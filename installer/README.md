@@ -45,6 +45,31 @@ looks for `ISCC.exe` on PATH, in `Program Files\Inno Setup 6\`,
 `package.bat` fails fast if step 2 hasn't produced `dist\Cursiv\Cursiv.exe`
 yet — always run `build.ps1` first.
 
+## 4. Publish the release
+
+```
+git push origin main
+gh release create v3.14-U## "installer/Output/Cursiv-Setup-3.14-U##.exe" --title "..." --notes-file ...
+```
+
+Then **copy the built exe to a stable filename and upload it as a second
+asset on the same release**:
+
+```
+cp installer/Output/Cursiv-Setup-3.14-U##.exe installer/Output/Cursiv-Setup-latest.exe
+gh release upload v3.14-U## installer/Output/Cursiv-Setup-latest.exe
+```
+
+The website's download buttons (index.html, start.html) link to
+`releases/latest/download/Cursiv-Setup-latest.exe` — GitHub's `releases/latest`
+redirect only works for a whole release *page*, not a specific asset, and
+asset URLs are filename-exact, so a versioned filename goes stale the moment
+the next release ships (this happened for real — U12's link sat on the
+homepage through U13/U14/U15 until a user reported the download button
+"takes me to GitHub instead of installing"). The stable-named asset is what
+makes `releases/latest/download/<name>` work permanently without editing the
+website again on every release. Don't skip this step.
+
 ## Notes
 
 - `cursiv_setup.iss` is the only installer script — `cursiv_setup_v2.iss` (a
