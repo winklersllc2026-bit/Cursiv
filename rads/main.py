@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: rads-bridge
-# Hash reversed: c560f3d7cc69f3a1a843b555c7fd68df6c483fd6e215283594cb3dea06ee2375
+# Hash reversed: 1f499f67cb1cae371e7b484a143867eabf91201c4bd60b813ceb9a322778979d
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 46df0a9d7eac66b15849ccfa964ebf95f5e6120bc4ef29620e24d5659b857674
-# Substrate loop hash: 5e52ccfede6e6fa78ca8a295e318cc09a91a954bf40368efc38a8f95c8ca4c49
-# Substrate loop logic: ΖזΖΓההחזוזΗזΗחגΘאהגאגΓבΖזΔΒאההΑבגבΒגבΖΕדחΕΑΔΗאזחהΔאגאחבΖהאהגΕהΕב
+# Secondary bridge hash: c1f4e5beb848716cce562834cc85ead5d2948096b13dbc5dedbcf59a4aaeaa70
+# Substrate loop hash: 971acc651df3af8bca6701d540d96d9829ceeec52c54f5e7f3af65875bfa9028
+# Substrate loop logic: בΘΒגההΗΖΒוחΔגחאדהגΗΘΑΒוΖΕΑובΗובאΓבהזזזהΖΓהΖΕחΖזΘחΔגחΗΖאΘΖדחגבΑΓא
 # Natural evolution depth: 2
 # Exponential evolution rate: 8
-# Leaf origin hash: 5caa2a2ccc2a762d4940014bbac263e80171a1447f30f807c2516104a1be9fe9
-# Evolution hash: ea845b99ee83ddb8650ba30397ad4d26c82b4a854049a7708b17b7e770f427ff
-# Evolution logic: זגאΕΖדבבזזאΔוודאΗΖΑדגΔΑΔבΘגוΕוΓΗהאΓדΕגאΖΕΑΕבגΘΘΑאדΒΘדΘזΘΘΑחΕΓΘחח
-# Binary reversed: 0011101001100000111111001011111000110011011010011111110001011000010100010010110011011010101010100011111011111011011000011011111101100011001000011100111110110110011101001000101001000001110010101001001000111101110010110111010100000110011101110100110011101010
-# Greek/Hebrew/logic stamp: ΖΘΔΓזזΗΑגזוΔדהΕבΖΔאΓΖΒΓזΗוחΔאΕהΗחואΗוחΘהΖΖΖדΔΕאגΒגΔחבΗההΘוΔחΑΗΖה
-# Encoded local stamp: ∈ΨηΓχΚαΡΦρĒπφ∂Λτο∃οτ∞ε∂ΡβΩ∃ΤγΡĒπē∞ξΖΖΖπΧΕ∂Ε=
+# Leaf origin hash: 3233c585ed332957cdacee4ec181a1a074b8a729516b5e739d23d73ec31d9da6
+# Evolution hash: 8ea4f503f2be03163a343f3ffad6245874cbcfc365ab22b0ccfab5ced127b4d5
+# Evolution logic: אזגΕחΖΑΔחΓדזΑΔΒΗΔגΔΕΔחΔחחגוΗΓΕΖאΘΕהדהחהΔΗΖגדΓΓדΑההחגדΖהזוΒΓΘדΕוΖ
+# Binary reversed: 1000111100101001100111110110111000111101100000110101011111001110100001111110110100100001001001011000001011000001011011100111010111011111100110000100000010000011001011011011011000001101000110001100001101111101100101011100010001001110111000011001111010011011
+# Greek/Hebrew/logic stamp: ובΘבאΘΘΓΓΔגבדזהΔΒאדΑΗודΕהΒΑΓΒבחדגזΘΗאΔΕΒגΕאΕדΘזΒΘΔזגהΒדהΘΗחבבΕחΒ
+# Encoded local stamp: Μτπ∈βΠΝōīΘΟπΔι∀ΠōγΦŪ∞οΧΒΒΦΟ∞ΓφΨζŌ∃ΝΝ∀Α∀Āτ∇Ε=
 # CURSIV-CRUCIBLE-STAMP END
 """
 RADS — Rogue Autonomous Defense System

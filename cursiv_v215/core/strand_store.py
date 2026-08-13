@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: core-sigil
-# Hash reversed: c47772f57a7498f8faa73bc6b141d435d9f11ed7b237a844a9bc46005e62ce88
+# Hash reversed: 98535951e456b28192674c9a8e07f8abf5bfd1f2926fab57cbf39af612fdd4a8
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 96f994b3b38ab057e0b8ac7be13adf4ed2027f158b58f34775b752a9ee48db1c
-# Substrate loop hash: 62e44a3f60713e1a554241aff6563e6b0ed041acda432af623fe576ac2a2fdba
-# Substrate loop logic: ΗΓזΕΕגΔחΗΑΘΒΔזΒגΖΖΕΓΕΒגחחΗΖΗΔזΗדΑזוΑΕΒגהוגΕΔΓגחΗΓΔחזΖΘΗגהΓגΓחודג
+# Secondary bridge hash: 913be33db24c97fad8bf1032ff3d1f101daa2d534e867d68aebc757a45dc9f06
+# Substrate loop hash: a7dfa94d4ef761d251bc9f688b3b799a5be6921496b2fa066b240f9d96f06ee9
+# Substrate loop logic: גΘוחגבΕוΕזחΘΗΒוΓΖΒדהבחΗאאדΔדΘבבגΖדזΗבΓΒΕבΗדΓחגΑΗΗדΓΕΑחבובΗחΑΗזזב
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: c06cad97d794322cd23dc9bffff61ebc7389f267c50a69d3b6306cccdd69aca6
-# Evolution hash: 73117ea2f6e20d649461b262b6aa757a9dcac29b96982a67d69cf46cb01434f0
-# Evolution logic: ΘΔΒΒΘזגΓחΗזΓΑוΗΕבΕΗΒדΓΗΓדΗגגΘΖΘגבוהגהΓבדבΗבאΓגΗΘוΗבהחΕΗהדΑΒΕΔΕחΑ
-# Binary reversed: 0011001011101110111001001111101011100101111000101001000111110001111101010101111011001101001101101101100000101000101100101100101010111001111110001000011110111110110101001100111001010001001000100101100111010011001001100000000010100111011001000011011100010001
-# Greek/Hebrew/logic stamp: אאזהΓΗזΖΑΑΗΕהדבגΕΕאגΘΔΓדΘוזΒΒחבוΖΔΕוΒΕΒדΗהדΔΘגגחאחאבΕΘגΘΖחΓΘΘΘΕה
-# Encoded local stamp: ΤΒĀΟσνιΧφζθΕμ∃ΧγΚο∃κΘΥξηΚυū∂ΛΒΔΨσΣΙΛūλĀΞτΞι=
+# Leaf origin hash: e28fa40f8ebe6fd173f76634200277850401f296f853d2daf665a9c5bb736856
+# Evolution hash: 36eb46c3a619769afc69c21b024ffb401a8037540a7157f50e09629f1f6c8817
+# Evolution logic: ΔΗזדΕΗהΔגΗΒבΘΗבגחהΗבהΓΒדΑΓΕחחדΕΑΒגאΑΔΘΖΕΑגΘΒΖΘחΖΑזΑבΗΓבחΒחΗהאאΒΘ
+# Binary reversed: 1001000110101100101010011010100001110010101001101101010000011000100101000110111000100011100101010001011100001110111100010101110111111010110111111011100011110100100101000110111101011101101011100011110111111100100101011111011010000100111110111011001001010001
+# Greek/Hebrew/logic stamp: אגΕווחΓΒΗחגבΔחדהΘΖדגחΗΓבΓחΒוחדΖחדגאחΘΑזאגבהΕΘΗΓבΒאΓדΗΖΕזΒΖבΖΔΖאב
+# Encoded local stamp: πιτΘΖŌξΔδεΡΡγκμσŌΛŌΟΣνμΝλΤŌοΔθοēπονξω∞σ∞ΠιΝ=
 # CURSIV-CRUCIBLE-STAMP END
 # ┌─────────────────────────────────────────────────────────────────────────────┐
 # │  CURSIV CONSTITUTIONAL LAYER — STRAND MEMORY MODULE                         │

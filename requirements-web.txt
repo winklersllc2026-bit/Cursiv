@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: docs
-# Hash reversed: 8ebf768220fcaf6cec2dc7b8beba97d07eba0388cc1eca4fd7d902d89599814e
+# Hash reversed: 82bf460d7029c98451cc149401cf2a37d11fa7a4852952901a7b599d7e1f851c
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 6a03e7bbb6bb0cd72bb2211674a3b55d8089ad65d4b2c262228afc1f602ff071
-# Substrate loop hash: e2b6e52f86b3881f551adaee7fe57f0c75db8688c1aed65783a1d50967fad8bc
-# Substrate loop logic: זΓדΗזΖΓחאΗדΔאאΒחΖΖΒגוגזזΘחזΖΘחΑהΘΖודאΗאאהΒגזוΗΖΘאΔגΒוΖΑבΗΘחגואדה
+# Secondary bridge hash: 9ad18583718424657167022565db904e05e360231a11466cae7bb80c97527e2b
+# Substrate loop hash: f98d7c50d091935fda7b81d8f81bad046af38e34d6c344a253f8ade958206938
+# Substrate loop logic: חבאוΘהΖΑוΑבΒבΔΖחוגΘדאΒואחאΒדגוΑΕΗגחΔאזΔΕוΗהΔΕΕגΓΖΔחאגוזבΖאΓΑΗבΔא
 # Natural evolution depth: 1
 # Exponential evolution rate: 4
-# Leaf origin hash: 8854d378cf8830b11030d636f3e28e7572efc7e4cfc20cf6e16ff215f8126737
-# Evolution hash: 2e4899d2b206eecf4703b296002c8079b3f2a6a27e13813683ee8fcbbcdba927
-# Evolution logic: ΓזΕאבבוΓדΓΑΗזזהחΕΘΑΔדΓבΗΑΑΓהאΑΘבדΔחΓגΗגΓΘזΒΔאΒΔΗאΔזזאחהדדהודגבΓΘ
-# Binary reversed: 0001011111011111111001100001010001000000111100110101111101100011011100110100101100111110110100011101011111010101100111101011000011100111110101010000110000010001001100111000011100110101001011111011111010111001000001001011000110011010100110010001100000100111
-# Greek/Hebrew/logic stamp: זΕΒאבבΖבאוΓΑבוΘוחΕגהזΒההאאΔΑגדזΘΑוΘבגדזדאדΘהוΓהזהΗחגהחΑΓΓאΗΘחדזא
-# Encoded local stamp: īŪΕΣοĀŌΧΣξρΘ∇υνΦΚξεΑψ∃βΑīιΚτūΒΤΕ∈ΞδĀΖΠσōφΑΙ=
+# Leaf origin hash: e56bf51eb2ada3bd2326dfbdf27c38d3024a5daf22e7801b9364b75172a1a016
+# Evolution hash: 0c887c55259a1db6c386df5362d1f4a89f060401279a97642e041bbd057d0565
+# Evolution logic: ΑהאאΘהΖΖΓΖבגΒודΗהΔאΗוחΖΔΗΓוΒחΕגאבחΑΗΑΕΑΒΓΘבגבΘΗΕΓזΑΕΒדדוΑΖΘוΑΖΗΖ
+# Binary reversed: 0001010011011111001001100000101111100000010010010011100100010010101010000011001110000010100100100000100000111111010001011100111010111000100011110101111001010010000110100100100110100100100100001000010111101101101010011001101111100111100011110001101010000011
+# Greek/Hebrew/logic stamp: הΒΖאחΒזΘובבΖדΘגΒΑבΓΖבΓΖאΕגΘגחΒΒוΘΔגΓחהΒΑΕבΕΒההΒΖΕאבהבΓΑΘוΑΗΕחדΓא
+# Encoded local stamp: κ∃β∃ΡΝΙΥΒνμΤΤΥΟφπā∞ΜοζΠ∂ΦēΚΖπΗδΝσα∃Ιτ∇δκχπĀ=
 # CURSIV-CRUCIBLE-STAMP END
 fastapi>=0.111.0
 uvicorn[standard]>=0.29.0

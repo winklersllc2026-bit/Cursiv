@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: council
-# Hash reversed: b2db3663316f8ed04008d8a21b3300a3a9efc98dae33d3b6799033dabb251cbf
+# Hash reversed: 9327ddc8cc7b3128ed5201260a94b1809514ad762fd42580fa031f73169df19f
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 7dba70d2dfdc3a617fbb2975b6999ff75648e16fea765c193633dcc0a5db4342
-# Substrate loop hash: 506f848672f996962b2c3955801c42462f23f3cb74b3c9fa7af9f5fd10d85dba
-# Substrate loop logic: ΖΑΗחאΕאΗΘΓחבבΗבΗΓדΓהΔבΖΖאΑΒהΕΓΕΗΓחΓΔחΔהדΘΕדΔהבחגΘגחבחΖחוΒΑואΖודג
+# Secondary bridge hash: d74ddec5b25c3959f5fc9839e8acbcaaefe2cbb4e1d5250c9e3e2904cbd86a30
+# Substrate loop hash: 448ed716ed963d92111cb546f9fceeabfdc5913f2e454de5bd4a61d234ae25b0
+# Substrate loop logic: ΕΕאזוΘΒΗזובΗΔובΓΒΒΒהדΖΕΗחבחהזזגדחוהΖבΒΔחΓזΕΖΕוזΖדוΕגΗΒוΓΔΕגזΓΖדΑ
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: 0415b943a8b26a590df3189466ff6a3cb24a1013a268adb3f35f314152a2e015
-# Evolution hash: 8de17cc55b050ebe72f9237e601c3598978779bf8d573f8160c6a5632d4817ab
-# Evolution logic: אוזΒΘההΖΖדΑΖΑזדזΘΓחבΓΔΘזΗΑΒהΔΖבאבΘאΘΘבדחאוΖΘΔחאΒΗΑהΗגΖΗΔΓוΕאΒΘגד
-# Binary reversed: 1101010010111101110001100110110011001000011011110001011110110000001000000000000110110001010101001000110111001100000000000101110001011001011111110011100100011011010101111100110010111100110101101110100110010000110011001011010111011101010010101000001111011111
-# Greek/Hebrew/logic stamp: חדהΒΖΓדדגוΔΔΑבבΘΗדΔוΔΔזגואבהחזבגΔגΑΑΔΔדΒΓגאואΑΑΕΑוזאחΗΒΔΔΗΗΔדוΓד
-# Encoded local stamp: εμ∇δΠ∂ΝΛΒ∇φΛ∈ηΨζνīΔγΓζ∀αιīŪΛαΧφΣηĒīĒξωξΜΠΓφ=
+# Leaf origin hash: 200e610780d0d965aa40e227ede4a24c27f9738a2c944840a7437689aceb06a2
+# Evolution hash: 25531de32bbd440560edc20602434b05274c7c449f1af0635d5dbfdd9ed5fc01
+# Evolution logic: ΓΖΖΔΒוזΔΓדדוΕΕΑΖΗΑזוהΓΑΗΑΓΕΔΕדΑΖΓΘΕהΘהΕΕבחΒגחΑΗΔΖוΖודחוובזוΖחהΑΒ
+# Binary reversed: 1001110001001110101110110011000100110011111011011100100001000001011110111010010000001000010001100000010110010010110110000001000010011010100000100101101111100110010011111011001001001010000100001111010100001100100011111110110010000110100110111111100010011111
+# Greek/Hebrew/logic stamp: חבΒחובΗΒΔΘחΒΔΑגחΑאΖΓΕוחΓΗΘוגΕΒΖבΑאΒדΕבגΑΗΓΒΑΓΖוזאΓΒΔדΘההאהווΘΓΔב
+# Encoded local stamp: ωλκξΓοιψΝζΝΤĒΓΖνγΧΩΓκ∀∇ΞΒιĒΜā∃ηιΨΦĒΜεθλυΤεΡ=
 # CURSIV-CRUCIBLE-STAMP END
 """
 Council Memory — semantic retrieval of past deliberations.

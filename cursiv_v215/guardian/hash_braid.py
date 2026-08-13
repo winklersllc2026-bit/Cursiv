@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: guardian
-# Hash reversed: 4ceae7d87848b8910f36b63e6f425fb027e17b8951525d7a27d063801685a6f1
+# Hash reversed: 1d048a6e606ff2e13c326890cc574cbb2ef7d7472de0772292b20211514e5b0a
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 607b2cfc6cd306cf7c058a5af5b9cd1c0a94a13a1938897fa538490917802a54
-# Substrate loop hash: 9887888d57a8bc991db687b96e0e2ee3805c70ce413255f0b728a913f72a09c1
-# Substrate loop logic: באאΘאאאוΖΘגאדהבבΒודΗאΘדבΗזΑזΓזזΔאΑΖהΘΑהזΕΒΔΓΖΖחΑדΘΓאגבΒΔחΘΓגΑבהΒ
+# Secondary bridge hash: 4a1b4f2fab94d8281af5be9195cb2d7d898f6de66ee242bc9ffb8157a6e8e6b5
+# Substrate loop hash: 141b58def6bdb4c8758db61e84022c776bef7e907a8353349c419d333496fb94
+# Substrate loop logic: ΒΕΒדΖאוזחΗדודΕהאΘΖאודΗΒזאΕΑΓΓהΘΘΗדזחΘזבΑΘגאΔΖΔΔΕבהΕΒבוΔΔΔΕבΗחדבΕ
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: d2be621935658e6bcc8f53c58710f54d21ee00fc9c4903e95b47de2631c5f1b4
-# Evolution hash: 2e196f71a692171219ab1d51e54682608b1ed5c2b9ad3df37ba4938f6037f446
-# Evolution logic: ΓזΒבΗחΘΒגΗבΓΒΘΒΓΒבגדΒוΖΒזΖΕΗאΓΗΑאדΒזוΖהΓדבגוΔוחΔΘדגΕבΔאחΗΑΔΘחΕΕΗ
-# Binary reversed: 0010001101110101011111101011000111100001001000011101000110011000000011111100011011010110110001110110111100100100101011111101000001001110011110001110110100011001101010001010010010101011111001010100111010110000011011000001000010000110000110100101011011111000
-# Greek/Hebrew/logic stamp: ΒחΗגΖאΗΒΑאΔΗΑוΘΓגΘוΖΓΖΒΖבאדΘΒזΘΓΑדחΖΓΕחΗזΔΗדΗΔחΑΒבאדאΕאΘאוΘזגזהΕ
-# Encoded local stamp: υεφΙΕπρΧωβδĪΔΨΡδΧΒπΚΨγλūΜΦΩΜψΧ∇ΒΩβΓ∀μΖνΗΦπĪ=
+# Leaf origin hash: 9c2d9ae2bdf9ecf9e58e6ad218bbea08c16fcc7f2e2ba03d65376d03c3dd96c5
+# Evolution hash: 8aeebcfa76f3e0f116b9072f2ce0549a6005eb16ac6f4c883b15e2c246960e8d
+# Evolution logic: אגזזדהחגΘΗחΔזΑחΒΒΗדבΑΘΓחΓהזΑΖΕבגΗΑΑΖזדΒΗגהΗחΕהאאΔדΒΖזΓהΓΕΗבΗΑזאו
+# Binary reversed: 1000101100000010000101010110011101100000011011111111010001111000110000111100010001100001100100000011001110101110001000111101110101000111111111101011111000101110010010110111000011101110010001001001010011010100000001001000100010101000001001111010110100000101
+# Greek/Hebrew/logic stamp: גΑדΖזΕΒΖΒΒΓΑΓדΓבΓΓΘΘΑזוΓΘΕΘוΘחזΓדדהΕΘΖההΑבאΗΓΔהΔΒזΓחחΗΑΗזΗגאΕΑוΒ
+# Encoded local stamp: ΤΚΘψΘΓ∃ūσΠ∇∈υΝ∞Ημ∇ΟσρΛδΘ∀ūωδρΠΙ∇ΕαΔτŪτŌγβ∞ε=
 # CURSIV-CRUCIBLE-STAMP END
 """
 Cursiv Hash Braid — constitutional chain encryption.

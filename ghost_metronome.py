@@ -2,19 +2,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: project
-# Hash reversed: e39f9f1db5249bcd46cd79263b28af97a2357409fe1e7dddef0bc14257b7d3dc
+# Hash reversed: 059dee69b0974e8b92a0adf9d27d82ee350b4802a6aad9bd42e65310fd9a51e7
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: b247cd2f500e5fc82db539df3358396973897992a5c85d650ba4e22af578c024
-# Substrate loop hash: 9504f050accc257e41f53985cabace2f231117b496ed9a0157dec017b307f31b
-# Substrate loop logic: בΖΑΕחΑΖΑגהההΓΖΘזΕΒחΖΔבאΖהגדגהזΓחΓΔΒΒΒΘדΕבΗזובגΑΒΖΘוזהΑΒΘדΔΑΘחΔΒד
+# Secondary bridge hash: dd8e7ae098131652a2a0c07209f8c0d8e78d44e90ea0432f5d68ec73d7e65411
+# Substrate loop hash: 6a2473efe1b814ab246de0e321fe887150078e35f50658109388103dc5f5e2cb
+# Substrate loop logic: ΗגΓΕΘΔזחזΒדאΒΕגדΓΕΗוזΑזΔΓΒחזאאΘΒΖΑΑΘאזΔΖחΖΑΗΖאΒΑבΔאאΒΑΔוהΖחΖזΓהד
 # Natural evolution depth: 1
 # Exponential evolution rate: 4
-# Leaf origin hash: 68860848a3a68815ebde25413eebbf272b0a1a6a66394b3cdd9fefbb4dfd4233
-# Evolution hash: e6c010467cf434ca26259a33543379aa3cf77450b40749ba6a3f33da4f3e8889
-# Evolution logic: זΗהΑΒΑΕΗΘהחΕΔΕהגΓΗΓΖבגΔΔΖΕΔΔΘבגגΔהחΘΘΕΖΑדΕΑΘΕבדגΗגΔחΔΔוגΕחΔזאאאב
-# Binary reversed: 0111110010011111100111111000101111011010010000101001110100111011001001100011101111101001010001101100110101000001010111111001111001010100110010101110001000001001111101111000011111101011101110110111111100001101001110000010010010101110110111101011110010110011
-# Greek/Hebrew/logic stamp: הוΔוΘדΘΖΓΕΒהדΑחזוווΘזΒזחבΑΕΘΖΔΓגΘבחגאΓדΔΗΓבΘוהΗΕוהדבΕΓΖדוΒחבחבΔז
-# Encoded local stamp: ĒŌχΗηχξψθΗιγŪο∈ΒσūΣεΝωζΩχδεπΨι∀γΙΞηΦŪ∞Īχθ∀Ν=
+# Leaf origin hash: 2647adb0b1b529c9b307731605cdef48e9e78e9fc01672cff9f45a0e7156a972
+# Evolution hash: 4410eb417e22d7fc75c7e89dd8663c0ef9abd78380022cc9ce948e47d44322b5
+# Evolution logic: ΕΕΒΑזדΕΒΘזΓΓוΘחהΘΖהΘזאבוואΗΗΔהΑזחבגדוΘאΔאΑΑΓΓההבהזבΕאזΕΘוΕΕΔΓΓדΖ
+# Binary reversed: 0000101010011011011101110110100111010000100111100010011100011101100101000101000001011011111110011011010011101011000101000111011111001010000011010010000100000100010101100101010110111001110110110010010001110110101011001000000011111011100101011010100001111110
+# Greek/Hebrew/logic stamp: ΘזΒΖגבוחΑΒΔΖΗזΓΕודבוגגΗגΓΑאΕדΑΖΔזזΓאוΘΓובחוגΑגΓבדאזΕΘבΑדבΗזזובΖΑ
+# Encoded local stamp: ∇∃ζΔηεδĒΨĀΔρζΔΨπεΝΒī∃∇ΦαζΕΨφō∃φΩσūΨΒιρΥφū∇Α=
 # CURSIV-CRUCIBLE-STAMP END
 """
 The Ghost & The Fracture  —  E minor guitar loop  —  1:30 exact
