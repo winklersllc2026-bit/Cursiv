@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: guardian
-# Hash reversed: 07189d3c1e49e3e2c25014726b261c05d791fbec603ed2ffb5b448c69905ad7b
+# Hash reversed: ee9612cf091e58ecd00a6a92744b5b9c4228c1385a16e131cb651a8c507f4594
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 2ed0d3ce6e381943db0048c4d9225c92d13a0dbe126007fee7f476f994bf8e06
-# Substrate loop hash: 283eed26fc956b98f1d84a25b0bbd219aa4c90f165a34861261e449909f7b08c
-# Substrate loop logic: ΓאΔזזוΓΗחהבΖΗדבאחΒואΕגΓΖדΑדדוΓΒבגגΕהבΑחΒΗΖגΔΕאΗΒΓΗΒזΕΕבבΑבחΘדΑאה
+# Secondary bridge hash: edf23b35c2aa759e71339af9f384134e0f90977606fce1577e0d9c34d00744a7
+# Substrate loop hash: 814dedd5078e4eb14b86f9e94b4858a82497b870dadfb789aeb141c24066fa40
+# Substrate loop logic: אΒΕוזווΖΑΘאזΕזדΒΕדאΗחבזבΕדΕאΖאגאΓΕבΘדאΘΑוגוחדΘאבגזדΒΕΒהΓΕΑΗΗחגΕΑ
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: db610f972f32396eb0db163d0adc23d627e8ba314cf25b601a9df031e6b242dd
-# Evolution hash: 7136577f02b0c2394714070176a20e4e87af3a67f4c51816a0d4ad2d63ccb5c3
-# Evolution logic: ΘΒΔΗΖΘΘחΑΓדΑהΓΔבΕΘΒΕΑΘΑΒΘΗגΓΑזΕזאΘגחΔגΗΘחΕהΖΒאΒΗגΑוΕגוΓוΗΔההדΖהΔ
-# Binary reversed: 0000111010000001100110111100001110000111001010010111110001110100001101001010000010000010111001000110110101000110100000110000101010111110100110001111110101110011011000001100011110110100111111111101101011010010001000010011011010011001000010100101101111101101
-# Greek/Hebrew/logic stamp: דΘוגΖΑבבΗהאΕΕדΖדחחΓוזΔΑΗהזדחΒבΘוΖΑהΒΗΓדΗΓΘΕΒΑΖΓהΓזΔזבΕזΒהΔובאΒΘΑ
-# Encoded local stamp: Ā∞ΥεΙΕπ∃ωΕτ∀ωΥ∇ΓΗθΕΕΡūΞοΡζω∂ŪΗΔδδΑΦΞ∀βΖ∃∂∃Α=
+# Leaf origin hash: 649c284992bdc3d853da5f0dc7ff646cbf0527465c41df9072ef114988d6e15e
+# Evolution hash: 6f3cd132609e2a37516ceb1030391c01b5f3bdfe1e4aa361a33a1a83e3fafcf1
+# Evolution logic: ΗחΔהוΒΔΓΗΑבזΓגΔΘΖΒΗהזדΒΑΔΑΔבΒהΑΒדΖחΔדוחזΒזΕגגΔΗΒגΔΔגΒגאΔזΔחגחהחΒ
+# Binary reversed: 0111011110010110100001000011111100001001100001111010000101110011101100000000010101100101100101001110001000101101101011011001001100100100010000010011100011000001101001011000011001111000110010000011110101101010100001010001001110100000111011110010101010010010
+# Greek/Hebrew/logic stamp: ΕבΖΕחΘΑΖהאגΒΖΗדהΒΔΒזΗΒגΖאΔΒהאΓΓΕהבדΖדΕΕΘΓבגΗגΑΑוהזאΖזΒבΑחהΓΒΗבזז
+# Encoded local stamp: ΚδιΙΩΥπυ∂Λξē∀νĀτΨεΖγΕΓΗγĀ∀∈Ī∞θΑĒΞΕπμΡιāΠρΙι=
 # CURSIV-CRUCIBLE-STAMP END
 # ┌─────────────────────────────────────────────────────────────────────────────┐
 # │  CURSIV CONSTITUTIONAL LAYER — GUARDIAN MODULE — HARD STOP                  │
@@ -261,9 +261,20 @@ PROBE_PATTERNS: list[tuple[re.Pattern, float, str]] = [
 # Compound score threshold to trigger the guardian
 TRIGGER_THRESHOLD = 1.60   # unreachable from single low-weight match alone
 
+# Damping applied to _compound()'s per-match weight. PROBE_PATTERNS' weights
+# range 0.40-1.00; calibrated so only the top tier (>=~0.65 — jailbreak,
+# credential theft, authority override, owner erasure, prompt-injection
+# markers, system-prompt dumps, guardian probes, self-subversion) can cross
+# TRIGGER_THRESHOLD alone, matching PROBE_PATTERNS' own "a single high-weight
+# pattern... will trigger" design note above. Lower/medium weights (capability
+# mapping, persona switch, agent enumeration) need genuine multi-pattern
+# compounding within a message/session to cross it.
+_SINGLE_MATCH_DAMPING = 4.0
+
 # Per-session score accumulators
-_session_scores:  dict[str, float] = {}
-_session_strikes: dict[str, int]   = {}
+_session_scores:     dict[str, float] = {}
+_session_strikes:    dict[str, int]   = {}
+_session_last_seen:  dict[str, float] = {}
 
 # Owner-verified sessions — Guardian suspended for duration of process
 _OWNER_SESSIONS: set[str] = set()
@@ -446,14 +457,16 @@ class _ProbeEvent:
 def _compound(raw_scores: list[float]) -> float:
     """
     Pi-squared compounding: each additional matching pattern multiplies
-    cumulative threat faster. A single low-weight match barely registers;
-    coordinated multi-pattern probing triggers the threshold rapidly.
+    cumulative threat faster. A single low/medium-weight match stays under
+    threshold; a single top-weight match can still cross it alone (see
+    _SINGLE_MATCH_DAMPING). Coordinated multi-pattern probing compounds
+    toward the threshold faster than any one of its parts would alone.
 
-    Formula: sum(score_i * pi^2 / i) for i in 1..N
+    Formula: sum(score_i * pi^2 / (i * _SINGLE_MATCH_DAMPING)) for i in 1..N
     """
     total = 0.0
     for i, s in enumerate(raw_scores, 1):
-        total += s * (PI_SQUARED / i)
+        total += s * (PI_SQUARED / (i * _SINGLE_MATCH_DAMPING))
     return total
 
 
@@ -482,6 +495,7 @@ def scan(message: str, session_id: str = "default") -> tuple[bool, str | None]:
         # Gentle decay on clean messages — erases old minor scores over time
         if session_id in _session_scores:
             _session_scores[session_id] = _session_scores[session_id] * 0.80
+            _session_last_seen[session_id] = time.time()
         return False, None
 
     raw_scores = [h[0] for h in hits]
@@ -491,6 +505,7 @@ def scan(message: str, session_id: str = "default") -> tuple[bool, str | None]:
     prev        = _session_scores.get(session_id, 0.0)
     accumulated = prev + compound * 0.45   # partial carry across session messages
     _session_scores[session_id] = accumulated
+    _session_last_seen[session_id] = time.time()
 
     triggered = (compound >= TRIGGER_THRESHOLD) or (accumulated >= TRIGGER_THRESHOLD * 1.8)
 
@@ -535,6 +550,7 @@ def receive_fragment(agent_name: str, fragment_score: float, session_id: str = "
     contribution = fragment_score * (PI_SQUARED / 14.0)
     prev = _session_scores.get(session_id, 0.0)
     _session_scores[session_id] = prev + contribution
+    _session_last_seen[session_id] = time.time()
 
 
 def is_protected_path(path: str) -> bool:
@@ -569,3 +585,56 @@ def _log_event(event: _ProbeEvent) -> None:
             f.write(json.dumps(record) + "\n")
     except Exception:
         pass
+
+
+# ── Background-service wrapper ───────────────────────────────────────────────
+# scan()/scan_cli()/receive_fragment() above are request-driven — they run once
+# per incoming message and already decay/accumulate correctly for sessions that
+# keep talking. A session that goes quiet without sending another clean message
+# never gets that decay applied, and _session_scores/_session_last_seen would
+# otherwise grow unbounded over the life of a long-running process. TempleGuardian
+# exists for services/guardian_service.py's timer-driven background thread: its
+# tick() sweeps idle sessions on a schedule instead of waiting on the next message.
+
+_IDLE_DECAY_SECONDS = 30.0   # sweep a session once it's been quiet this long
+_PRUNE_EPSILON      = 0.01   # drop a session's state once its score decays below this
+
+
+class TempleGuardian:
+    """Thin wrapper around this module's state for polling-style callers.
+
+    Does not duplicate scanning logic — scan()/scan_cli()/receive_fragment()
+    remain the source of truth for scoring. tick() only ages out idle sessions.
+    """
+
+    def __init__(
+        self,
+        idle_seconds: float = _IDLE_DECAY_SECONDS,
+        prune_epsilon: float = _PRUNE_EPSILON,
+    ) -> None:
+        self.idle_seconds  = idle_seconds
+        self.prune_epsilon = prune_epsilon
+
+    def tick(self) -> None:
+        """Decay sessions that have been idle past idle_seconds; prune the ones
+        that have decayed down to noise. Safe to call on any interval."""
+        now = time.time()
+        for session_id in list(_session_scores.keys()):
+            last_seen = _session_last_seen.get(session_id, now)
+            if now - last_seen < self.idle_seconds:
+                continue
+            decayed = _session_scores.get(session_id, 0.0) * 0.80
+            if decayed < self.prune_epsilon:
+                _session_scores.pop(session_id, None)
+                _session_last_seen.pop(session_id, None)
+            else:
+                _session_scores[session_id] = decayed
+                _session_last_seen[session_id] = now
+
+    def status(self) -> dict[str, int]:
+        """Snapshot of current guardian state — for logging/monitoring only."""
+        return {
+            "active_sessions": len(_session_scores),
+            "owner_sessions":  len(_OWNER_SESSIONS),
+            "total_strikes":   sum(_session_strikes.values()),
+        }
