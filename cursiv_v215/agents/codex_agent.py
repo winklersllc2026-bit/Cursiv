@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: project
-# Hash reversed: c426ddf3a6a4aa869de2243362e3fcf8e726a703ed784621d1f2081afc55e056
+# Hash reversed: 5cde7a8c59d5cf2fd78005befd9b78b39c005bf16c1fc58b83d13d0cd2cba501
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 98d02035fdc984ade5562c460c1d60db0438da6357971b2d13380a3c93bb799e
-# Substrate loop hash: 56a5a4f0c072bffbf7f3d71566388b26782e9f4c36414554c404b74e7e0552ea
-# Substrate loop logic: ΖΗגΖגΕחΑהΑΘΓדחחדחΘחΔוΘΒΖΗΗΔאאדΓΗΘאΓזבחΕהΔΗΕΒΕΖΖΕהΕΑΕדΘΕזΘזΑΖΖΓזג
+# Secondary bridge hash: b8d91efd14eefa9a0fa9e4b110b3ca6cd5b7d6842743e8d07d77854c2edeb87b
+# Substrate loop hash: b8724f6cb6dfa00210fb303bbd1da4e316d5e51c7680160b1d3db85e17731a5a
+# Substrate loop logic: דאΘΓΕחΗהדΗוחגΑΑΓΒΑחדΔΑΔדדוΒוגΕזΔΒΗוΖזΖΒהΘΗאΑΒΗΑדΒוΔודאΖזΒΘΘΔΒגΖג
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: 64e68d0229a6b7c6948e747ee6dd218b0523f366e9a021214cb9e747f80dd415
-# Evolution hash: f4cddb5376ff5065ac24d6b10a366bb23fee1f3fe21e9ae639891fdd708a6ce1
-# Evolution logic: חΕהוודΖΔΘΗחחΖΑΗΖגהΓΕוΗדΒΑגΔΗΗדדΓΔחזזΒחΔחזΓΒזבגזΗΔבאבΒחווΘΑאגΗהזΒ
-# Binary reversed: 0011001001000110101110111111110001010110010100100101010100010110100110110111010001000010110011000110010001111100111100111111000101111110010001100101111000001100011110111110000100100110010010001011100011110100000000011000010111110011101010100111000010100110
-# Greek/Hebrew/logic stamp: ΗΖΑזΖΖהחגΒאΑΓחΒוΒΓΗΕאΘוזΔΑΘגΗΓΘזאחהחΔזΓΗΔΔΕΓΓזובΗאגגΕגΗגΔחווΗΓΕה
-# Encoded local stamp: ēōΕ∂ΥοαĒ∇ξ∀āζτΚνΞυ∞āγΣΕεγχκγδφāΕ∀η∀īΜΩιΙξψι=
+# Leaf origin hash: 64d0267a7afafe3c7738b7c6643d7c1fa4e2358f3a2452404c56059c80c9eb43
+# Evolution hash: a7d22355c11ac32bca7ddf0ca6f9d74b551b628bc7398ea3b6c0cded34b049c1
+# Evolution logic: גΘוΓΓΔΖΖהΒΒגהΔΓדהגΘווחΑהגΗחבוΘΕדΖΖΒדΗΓאדהΘΔבאזגΔדΗהΑהוזוΔΕדΑΕבהΒ
+# Binary reversed: 1010001110110111111001010001001110101001101110100011111101001111101111100001000000001010110101111111101110011101111000011101110010010011000000001010110111111000011000111000111100111010000111010001110010111000110010110000001110110100001111010101101000001000
+# Greek/Hebrew/logic stamp: ΒΑΖגדהΓוהΑוΔΒוΔאדאΖהחΒהΗΒחדΖΑΑהבΔדאΘדבוחזדΖΑΑאΘוחΓחהΖובΖהאגΘזוהΖ
+# Encoded local stamp: γβΙΦωŪτ∂ΛΩΚη∂ΞεψΚΜΗκΝΜūηΣΤ∈ψΣāχα∃ŌŌωΦζ∞υπΙĪ=
 # CURSIV-CRUCIBLE-STAMP END
 """
 Codex Agent — Winkler Personal Coding Specialist

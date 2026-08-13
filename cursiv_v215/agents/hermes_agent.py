@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: project
-# Hash reversed: 578ed52b4587bba65970ebb26f1d6510e8cefb3c33430c0ac211bac30b130918
+# Hash reversed: cf10de658adcd8129f2842a7557b2fea7083f6772a6cb6027abe3714d15b0322
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 8ae49e8193068665934a7831aebb7875304db8da3462374cd2f8031ec324696a
-# Substrate loop hash: 607b4262a58b6538a80aad3ff76223e31b17f3822fc4847b4e69ba2d21605b94
-# Substrate loop logic: ΗΑΘדΕΓΗΓגΖאדΗΖΔאגאΑגגוΔחחΘΗΓΓΔזΔΒדΒΘחΔאΓΓחהΕאΕΘדΕזΗבדגΓוΓΒΗΑΖדבΕ
+# Secondary bridge hash: bcb07dd7475ad1c1269085e55e927f2595f49da0a1a2aecd5d6ab695a44076e6
+# Substrate loop hash: da58b0ab48b8de4d28c76c9218ac9a4f7ecd58c65f4a83bc7d41e40efc286942
+# Substrate loop logic: וגΖאדΑגדΕאדאוזΕוΓאהΘΗהבΓΒאגהבגΕחΘזהוΖאהΗΖחΕגאΔדהΘוΕΒזΕΑזחהΓאΗבΕΓ
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: 1caee6a9e10351a7f273d8494388f4bc772f7e457a3c3b05c4f456635e81a5b8
-# Evolution hash: 4ab5eb734c3458b3bfd4b8f3ac6fe8605d092d88aefe5c076f3c65ee7cb539ab
-# Evolution logic: ΕגדΖזדΘΔΕהΔΕΖאדΔדחוΕדאחΔגהΗחזאΗΑΖוΑבΓואאגזחזΖהΑΘΗחΔהΗΖזזΘהדΖΔבגד
-# Binary reversed: 1010111000010111101110100100110100101010000111101101110101010110101010011110000001111101110101000110111110001011011010101000000001110001001101111111110111000011110011000010110000000011000001010011010010001000110101010011110000001101100011000000100110000001
-# Greek/Hebrew/logic stamp: אΒבΑΔΒדΑΔהגדΒΒΓהגΑהΑΔΕΔΔהΔדחזהאזΑΒΖΗוΒחΗΓדדזΑΘבΖΗגדדΘאΖΕדΓΖוזאΘΖ
-# Encoded local stamp: στιΩĀι∞ΕσĒΣιΩφΒφθμπκμεΧ∞ēρνΥβοĀĒΝτΑ∞ĀΛΕēīχŪ=
+# Leaf origin hash: bf0b35aeafc70647149aabe029c2764f6ae53c839455c0f9dae2ecdfd78eb013
+# Evolution hash: e92aea15035a04f7298be1f738ac37a7fd2d2710022262f62e4a01b9a5deca44
+# Evolution logic: זבΓגזגΒΖΑΔΖגΑΕחΘΓבאדזΒחΘΔאגהΔΘגΘחוΓוΓΘΒΑΑΓΓΓΗΓחΗΓזΕגΑΒדבגΖוזהגΕΕ
+# Binary reversed: 0011111110000000101101110110101000010101101100111011000110000100100111110100000100100100010111101010101011101101010011110111010111100000000111001111011011101110010001010110001111010110000001001110010111010111110011101000001010111000101011010000110001000100
+# Greek/Hebrew/logic stamp: ΓΓΔΑדΖΒוΕΒΘΔזדגΘΓΑΗדהΗגΓΘΘΗחΔאΑΘגזחΓדΘΖΖΘגΓΕאΓחבΓΒאוהוגאΖΗזוΑΒחה
+# Encoded local stamp: ωΗχμ∂ΜīāοιΩδξζΛξεΕνΚŪāīΞ∀ΡΩτψτβΩδοĒΕāθŌΡψāΕ=
 # CURSIV-CRUCIBLE-STAMP END
 """
 Hermes Agent — Multi-step agentic task executor (offline-capable)

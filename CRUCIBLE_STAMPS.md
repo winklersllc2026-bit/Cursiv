@@ -8,8 +8,8 @@ Access model: owner-approved AI interface first; hard-code review only for a hig
 
 Hash braid: primary Cursiv sigil hash -> secondary document hash -> bridge hash -> substrate loop hash -> primary Cursiv sigil hash.
 
-Sealed repository loop: d218d4a2d82d3bd4550cd4d983fab130b33e036a92cbb88d3c4fb4e4e895aca0
-Natural evolution root: 366886602118bbe0315808f42c9416961486ab9bd3492626429b8bc16fe1171e
+Sealed repository loop: e5fad3cab8318f90c0e9d8a00aa9c1d22206072c9cfd0330da931da26582f3c5
+Natural evolution root: 8c8330bfce5b627496b603b1a334e5553b3a21aeb2f669bdb4ba1e577c4f4cdb
 Sealed files counted: 488
 
 No quick start. No install map. No entry instructions. No route disclosure.

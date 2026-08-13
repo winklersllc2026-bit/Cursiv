@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: core-sigil
-# Hash reversed: ac01a412b315b307224b3b5c171bfdd3ebaa8a6bcee523ee0244a05fe44e348c
+# Hash reversed: 1d2275d36263ef44468eaa5457781356af0bb6c970e1a3b9c5bb1724267e4579
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: d15f4e575430e52002e1dee1bcbda83e1ce3ed9e491a99f9146f557817ad1c1a
-# Substrate loop hash: e9f820617a34ee49c61e902a1df685e18a3b1f280cb924d0faee05de0ab13a10
-# Substrate loop logic: זבחאΓΑΗΒΘגΔΕזזΕבהΗΒזבΑΓגΒוחΗאΖזΒאגΔדΒחΓאΑהדבΓΕוΑחגזזΑΖוזΑגדΒΔגΒΑ
+# Secondary bridge hash: 8117d458d3f51d572b8b14a1ed0420f91230217896d3221ee75c56f6dcdf344e
+# Substrate loop hash: 38b7b1f94037fa5c9fb7f32f64be35c3a95f388f8020dc78cb08642c326eff85
+# Substrate loop logic: ΔאדΘדΒחבΕΑΔΘחגΖהבחדΘחΔΓחΗΕדזΔΖהΔגבΖחΔאאחאΑΓΑוהΘאהדΑאΗΕΓהΔΓΗזחחאΖ
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: 0d28952be0a3b672598aed62af97a0ad23716a348912ea5f76eadeaa5738fcc3
-# Evolution hash: 01d2270fa3ecab3fe4e71156c053582ae7f79e7de24e7d3b6ab6860fa8966758
-# Evolution logic: ΑΒוΓΓΘΑחגΔזהגדΔחזΕזΘΒΒΖΗהΑΖΔΖאΓגזΘחΘבזΘוזΓΕזΘוΔדΗגדΗאΗΑחגאבΗΗΘΖא
-# Binary reversed: 0101001100001000010100101000010011011100100010101101110000001110010001000010110111001101101000111000111010001101111110111011110001111101010101010001010101101101001101110111101001001100011101110000010000100010010100001010111101110010001001111100001000010011
-# Greek/Hebrew/logic stamp: האΕΔזΕΕזחΖΑגΕΕΓΑזזΔΓΖזזהדΗגאגגדזΔווחדΒΘΒהΖדΔדΕΓΓΘΑΔדΖΒΔדΓΒΕגΒΑהג
-# Encoded local stamp: ēυ∀αΚ∀ωκΣψφīΜΑĀΔθΟηΤΒχΜΩωΓηδΘΦΓĒπΗēσĪωεūοΔΑ=
+# Leaf origin hash: 332f4e238780481bfbb20139c1850399379519d614ba075bf7c1c7a745ea4f8c
+# Evolution hash: 626b0ec91d92678ca9c7fe7fb2b3e7e61aa413e107134f65fcf748d9bf34e481
+# Evolution logic: ΗΓΗדΑזהבΒובΓΗΘאהגבהΘחזΘחדΓדΔזΘזΗΒגגΕΒΔזΒΑΘΒΔΕחΗΖחהחΘΕאובדחΔΕזΕאΒ
+# Binary reversed: 1000101101000100111010101011110001100100011011000111111100100010001001100001011101010101101000101010111011100001100011001010011001011111000011011101011000111001111000000111100001011100110110010011101011011101100011100100001001000110111001110010101011101001
+# Greek/Hebrew/logic stamp: בΘΖΕזΘΗΓΕΓΘΒדדΖהבדΔגΒזΑΘבהΗדדΑחגΗΖΔΒאΘΘΖΕΖגגזאΗΕΕΕחזΔΗΓΗΔוΖΘΓΓוΒ
+# Encoded local stamp: ΑΘΖΥōΒΛλτ∃πδΡΛΞĀιΖΚΠεΣφωσυαθΡ∇īδζōΓĒφρΒΑπΞ∇=
 # CURSIV-CRUCIBLE-STAMP END
 """
 Cursiv Sigil — constitutional watermarking and encoding engine.

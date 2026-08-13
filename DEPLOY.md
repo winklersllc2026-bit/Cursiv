@@ -2,20 +2,22 @@
   CURSIV-CRUCIBLE-STAMP BEGIN
   Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
   Layer: docs
-  Hash reversed: b567d3cdc46f20b97ce6caeac1ea13f8f50b80486ff67a852ae00d2c24f96687
+  Hash reversed: 98deffe1e7100f8a5079ff317ab650e6f063d76c6f1855a62ff082bb7651d29a
   Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-  Secondary bridge hash: 42927a41a231979b9504b4dff352a48b2ce0c219a49ca0e199200b1351eb21c6
-  Substrate loop hash: afadc98db6a4f778ba9155122a82ba60cf3f294101b6e77a8f26bc40cd22db1a
-  Substrate loop logic: גחגוהבאודΗגΕחΘΘאדגבΒΖΖΒΓΓגאΓדגΗΑהחΔחΓבΕΒΑΒדΗזΘΘגאחΓΗדהΕΑהוΓΓודΒג
+  Secondary bridge hash: b2c63a35058e2b71785875b90e887ec8aedad96d40ff2641f354aa1a4daee532
+  Substrate loop hash: 78d1b22f146a82c6ccc31693578da3a1b0e9415c674cf8bbed26b3643201d6db
+  Substrate loop logic: ΘאוΒדΓΓחΒΕΗגאΓהΗהההΔΒΗבΔΖΘאוגΔגΒדΑזבΕΒΖהΗΘΕהחאדדזוΓΗדΔΗΕΔΓΑΒוΗוד
   Natural evolution depth: 1
   Exponential evolution rate: 4
-  Leaf origin hash: 412e24dd523f4d1ab1373df1b74bd45a37ba73ac8feebd751b68e372583ba73d
-  Evolution hash: 5209cce39bd3e7fcc25188ddc009af999972eccd27db748321cee5a37740658a
-  Evolution logic: ΖΓΑבההזΔבדוΔזΘחההΓΖΒאאווהΑΑבגחבבבבΘΓזההוΓΘודΘΕאΔΓΒהזזΖגΔΘΘΕΑΗΖאג
-  Binary reversed: 1101101001101110101111000011101100110010011011110100000011011001111000110111011000110101011101010011100001110101100011001111000111111010000011010001000000100001011011111111011011100101000110100100010101110000000010110100001101000010111110010110011000011110
-  Greek/Hebrew/logic stamp: ΘאΗΗבחΕΓהΓוΑΑזגΓΖאגΘΗחחΗאΕΑאדΑΖחאחΔΒגזΒהגזגהΗזהΘבדΑΓחΗΕהוהΔוΘΗΖד
-  Encoded local stamp: ηūρΚμĀ∇νΓΟāππ∈∀∀ψūΤηπΜβΦνγζΙΧΟοΦΔεεŪ∂νŌŪΤψΡ=
+  Leaf origin hash: d7b29bde3cae91b1ac4b912d2ce711907519cf5210b9f9b364a737cb074e307d
+  Evolution hash: 21af0b1988767bd4cbac3c6e76fdc0d094d9e6925979c19cf81c86dbcf0ef1da
+  Evolution logic: ΓΒגחΑדΒבאאΘΗΘדוΕהדגהΔהΗזΘΗחוהΑוΑבΕובזΗבΓΖבΘבהΒבהחאΒהאΗודהחΑזחΒוג
+  Binary reversed: 1001000110110111111111110111100001111110100000000000111100010101101000001110100111111111110010001110010111010110101000000111011011110000011011001011111001100011011011111000000110101010010101100100111111110000000101001101110111100110101010001011010010010101
+  Greek/Hebrew/logic stamp: גבΓוΒΖΗΘדדΓאΑחחΓΗגΖΖאΒחΗהΗΘוΔΗΑחΗזΑΖΗדגΘΒΔחחבΘΑΖגאחΑΑΒΘזΒזחחזואב
+  Encoded local stamp: ∃āΔνωε∞ΓΣβιφāΖγγχā∀χΚηιιωεΧ∞ΒξĒēΤζēΕκσψΙΠβĪ=
   CURSIV-CRUCIBLE-STAMP END
+-->
+<!--
 -->
 <!--
 -->
@@ -69,11 +71,18 @@ SQLite file, `cursiv_v215/web/board.db`, on the container's local disk.
 Railway containers get a fresh filesystem on every deploy/restart unless a
 Volume is attached — nothing on local disk survives that by default.
 
-1. In the Railway dashboard, open your service → **Settings > Volumes**.
-2. Click **Add Volume**. Set the mount path to `/app/cursiv_v215/web`
-   (adjust if your build's working directory differs — it should be the
-   directory containing `db.py` at runtime).
-3. Redeploy. `board.db` now lives on the volume and survives redeploys,
+1. Volumes are attached from the **project canvas view**, not the service's
+   Settings tab -- right-click the canvas (or use the "+ Create" button) to
+   add a Volume, then attach it to the Cursiv service.
+2. Set the mount path to **`/data`** -- a dedicated, empty directory.
+   **Do not** mount it at `/app/cursiv_v215/web` or anywhere else source
+   code lives: a volume mount shadows whatever files were already in that
+   directory from the build (app.py, db.py, letters.html, etc.), so
+   mounting over the source directory breaks the app on startup.
+3. Set the `CURSIV_DB_PATH` environment variable to `/data/board.db`.
+   `db.py` reads this at startup (falls back to the old local-file location
+   if unset, so local dev needs no changes).
+4. Redeploy. `board.db` now lives on the volume and survives redeploys,
    restarts, and scaling events.
 
 This is required for: user accounts (`/api/register`), Board posts
@@ -96,6 +105,7 @@ In the Railway dashboard (or via `railway variables set KEY=value`):
 | `CURSIV_FLEET_TOKEN` | Optional | Master token for fleet relay access |
 | `CURSIV_SPECIAL_USERS` | Optional | Babel Letters access — `username:member_key` pairs, comma-separated (e.g. `keiarra_login:keiarra,kain_login:kain`). Grants that logged-in web username the one letter for that family member. |
 | `CURSIV_MASTER_USERS` | Optional | Comma-separated usernames who may view all sealed letters at once via `/api/legacy/letters?master=1`. |
+| `CURSIV_DB_PATH` | Optional | Full path to the SQLite file. Set to `/data/board.db` once a Volume is mounted at `/data`. Defaults to a local file next to `db.py` (fine for local dev, wiped on every Railway redeploy without this set). |
 
 Note: the current backend does not use Groq — `requirements-web.txt` lists it but nothing in `cursiv_v215/web/` imports it. The demo chat cascades Anthropic → local Ollama → static fallback.
 

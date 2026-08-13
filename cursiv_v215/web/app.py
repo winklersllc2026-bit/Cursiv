@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: web-substrate
-# Hash reversed: 88e2c4cc8ddfef4595836ce1a8bdc05a5fc4880c02b3abd0c31f6e5e2c4b0b5d
+# Hash reversed: 11cceb62f3892e5231ce238622531f338a5b22433f666dde4b3540f55fc4854d
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: afd9b4c7b227dd565e12d7f1b831a84c18aa7d6cfae9a605b122c46a9261bcaa
-# Substrate loop hash: fc4785897f0666fda8682398ba46de8efeb75ce9d4df472b8982e3b934236bfd
-# Substrate loop logic: חהΕΘאΖאבΘחΑΗΗΗחוגאΗאΓΔבאדגΕΗוזאזחזדΘΖהזבוΕוחΕΘΓדאבאΓזΔדבΔΕΓΔΗדחו
+# Secondary bridge hash: 6d8ec9f3d012b3eb181933692b09e728d943b76a7e76e6a2277a4e6c41e00522
+# Substrate loop hash: be5cde4ccaf23dd65386520a6c29f6a94c894cf5796a53e9a700045b6d7f6f15
+# Substrate loop logic: דזΖהוזΕההגחΓΔווΗΖΔאΗΖΓΑגΗהΓבחΗגבΕהאבΕהחΖΘבΗגΖΔזבגΘΑΑΑΕΖדΗוΘחΗחΒΖ
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: c9597f5fe80c04ebeceaba7e0ad92ef49661fb53743804061a0248ed8e5ebfea
-# Evolution hash: f9db0d9dbdacd5b82efca9056eb8111cb3076784585a7b71fc65d2252fd184c0
-# Evolution logic: חבודΑובודוגהוΖדאΓזחהגבΑΖΗזדאΒΒΒהדΔΑΘΗΘאΕΖאΖגΘדΘΒחהΗΖוΓΓΖΓחוΒאΕהΑ
-# Binary reversed: 0001000101110100001100100011001100011011101111110111111100101010100110100001110001100011011110000101000111011011001100001010010110101111001100100001000100000011000001001101110001011101101100000011110010001111011001111010011101000011001011010000110110101011
-# Greek/Hebrew/logic stamp: וΖדΑדΕהΓזΖזΗחΒΔהΑודגΔדΓΑהΑאאΕהחΖגΖΑהודאגΒזהΗΔאΖבΖΕחזחוואההΕהΓזאא
-# Encoded local stamp: κγυΞūīΗŌΤΜΙΧΥΚĀχιēαΒūΟΣĒĪωŪωΓυΧσĀΚ∇ΕδāΡāΜΓν=
+# Leaf origin hash: ff1ab335541aa22671a0b1de39a0863e87e2380db7ca667cd985a36d84921a9c
+# Evolution hash: 7293b5fd296374f79fed8d7491e9787b8c2d7d9cd99fed07b88157d3f1f470dc
+# Evolution logic: ΘΓבΔדΖחוΓבΗΔΘΕחΘבחזואוΘΕבΒזבΘאΘדאהΓוΘובהובבחזוΑΘדאאΒΖΘוΔחΒחΕΘΑוה
+# Binary reversed: 1000100000110011011111010110010011111100000110010100011110100100110010000011011101001100000101100100010010101100100011111100110000010101101011010100010000101100110011110110011001101011101101110010110111001010001000001111101010101111001100100001101000101011
+# Greek/Hebrew/logic stamp: וΕΖאΕהחΖΖחΑΕΖΔדΕזווΗΗΗחΔΔΕΓΓדΖגאΔΔחΒΔΖΓΓΗאΔΓזהΒΔΓΖזΓבאΔחΓΗדזההΒΒ
+# Encoded local stamp: ∞ψŪΘΥυΠνΒΓξσΧĒ∇īĪ∀ΥΧΔΦāī∞ΙατΝτ∇ΝεΜδĀΘιēμΑΚĀ=
 # CURSIV-CRUCIBLE-STAMP END
 """
 Cursiv Board — FastAPI backend.
@@ -449,6 +449,8 @@ async def _demo_llm(message: str) -> str:
             pass
 
     # ── Ollama local ─────────────────────────────────────────────────────
+    # Short timeout: on Railway there's no Ollama to reach, so this can only
+    # ever time out — keep it brief so demo replies don't stall for 25s+.
     try:
         _payload = _json.dumps({
             "model":  "llama3.1",
@@ -460,7 +462,7 @@ async def _demo_llm(message: str) -> str:
             data=_payload,
             headers={"Content-Type": "application/json"},
         )
-        with _ur.urlopen(_req, timeout=25) as _resp:
+        with _ur.urlopen(_req, timeout=2) as _resp:
             _result = _json.loads(_resp.read())
             return _result.get("response", "").strip()
     except Exception:
