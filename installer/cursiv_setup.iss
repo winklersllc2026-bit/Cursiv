@@ -1,26 +1,26 @@
 ; CURSIV-CRUCIBLE-STAMP BEGIN
 ; Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 ; Layer: install-build
-; Hash reversed: ce18d835b8e4a183d03f80cc4b3643227f802d1b0dbc030440f7c879e91bb7b6
+; Hash reversed: d609d1666e5388aaa19a16746d7d98a8d2ce9db87d941135605537ec0f88524f
 ; Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-; Secondary bridge hash: 0963f0c1e768fb6e55d0d7662d3a0d6f4c8f996f3266e4c3299358837a41ffae
-; Substrate loop hash: 84d8a2e7b39e4640e2da53cc8592296369b51f2e45366a3e9109211f087deeaf
-; Substrate loop logic: אΕואגΓזΘדΔבזΕΗΕΑזΓוגΖΔההאΖבΓΓבΗΔΗבדΖΒחΓזΕΖΔΗΗגΔזבΒΑבΓΒΒחΑאΘוזזגח
+; Secondary bridge hash: 10eca8d73d4fa8dc5559d0e9a55263afad571a39f96acd607e5414423febb4bf
+; Substrate loop hash: e6fbb8427807c6bf5ab0b15715f6e6679661c8e5e9f5a7904d164a9d11a6a587
+; Substrate loop logic: זΗחדדאΕΓΘאΑΘהΗדחΖגדΑדΒΖΘΒΖחΗזΗΗΘבΗΗΒהאזΖזבחΖגΘבΑΕוΒΗΕגבוΒΒגΗגΖאΘ
 ; Natural evolution depth: 2
 ; Exponential evolution rate: 8
-; Leaf origin hash: 7b3fad722d0e419dfb2369856ffe3f4ad1816fcf2fad915dd949237da901ad20
-; Evolution hash: 29efedb5a3e3dbd0bb8ff28d5943ecd87dddbdb8a10253cf26532119b2de9639
-; Evolution logic: ΓבזחזודΖגΔזΔודוΑדדאחחΓאוΖבΕΔזהואΘווודודאגΒΑΓΖΔהחΓΗΖΔΓΒΒבדΓוזבΗΔב
-; Binary reversed: 0011011110000001101100011100101011010001011100100101100000011100101100001100111100010000001100110010110111000110001011000100010011101111000100000100101110001101000010111101001100001100000000100010000011111110001100011110100101111001100011011101111011010110
-; Greek/Hebrew/logic stamp: ΗדΘדדΒבזבΘאהΘחΑΕΕΑΔΑהדוΑדΒוΓΑאחΘΓΓΔΕΗΔדΕההΑאחΔΑוΔאΒגΕזאדΖΔאואΒזה
-; Encoded local stamp: Μ∇ηβΟ∞οΝθΖκĒĀζξīΨ∈χΚΧ∂ψμ∈ΡυΛΓΥΚφλδāζεπ∞ΖθΣĀ=
+; Leaf origin hash: 26c6cd8af4bf6e6e6a6542d3e0e34ba01305862ee9699b192fe3bcde4bdf678a
+; Evolution hash: a309beba8af58d5f683d6ab4eff3fe698ef5bae83f0a4f2e763f5e57394fc6d0
+; Evolution logic: גΔΑבדזדגאגחΖאוΖחΗאΔוΗגדΕזחחΔחזΗבאזחΖדגזאΔחΑגΕחΓזΘΗΔחΖזΖΘΔבΕחהΗוΑ
+; Binary reversed: 1011011000001001101110000110011001100111101011000001000101010101010110001001010110000110111000100110101111101011100100010101000110110100001101111001101111010001111010111001001010001000110010100110000010101010110011100111001100001111000100011010010000101111
+; Greek/Hebrew/logic stamp: חΕΓΖאאחΑהזΘΔΖΖΑΗΖΔΒΒΕבוΘאדובזהΓואגאבוΘוΗΕΘΗΒגבΒגגגאאΔΖזΗΗΗΒובΑΗו
+; Encoded local stamp: ΧκΖ∈ηβōΡν∀λ∂ψΩāΣγφΨδĀΨνā∇αΗĪΩŪχΥīΚκεδΜΟδζ∂Ι=
 ; CURSIV-CRUCIBLE-STAMP END
 ; ============================================================
-; Cursiv v3.14-U11 — Full desktop bundle + CLI fix
-; Produces: installer\Output\Cursiv-Setup-3.14-U11.exe
+; Cursiv v3.14-U13 — Guardian service fix + web chat protection
+; Produces: installer\Output\Cursiv-Setup-3.14-U13.exe
 ;
-; Full PyInstaller bundle: CursivLauncher.exe (GUI tray + guardian +
-; feedback loops + substrate browser) + Cursiv.exe (CLI terminal).
+; Single PyInstaller bundle: Cursiv.exe (GUI launcher, tray, guardian,
+; feedback loops, substrate browser, and terminal/chat mode via -t).
 ; Patches applied: groovy/version.txt + pandas stub (fixes CLI crash).
 ; Bootstrap script installs Ollama + all pip packages post-install.
 ;
@@ -28,9 +28,9 @@
 ; ============================================================
 
 #define AppName      "Cursiv"
-#define AppVer       "3.14-U11"
+#define AppVer       "3.14-U13"
 #define AppPublisher "Joshua Winkler"
-#define AppURL       "https://github.com/joshua1993winkler-jpg/Cursiv"
+#define AppURL       "https://github.com/winklersllc2026-bit/Cursiv"
 #define AppExe       "Cursiv.exe"
 #define AppID        "{{A7B1C2D3-E4F5-4A6B-9C7D-8E0F1A2B3C4D}}"
 
@@ -50,7 +50,7 @@ LicenseFile=..\LICENSE
 InfoAfterFile=..\CHANGELOG.md
 AppComments=Offline AI workspace with cascade routing (xAI → OpenAI → Claude → Ollama), live status indicators, and security-question password recovery. No internet required after install. Your data never leaves your machine.
 OutputDir=Output
-OutputBaseFilename=Cursiv-Setup-3.14-U11
+OutputBaseFilename=Cursiv-Setup-3.14-U13
 SetupIconFile=..\launcher\resources\icons\cursiv.ico
 WizardSmallImageFile=..\launcher\resources\icons\cursiv_256.png
 Compression=lzma2/ultra64
@@ -70,21 +70,27 @@ Name: "autostart";    Description: "Start Cursiv when Windows starts";          
 Name: "csb";          Description: "Cursiv Substrate Browser — adds a desktop icon for the local curs.http:// browser"; GroupDescription: "Optional components:"
 
 [Files]
-; ── Main application (PyInstaller bundle: CursivLauncher.exe + Cursiv.exe) ───
+; ── Main application (PyInstaller bundle: single Cursiv.exe) ─────────────────
 ; Includes groovy/version.txt and pandas stub patch — CLI no longer crashes.
 Source: "..\dist\Cursiv\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-; ── .bat launchers (alternative entry points from any terminal) ───────────────
+; ── .bat launcher (alternative entry point from any terminal) ─────────────────
+; cursiv-web.bat is intentionally not shipped here — it runs uvicorn --reload
+; against the source tree, which doesn't apply to a frozen PyInstaller build.
 Source: "..\launcher\cursiv.bat";     DestDir: "{app}"; Flags: ignoreversion
-Source: "..\launcher\cursiv-web.bat"; DestDir: "{app}"; Flags: ignoreversion
 
 ; ── Bootstrap scripts ─────────────────────────────────────────────────────────
 Source: "..\scripts\cursiv_bootstrap.ps1";   DestDir: "{app}\scripts"; Flags: ignoreversion
 Source: "..\scripts\cursiv_full_setup.ps1";  DestDir: "{app}\scripts"; Flags: ignoreversion
 Source: "..\scripts\install_ollama.ps1";     DestDir: "{app}\scripts"; Flags: ignoreversion
 
-; ── Web terminal HTML (browser interface) ─────────────────────────────────────
-Source: "..\cursiv_v215\web\terminal.html"; DestDir: "{app}\_internal\cursiv_v215\web"; Flags: ignoreversion
+; Note: cursiv_v215/web/*.html (substrate_ui.html, letters.html, etc.) is
+; already carried by the main bundle above — build.spec packages the entire
+; cursiv_v215 package as PyInstaller `datas`, so no separate copy is needed
+; here. (This line used to copy a since-deleted cursiv_v215/web/terminal.html
+; — that file was removed by a later revert commit and this reference went
+; stale, which is why compiling this installer with U11/U12's script failed
+; outright once the source file was gone.)
 
 [Icons]
 ; Start Menu
