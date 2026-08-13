@@ -43,7 +43,7 @@
 -->
 <!--
 -->
-# ⬡ Cursiv v3.14-U14 — Offline. Yours. Everywhere.
+# ⬡ Cursiv v3.14-U15 — Offline. Yours. Everywhere.
 
 > Not OpenAI. Not xAI. Not a subscription. A piece of AI infrastructure that lives on your machine, runs without the internet, and belongs entirely to you.
 
@@ -120,7 +120,9 @@ After the installer finishes, a **second window opens automatically** and downlo
 
 ---
 
-## What's New in v3.14-U14
+## What's New in v3.14-U15
+
+**Babel family activation fixed** — the PIN storage had the same install-path bug as Create Account below; a PIN that went missing after a reinstall looked exactly like "babel stopped working," with no error at all since PIN verification fails silently by design. Fixed.
 
 **The Eye of Horus terminal now actually opens** — on startup, automatically, alongside Guardian and the Training Watcher. Previously it lived behind a button most people would never find, and the command behind that button didn't even work.
 
@@ -227,4 +229,4 @@ Copyright © 2026 Joshua Winkler. All rights reserved.
 
 Released under the MIT License — you are free to use, modify, and distribute this software. See [LICENSE](LICENSE) for full terms.
 
-*Cursiv v3.14-U14 · Built by Joshua Winkler*
+*Cursiv v3.14-U15 · Built by Joshua Winkler*

@@ -45,6 +45,16 @@
 -->
 # Changelog
 
+## v3.14-U15 — Babel family activation fix + homepage privacy fix (2026-08-13)
+
+**Babel family activation:**
+- The PIN storage path had the same install-directory-relative bug as Create Account (see U14). PIN verification fails silently by design — indistinguishable from "no match," for security — so a PIN that went missing or became unreadable after a reinstall looked exactly like "babel stopped working," with nothing to go on. Moved to the same stable per-user location.
+
+**Website:**
+- The homepage was publishing a family member's exact birthdate next to her first name in plaintext — which, combined with the family-activation system's fuzzy name matching, was itself enough to pass the "secret" activation check. Replaced with generic language; sealed letters are still there, just not with the unlock key printed next to them.
+- Removed a second, fully duplicate demo-chat widget that had drifted out of sync with the one at the top of the page.
+- Fixed stale hardcoded version links and version-number references scattered across the page.
+
 ## v3.14-U14 — The bootstrap actually runs, the Eye actually opens (2026-08-13)
 
 **Auto-install bootstrap:**
