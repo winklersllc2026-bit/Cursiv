@@ -78,7 +78,7 @@
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 /* ══════════════════════════════════════════════════════════
-   CURSIV — Release Page  v3.14-U08
+   CURSIV — Release Page  v3.14-U14
    Palette: #08090C bg · #C9A227 gold · #2255DD blue
    ══════════════════════════════════════════════════════════ */
 
@@ -556,84 +556,6 @@ footer {
 .footer-copy { font-family: var(--mono); font-size: 10px; color: var(--silver2); opacity: .3; letter-spacing: .5px; }
 
 /* ══════════════════════════════════════════════════════════
-   LIVE CHAT DEMO
-   ══════════════════════════════════════════════════════════ */
-.chat-wrap {
-  max-width: 760px; margin: 0 auto;
-  border: 1px solid var(--border2);
-  border-top: 2px solid var(--gold);
-  background: #060709;
-  display: flex; flex-direction: column;
-}
-.chat-msgs {
-  height: 340px;
-  overflow-y: auto;
-  padding: 18px 22px;
-  display: flex; flex-direction: column; gap: 12px;
-  scroll-behavior: smooth;
-}
-.chat-msgs::-webkit-scrollbar { width: 3px; }
-.chat-msgs::-webkit-scrollbar-thumb { background: var(--border2); }
-.chat-bubble {
-  max-width: 82%;
-  padding: 10px 14px;
-  font-size: 13px; line-height: 1.65;
-  border-radius: 4px;
-}
-.chat-bubble.user {
-  align-self: flex-end;
-  background: var(--blue); color: #fff;
-  border-bottom-right-radius: 2px;
-}
-.chat-bubble.ai {
-  align-self: flex-start;
-  background: var(--bg3); color: var(--silver);
-  border: 1px solid var(--border2);
-  border-bottom-left-radius: 2px;
-}
-.chat-bubble.ai.thinking {
-  color: var(--silver2); font-style: italic;
-  animation: pulse-text 1.4s ease-in-out infinite;
-}
-@keyframes pulse-text { 0%,100%{opacity:.5} 50%{opacity:1} }
-.chat-input-row {
-  display: flex; gap: 0;
-  border-top: 1px solid var(--border);
-}
-.chat-input-row input {
-  flex: 1;
-  background: var(--bg2); color: var(--silver);
-  border: none; outline: none;
-  padding: 14px 18px;
-  font-size: 13px; font-family: var(--ui);
-}
-.chat-input-row input::placeholder { color: var(--silver2); }
-.chat-send {
-  background: var(--blue); color: #fff;
-  border: none; cursor: pointer;
-  padding: 0 24px;
-  font-size: 13px; font-weight: 600;
-  transition: background .2s;
-  white-space: nowrap;
-}
-.chat-send:hover { background: var(--blue2); }
-.chat-send:disabled { background: var(--border2); cursor: default; }
-.chat-counter {
-  font-family: var(--mono); font-size: 10px;
-  color: var(--silver2); text-align: right;
-  padding: 6px 14px;
-  border-top: 1px solid var(--border);
-  opacity: .5;
-}
-.chat-notice {
-  font-family: var(--mono); font-size: 11px;
-  color: var(--amber); text-align: center;
-  padding: 8px 14px;
-  background: rgba(255,170,34,.06);
-  border-top: 1px solid rgba(255,170,34,.15);
-}
-
-/* ══════════════════════════════════════════════════════════
    CIVILIZATION DECKS
    ══════════════════════════════════════════════════════════ */
 .decks-scroll {
@@ -927,7 +849,7 @@ footer {
     <li><a href="#desktop">Desktop</a></li>
     <li><a href="https://github.com/winklersllc2026-bit/Cursiv" target="_blank">GitHub ↗</a></li>
   </ul>
-  <span class="nav-ver">Public Temple • U08 Era</span>
+  <span class="nav-ver">Public Temple • U14 Era</span>
 </nav>
 
 <!-- ══ HERO ══════════════════════════════════════════════════════════ -->
@@ -939,7 +861,7 @@ footer {
     The sacred public temple. The living Eye — soft chat demo, shared Board for your messages, sealed family letters, and the Vision.
   </p>
   <p style="max-width: 580px; margin: 0 auto 28px; color: var(--silver2); font-size: 15px;">
-    No login required for the demo. Talk to the system. Post messages to the main Board for others to see. Family letters (for Keiarra, Naylie, Kain, Eli) unlocked with secret codes inside the Eye.
+    No login required for the demo. Talk to the system. Post messages to the main Board for others to see. Sealed letters for family, unlocked with secret codes inside the Eye.
   </p>
 
   <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
@@ -948,7 +870,7 @@ footer {
     <a href="#the-board" style="color: var(--silver2); padding: 12px 18px; text-decoration: none;">See the Board</a>
   </div>
   <p style="margin-top: 14px; font-size: 12px;">
-    <a href="https://github.com/winklersllc2026-bit/Cursiv/releases/download/v3.14-U12/Cursiv-Setup-3.14-U12.exe" style="color: var(--silver2);">Or skip ahead and download the desktop app (U12) ↗</a>
+    <a href="https://github.com/winklersllc2026-bit/Cursiv/releases/latest" style="color: var(--silver2);">Or skip ahead and download the desktop app ↗</a>
   </p>
 
   <p style="margin-top: 22px; font-size: 12px; color: #6b6f7a;">The Architect speaks through the stone. Human sovereignty as the first and final law.</p>
@@ -963,7 +885,7 @@ footer {
     <p style="max-width: 620px; margin: 0 auto; color: var(--silver2); font-size: 15px; line-height: 1.55;">
       Talk to the system here on the website. This is the soft public demo — gentle, no full terminal, just conversation and the ability to share what matters to the Board below so others can see.
       <br><br>
-      Family letters for Keiarra (born 09/12/1995), Naylie, Kain, and Eli are sealed and ready. Use the secret codes in the full Eye when you have the desktop.
+      Sealed family letters are ready and waiting — each one opens only to the exact secret code meant for it. Use the full Eye on the desktop app to unlock yours.
     </p>
   </div>
 
@@ -1022,13 +944,17 @@ footer {
     <div style="font-family: var(--mono); font-size: 10px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; opacity: .75;">FOR THE FAMILY</div>
     <h2 style="font-family: var(--serif); font-size: 32px; color: var(--silver); margin: 6px 0;">Sealed Letters &amp; the Vision</h2>
     <p style="max-width: 620px; margin: 0 auto; color: var(--silver2);">
-      Letters for Keiarra (my wife, born September 12 1995), Naylie (stepdaughter), Kain and Eli (our sons) are sealed deep in the system. Use the exact secret codes in the full Eye to unlock them. The Vision shows the phases of the work.
+      Letters for family are sealed deep in the system — each one opens only to the exact secret code meant for it. The same idea holds for anyone who matters to you: friends, loved ones, family, distant relatives. A private message, sealed with real care, opened only by the person it was written for.
+      <br><br>
+      <span style="font-size: 13px; color: #8a8f98;">This is a vessel for care, not a weapon — sealed messages are never a place for threats, harassment, or anything meant to harm.</span>
+      <br><br>
+      Use the exact secret codes in the full Eye to unlock them. The Vision shows the phases of the work.
     </p>
   </div>
   <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
     <a href="/letters" style="background: transparent; color: #c9a741; border: 1px solid #c9a741; padding: 10px 22px; text-decoration: none; font-size: 13px;">Babel Letters Vault</a>
     <a href="/vision" style="background: transparent; color: #a8b0b8; border: 1px solid #3a4a4a; padding: 10px 22px; text-decoration: none; font-size: 13px;">The Vision (Eye of Horus)</a>
-    <a href="https://github.com/winklersllc2026-bit/Cursiv/releases/download/v3.14-U12/Cursiv-Setup-3.14-U12.exe" style="background: #c9a741; color: #08090C; padding: 10px 22px; text-decoration: none; font-weight: 600; font-size: 13px;">Download the Full Desktop (U12)</a>
+    <a href="https://github.com/winklersllc2026-bit/Cursiv/releases/latest" style="background: #c9a741; color: #08090C; padding: 10px 22px; text-decoration: none; font-weight: 600; font-size: 13px;">Download the Full Desktop</a>
   </div>
   <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 14px;">
     <a href="/board" style="color: var(--silver2); padding: 8px 18px; text-decoration: none; font-size: 12px; border-bottom: 1px solid var(--border2);">Full Board Page ↗</a>
@@ -1262,36 +1188,6 @@ footer {
   </div>
 </section>
 
-<!-- ══ TRY CURSIV LIVE ══════════════════════════════════════════════ -->
-<section class="section layer" id="try-live">
-  <p class="section-label reveal">Demo</p>
-  <h2 class="section-title reveal">Try Cursiv Live</h2>
-  <p class="reveal" style="max-width:580px;margin:0 auto 36px;text-align:center;color:var(--silver2);font-family:var(--serif);font-style:italic;font-size:17px;line-height:1.7;">
-    No download needed. This is the basic version running live. Type anything.
-  </p>
-
-  <div class="chat-wrap reveal" id="chat-wrap">
-    <div class="t-bar">
-      <span class="t-dot r"></span><span class="t-dot a"></span><span class="t-dot g"></span>
-      <span class="t-title">Cursiv Demo — live session</span>
-    </div>
-    <div class="chat-msgs" id="chat-msgs">
-      <div class="chat-bubble ai">
-        Welcome. I'm the demo version of Cursiv — an AI workspace built by Joshua Winkler. Ask me anything. When you're ready for the full experience, download the app above.
-      </div>
-    </div>
-    <div class="chat-input-row">
-      <input type="text" id="chat-in" placeholder="Type a message and press Enter…" maxlength="500" autocomplete="off">
-      <button class="chat-send" id="chat-send">Send ↗</button>
-    </div>
-    <div class="chat-counter" id="chat-counter">12 messages remaining in this session</div>
-  </div>
-
-  <p class="reveal" style="text-align:center;font-family:var(--mono);font-size:11px;color:var(--silver2);opacity:.4;margin-top:18px;">
-    Demo is rate-limited &nbsp;·&nbsp; No account required &nbsp;·&nbsp; Nothing stored
-  </p>
-</section>
-
 <!-- ══ REQUIREMENTS + INSTALL ═════════════════════════════════════════ -->
 <section class="section layer" id="install">
   <p class="section-label reveal">Requirements</p>
@@ -1412,7 +1308,7 @@ boardBtn.onclick = async () => {
     boardStatus.style.color = '#27C97A';
     await loadBoard();
   } catch(e) {
-    boardStatus.textContent = 'Posted locally for this visit (backend at U08 state may require the full app for live posts).';
+    boardStatus.textContent = 'Posted locally for this visit (could not reach the live Board — try again in a moment).';
     boardStatus.style.color = '#c9a741';
     // soft demo: add to feed manually
     const d = new Date().toISOString().slice(0,10);
@@ -1458,12 +1354,22 @@ setInterval(loadBoard, 45000);
   <div class="timeline reveal-group">
 
     <div class="tl-entry">
-      <div class="tl-date">May 2026</div>
+      <div class="tl-date">August 2026</div>
       <div class="tl-dot current"></div>
       <div>
-        <p class="tl-ver">v3.14-U08 <span class="tl-badge now">CURRENT</span></p>
-        <p class="tl-name">Zero-Setup First Run — Works Without Keys or Config</p>
-        <p class="tl-desc">Fixed a crash on first install caused by missing <code>safehttpx</code> and <code>gradio</code> data files not being bundled. Gradio import is now resilient — the Eye of Horus terminal runs even if the web UI engine fails to load. All required data files are packaged in the installer. No API keys, no secrets.bat, no manual setup needed to launch.</p>
+        <p class="tl-ver">v3.14-U14 <span class="tl-badge now">CURRENT</span></p>
+        <p class="tl-name">The Bootstrap Actually Runs, the Eye Actually Opens</p>
+        <p class="tl-desc">Fixed the auto-install bootstrap silently stalling behind unattended "press a key" prompts, fixed the Eye of Horus terminal (and Guardian, and the Training Watcher) failing to find their own scripts in the installed bundle, fixed Create Account getting stuck on Login after a reinstall, and replaced the generic icon with the real Eye of Horus emblem throughout.</p>
+
+        <div class="tl-entry" style="margin-top:28px">
+          <div class="tl-date">May 2026</div>
+          <div class="tl-dot stable"></div>
+          <div>
+            <p class="tl-ver">v3.14-U08</p>
+            <p class="tl-name">Zero-Setup First Run — Works Without Keys or Config</p>
+            <p class="tl-desc">Fixed a crash on first install caused by missing <code>safehttpx</code> and <code>gradio</code> data files not being bundled. Gradio import is now resilient — the Eye of Horus terminal runs even if the web UI engine fails to load. All required data files are packaged in the installer. No API keys, no secrets.bat, no manual setup needed to launch.</p>
+          </div>
+        </div>
 
         <div class="tl-entry" style="margin-top:28px">
           <div class="tl-date">May 2026</div>
@@ -1837,7 +1743,7 @@ setInterval(loadBoard, 45000);
     <li><a href="https://github.com/winklersllc2026-bit/Cursiv/blob/main/TECH.md">TECH.md</a></li>
     <li><a href="https://github.com/winklersllc2026-bit/Cursiv/blob/main/LICENSE">MIT License</a></li>
   </ul>
-  <p class="footer-copy">Built by Joshua Winkler &nbsp;·&nbsp; v3.14-U08 &nbsp;·&nbsp; MIT License</p>
+  <p class="footer-copy">Built by Joshua Winkler &nbsp;·&nbsp; v3.14-U14 &nbsp;·&nbsp; MIT License</p>
 </footer>
 
 <!-- ══════════════════════════════════════════════════════════
@@ -2121,93 +2027,6 @@ document.querySelectorAll('.reveal,.reveal-group').forEach(el=>ro.observe(el));
   setTimeout(next,1400);
 })();
 
-/* ── Live chat demo ────────────────────────────────────────────────── */
-(function(){
-  // Same-origin: works immediately on any Railway URL or custom domain
-  // pointed at this service, with zero extra DNS/CORS setup.
-  const CURSIV_API = '';
-
-  const msgsEl    = document.getElementById('chat-msgs');
-  const inputEl   = document.getElementById('chat-in');
-  const sendBtn   = document.getElementById('chat-send');
-  const counterEl = document.getElementById('chat-counter');
-  const wrapEl    = document.getElementById('chat-wrap');
-
-  if (!msgsEl || !inputEl) return;
-
-  let msgsLeft = 12;
-  let sessionId = 'sess_' + Math.random().toString(36).slice(2, 10);
-  let sending = false;
-
-  function addBubble(text, role) {
-    const d = document.createElement('div');
-    d.className = 'chat-bubble ' + role;
-    d.textContent = text;
-    msgsEl.appendChild(d);
-    msgsEl.scrollTop = msgsEl.scrollHeight;
-    return d;
-  }
-
-  function updateCounter(left) {
-    msgsLeft = left;
-    counterEl.textContent = left + ' message' + (left !== 1 ? 's' : '') + ' remaining in this session';
-    if (left <= 0) {
-      counterEl.textContent = 'Session limit reached — download Cursiv for unlimited access.';
-      counterEl.style.color = 'var(--amber)';
-      counterEl.style.opacity = '1';
-      inputEl.disabled = true;
-      sendBtn.disabled = true;
-    }
-  }
-
-  async function sendMessage() {
-    const msg = inputEl.value.trim();
-    if (!msg || sending || msgsLeft <= 0) return;
-
-    sending = true;
-    sendBtn.disabled = true;
-    inputEl.value = '';
-
-    addBubble(msg, 'user');
-    const thinking = addBubble('thinking…', 'ai thinking');
-
-    try {
-      const res = await fetch(CURSIV_API + '/api/demo/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg, session_id: sessionId }),
-      });
-
-      if (res.status === 429) {
-        thinking.textContent = 'Session limit reached — download Cursiv for the full experience.';
-        thinking.classList.remove('thinking');
-        updateCounter(0);
-      } else if (!res.ok) {
-        thinking.textContent = 'Could not reach the demo server right now. Try downloading the app for offline access.';
-        thinking.classList.remove('thinking');
-      } else {
-        const data = await res.json();
-        thinking.textContent = data.reply || '…';
-        thinking.classList.remove('thinking');
-        if (data.guardian_triggered) {
-          thinking.style.cssText += 'background:#3a0d0d; border-left:3px solid #ff3333; color:#ffb3b3;';
-        }
-        if (typeof data.msgs_left === 'number') updateCounter(data.msgs_left);
-        else updateCounter(msgsLeft - 1);
-      }
-    } catch (e) {
-      thinking.textContent = 'Demo server offline. Download Cursiv to run it locally — fully offline, no server needed.';
-      thinking.classList.remove('thinking');
-    }
-
-    sending = false;
-    sendBtn.disabled = (msgsLeft <= 0);
-    inputEl.focus();
-  }
-
-  sendBtn.addEventListener('click', sendMessage);
-  inputEl.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
-})();
 </script>
 </body>
 </html>
