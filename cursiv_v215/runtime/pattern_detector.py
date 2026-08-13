@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: project
-# Hash reversed: a083713e9e048e05722050892fbe628f9564e2ca63a2a5186319afaab9588754
+# Hash reversed: aa3801bdbd8f4203c4641950f2c5d79b11487d6394ebbde913202ed32ba1c79e
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 70cdcacaead85faff94d3acc54579dfc56f2a89acbdfb1a0ec1e82620ab4f36d
-# Substrate loop hash: f398779872161f40583ee073dd1afb13de137b8706f31211dbb0b0f296167c52
-# Substrate loop logic: חΔבאΘΘבאΘΓΒΗΒחΕΑΖאΔזזΑΘΔווΒגחדΒΔוזΒΔΘדאΘΑΗחΔΒΓΒΒודדΑדΑחΓבΗΒΗΘהΖΓ
+# Secondary bridge hash: 87cb1ab163a8e870765d36617f9ad418a5268c8745cb588105b1ef3a84111aa1
+# Substrate loop hash: 4c571c86768642e0137080e3a1b564bf04e1e550f3564abd82c3084a1abd1b86
+# Substrate loop logic: ΕהΖΘΒהאΗΘΗאΗΕΓזΑΒΔΘΑאΑזΔגΒדΖΗΕדחΑΕזΒזΖΖΑחΔΖΗΕגדואΓהΔΑאΕגΒגדוΒדאΗ
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: 75eb424fb87824823c0d66b5890297a8a97cebd4116091a7d2d1b5705b909a9e
-# Evolution hash: e91316041a49b2a2e9e9afde57d0f577c2585859727944f5ea6eb4c344e49cc8
-# Evolution logic: זבΒΔΒΗΑΕΒגΕבדΓגΓזבזבגחוזΖΘוΑחΖΘΘהΓΖאΖאΖבΘΓΘבΕΕחΖזגΗזדΕהΔΕΕזΕבההא
-# Binary reversed: 0101000000011100111010001100011110010111000000100001011100001010111001000100000010100000000110010100111111010111011001000001111110011010011000100111010000110101011011000101010001011010100000010110110010001001010111110101010111011001101000010001111010100010
-# Greek/Hebrew/logic stamp: ΕΖΘאאΖבדגגחגבΒΔΗאΒΖגΓגΔΗגהΓזΕΗΖבחאΓΗזדחΓבאΑΖΑΓΓΘΖΑזאΕΑזבזΔΒΘΔאΑג
-# Encoded local stamp: ΧΞεΙΟΧēβαΚ∃ηΩΣΞεοŪα∈βΤΟλΝΡΘαĒΧ∈μδ∂ōη∀χεōŌāι=
+# Leaf origin hash: 589690cc02446a0cd64eb13c89f122da2ef64b64dc4dda7529c71aac8dfa3202
+# Evolution hash: 055fdf56214094e5b9aec30733e0197fc32f28bc467d17c3d948c42de02a3178
+# Evolution logic: ΑΖΖחוחΖΗΓΒΕΑבΕזΖדבגזהΔΑΘΔΔזΑΒבΘחהΔΓחΓאדהΕΗΘוΒΘהΔובΕאהΕΓוזΑΓגΔΒΘא
+# Binary reversed: 0101010111000001000010001101101111011011000111110010010000001100001100100110001010001001101000001111010000111010101111101001110110001000001000011110101101101100100100100111110111011011011110011000110001000000010001111011110001001101010110000011111010010111
+# Greek/Hebrew/logic stamp: זבΘהΒגדΓΔוזΓΑΓΔΒבזודדזΕבΔΗוΘאΕΒΒדבΘוΖהΓחΑΖבΒΕΗΕהΔΑΓΕחאודודΒΑאΔגג
+# Encoded local stamp: Θ∈κŪĒΓαεī∂ξ∇ΝΨνōβψΘāπūōΜ∈ΛūωοāζΨψΚĪδūβΝαοε∇=
 # CURSIV-CRUCIBLE-STAMP END
 """
 Evolutionary Runtime — pattern detector.

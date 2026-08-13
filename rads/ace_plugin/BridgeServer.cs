@@ -1,19 +1,19 @@
 // CURSIV-CRUCIBLE-STAMP BEGIN
 // Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 // Layer: rads-bridge
-// Hash reversed: 0ffc203e7091165826d763fe2b512c74af2244665ae217769129e64a16c6cd5b
+// Hash reversed: 0fefe7e037656f42528733f03c18d6ec18177521f0f7056143eb699aa697fdb1
 // Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-// Secondary bridge hash: b457d5565081913d68bce5f48b4aabb9583930771db741c6c39531674b8c44e8
-// Substrate loop hash: 4576546041b0ae2e1b1393ebb3cccc6c3da621b77c908a6449fe0dc24a4d199c
-// Substrate loop logic: ΕΖΘΗΖΕΗΑΕΒדΑגזΓזΒדΒΔבΔזדדΔההההΗהΔוגΗΓΒדΘΘהבΑאגΗΕΕבחזΑוהΓΕגΕוΒבבה
+// Secondary bridge hash: 82c5744f7d179c3adeeb3c0755421667319debc3af8948eba0353531959af53b
+// Substrate loop hash: 3d443a18543ccfba01c0d651a6d576f1350168f9a84a14297485750d5436f148
+// Substrate loop logic: ΔוΕΕΔגΒאΖΕΔההחדגΑΒהΑוΗΖΒגΗוΖΘΗחΒΔΖΑΒΗאחבגאΕגΒΕΓבΘΕאΖΘΖΑוΖΕΔΗחΒΕא
 // Natural evolution depth: 3
 // Exponential evolution rate: 16
-// Leaf origin hash: 077a2960d68d03547db943b3a8e0f2ae95e39a3d21cc09f7a36c3bb0a0d716fc
-// Evolution hash: f5e48ed55fff0c821bb3c06a4a5da7bcc60d7e87114b5cb77262b10fd1b6a531
-// Evolution logic: חΖזΕאזוΖΖחחחΑהאΓΒדדΔהΑΗגΕגΖוגΘדההΗΑוΘזאΘΒΒΕדΖהדΘΘΓΗΓדΒΑחוΒדΗגΖΔΒ
-// Binary reversed: 0000111111110011010000001100011111100000100110001000011010100001010001101011111001101100111101110100110110101000010000111110001001011111010001000010001001100110101001010111010010001110111001101001100001001001011101100010010110000110001101100011101110101101
-// Greek/Hebrew/logic stamp: דΖוהΗהΗΒגΕΗזבΓΒבΗΘΘΒΓזגΖΗΗΕΕΓΓחגΕΘהΓΒΖדΓזחΔΗΘוΗΓאΖΗΒΒבΑΘזΔΑΓהחחΑ
-// Encoded local stamp: ∀Ξξ∂λΛēŪΔΨΥΛξū∞ΝαΙΖβΦεΖōΝ∇ΨζΡΡΠ∀∈σζΤΚτΡīπρΦ=
+// Leaf origin hash: cf0b8b6089379ea4a8402957c6473c111a10b8150b2377ebfb94c166180d29f6
+// Evolution hash: 289d50ac36c60a292c4867eb965838e3781e81e16155d8d10e6f0967aef01e26
+// Evolution logic: ΓאבוΖΑגהΔΗהΗΑגΓבΓהΕאΗΘזדבΗΖאΔאזΔΘאΒזאΒזΒΗΒΖΖואוΒΑזΗחΑבΗΘגזחΑΒזΓΗ
+// Binary reversed: 0000111101111111011111100111000011001110011010100110111100100100101001000001111011001100111100001100001110000001101101100111001110000001100011101110101001001000111100001111111000001010011010000010110001111101011010011001010101010110100111101111101111011000
+// Greek/Hebrew/logic stamp: ΒדוחΘבΗגגבבΗדזΔΕΒΗΖΑΘחΑחΒΓΖΘΘΒאΒהזΗואΒהΔΑחΔΔΘאΓΖΓΕחΗΖΗΘΔΑזΘזחזחΑ
+// Encoded local stamp: ŪΚΑλ∞Χη∈∃ΥΞΘγΗāΧūψΕΑΛΣΝΕε∂ΛēīΑπωξεĒΑΖνΒω∀χρ=
 // CURSIV-CRUCIBLE-STAMP END
 /*
  * RADS Bridge Server — ACEmulator Plugin

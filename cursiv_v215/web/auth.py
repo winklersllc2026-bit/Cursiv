@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: web-substrate
-# Hash reversed: 0ea73f8dcc87cc1f546c49ae0e676a7d4b65d69314af137a48875b28f88d2dc7
+# Hash reversed: f7643f9fbf38b58c007d7c4109ce473ad556fb1fb9cd284782657418a806f397
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: c0d0466aa8c263740a8cc8c91572b2488d8119e878947753a85c764924d2156c
-# Substrate loop hash: 5b0e38a992c49bbe3b325df28f50cfba48243bda3863adaf2dac4bb92f7219e1
-# Substrate loop logic: ΖדΑזΔאגבבΓהΕבדדזΔדΔΓΖוחΓאחΖΑהחדגΕאΓΕΔדוגΔאΗΔגוגחΓוגהΕדדבΓחΘΓΒבזΒ
+# Secondary bridge hash: 9d7907d1ae6b44725420ed8ec6823e3e262b6fef07ff384e0d5c69a143a86aab
+# Substrate loop hash: a8849764c787499db365c516b4d3d507c6c68180865576b6ba0711aeba522838
+# Substrate loop logic: גאאΕבΘΗΕהΘאΘΕבבודΔΗΖהΖΒΗדΕוΔוΖΑΘהΗהΗאΒאΑאΗΖΖΘΗדΗדגΑΘΒΒגזדגΖΓΓאΔא
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: 938ae2d1f8a723ddf17ac52c4d0c6a4e264b536898c918291a3a6c3a48673a3a
-# Evolution hash: 49c60ed9d198e4a080947f8e4597583f7f4604a5a2f44eeac5077adcbcb3e3d0
-# Evolution logic: ΕבהΗΑזובוΒבאזΕגΑאΑבΕΘחאזΕΖבΘΖאΔחΘחΕΗΑΕגΖגΓחΕΕזזגהΖΑΘΘגוהדהדΔזΔוΑ
-# Binary reversed: 0000011101011110110011110001101100110011000111100011001110001111101000100110001100101001010101110000011101101110011001011110101100101101011010101011011010011100100000100101111110001100111001010010000100011110101011010100000111110001000110110100101100111110
-# Greek/Hebrew/logic stamp: ΘהוΓואאחאΓדΖΘאאΕגΘΔΒחגΕΒΔבΗוΖΗדΕוΘגΗΘΗזΑזגבΕהΗΕΖחΒההΘאההואחΔΘגזΑ
-# Encoded local stamp: ōψι∞∈ΒΕĀηΣυ∃Ū∇ēΥν∞ψΔΘĒΗκŪμθζοΞβΣαΠΛξΟπΔΜθΣĪ=
+# Leaf origin hash: fbb8c1cf8b738d34371015e2947a333b9eddef019e2df7ab39568b8aa60b1ed6
+# Evolution hash: 68cd355f454a07fbd51fe24ea797f26fd6273638fcf121b481b7a4b389ef629c
+# Evolution logic: ΗאהוΔΖΖחΕΖΕגΑΘחדוΖΒחזΓΕזגΘבΘחΓΗחוΗΓΘΔΗΔאחהחΒΓΒדΕאΒדΘגΕדΔאבזחΗΓבה
+# Binary reversed: 1111111001100010110011111001111111011111110000011101101000010011000000001110101111100011001010000000100100110111001011101100010110111010101001101111110110001111110110010011101101000001001011100001010001101010111000101000000101010001000001101111110010011110
+# Greek/Hebrew/logic stamp: ΘבΔחΗΑאגאΒΕΘΖΗΓאΘΕאΓוהבדחΒדחΗΖΖוגΔΘΕזהבΑΒΕהΘוΘΑΑהאΖדאΔחדחבחΔΕΗΘח
+# Encoded local stamp: ΝΗοΡφΥλ∀ΝΤΠευο∇ΥφΛΩŪψŪηΓΟγξΠιχΞηΥξ∞ΖΘωιψψηε=
 # CURSIV-CRUCIBLE-STAMP END
 """
 Cursiv Auth — two-ring token system.
