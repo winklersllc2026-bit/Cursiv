@@ -45,6 +45,23 @@
 -->
 # Changelog
 
+## v3.14-U14 — The bootstrap actually runs, the Eye actually opens (2026-08-13)
+
+**Auto-install bootstrap:**
+- The post-install setup script (`cursiv_full_setup.ps1`) was advertised as fully automatic but wasn't — it opened a "Press ENTER to begin" prompt before starting, and every one of its 12 steps then blocked on its own separate "Press ENTER to close this window" prompt. If any single one of those windows went unnoticed, every step after it — including the actual llama3.1 model download — silently never ran. All of those blocking prompts are now non-blocking auto-continues on success.
+- Windows that spawn with no `-NoExit` flag close instantly the moment their script ends — so a step that hit a genuinely unhandled error used to vanish before its red error text could even be read, let alone copied. Every step's output is now scanned for `[ERROR]`/`[WARN]`/`[FATAL]`; if any appear, the window stays open until you close it instead of disappearing.
+- The llama3.1 and Offline Code Council model pulls (`ollama pull`) also silently reported success even when the download actually failed — PowerShell's `try/catch` doesn't catch a failing external process's exit code. Both now check the real exit code and report failure honestly.
+
+**Launcher — the Eye of Horus terminal:**
+- It only ever opened via a button most new users would never find, and — separately — the command behind that button was broken outright: it tried to run `main.py`, a file that doesn't exist anywhere in the installed bundle (it's compiled into `Cursiv.exe` itself). Fixed the command to re-invoke `Cursiv.exe -t` directly, and it now opens automatically on startup alongside Guardian and the Training Watcher, instead of requiring a click.
+- The Guardian and Training Watcher windows had the same class of bug one level deeper: PyInstaller places bundled Python source under `_internal/`, not beside `Cursiv.exe`, but both were launched with the install directory as their working folder. The windows opened with the right title, making it look like they were running — they were actually failing to find their own scripts every time. Fixed.
+
+**Login screen:**
+- Create Account / security-question recovery already existed in full, but credential state was stored relative to the install directory — and since every installer version installs to the same fixed path, leftover state from any earlier test install silently persisted across reinstalls and upgrades, so the app kept skipping straight to Login and never showing Create Account again. Moved to a stable per-user location that doesn't depend on install path or version.
+
+**Icons:**
+- Desktop/Start Menu/taskbar icons were rendering as blank pages for some installs, and even when they weren't, they were a generic gold star with no connection to the rest of the product's branding. Replaced with the actual Eye of Horus glyph used everywhere else (website, terminal, login dialogs), on the same dark-circle/gold/lapis palette.
+
 ## v3.14-U13 — Guardian fixes & installer cleanup (2026-08-13)
 
 **Guardian (security layer):**

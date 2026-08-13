@@ -43,7 +43,7 @@
 -->
 <!--
 -->
-# ⬡ Cursiv v3.14-U13 — Offline. Yours. Everywhere.
+# ⬡ Cursiv v3.14-U14 — Offline. Yours. Everywhere.
 
 > Not OpenAI. Not xAI. Not a subscription. A piece of AI infrastructure that lives on your machine, runs without the internet, and belongs entirely to you.
 
@@ -120,7 +120,15 @@ After the installer finishes, a **second window opens automatically** and downlo
 
 ---
 
-## What's New in v3.14-U13
+## What's New in v3.14-U14
+
+**The Eye of Horus terminal now actually opens** — on startup, automatically, alongside Guardian and the Training Watcher. Previously it lived behind a button most people would never find, and the command behind that button didn't even work.
+
+**Create Account works reliably now** — it always existed, but leftover state from earlier test installs could make the app skip straight to Login forever. Fixed to use a stable location independent of install path or version.
+
+**Real Eye of Horus icons** — desktop, Start Menu, and taskbar icons now show the actual Eye of Horus emblem instead of a blank page or a generic star.
+
+**The auto-install bootstrap actually runs unattended now** — it previously stalled at any of 12 separate "press a key to continue" prompts, silently skipping the llama3.1 model download (and anything after it) if one went unnoticed. It now runs start to finish with no input required, and stays open with the real error message if something genuinely fails instead of vanishing before you can read it.
 
 **Guardian fixes** — the background security service was silently failing to start on every launch; it's now fixed and actively decaying/pruning session state. The public web demo chat is now protected by the same probe-pattern scanning as the desktop app.
 
@@ -219,4 +227,4 @@ Copyright © 2026 Joshua Winkler. All rights reserved.
 
 Released under the MIT License — you are free to use, modify, and distribute this software. See [LICENSE](LICENSE) for full terms.
 
-*Cursiv v3.14-U13 · Built by Joshua Winkler*
+*Cursiv v3.14-U14 · Built by Joshua Winkler*

@@ -58,9 +58,16 @@ from PyQt6.QtWidgets import (
 if getattr(sys, "frozen", False):
     _HERE = Path(sys.executable).parent
     _ROOT = _HERE
+    # PyInstaller's COLLECT layout puts bundled Python source/data (services/,
+    # cursiv_v215/, etc.) under _internal/, not directly beside Cursiv.exe.
+    # Anything launched as "python <relative path>" needs THIS as its cwd,
+    # not _ROOT — using _ROOT there silently fails (file/module not found),
+    # even though the spawned cmd window still opens with the right title.
+    _DATA_ROOT = _HERE / "_internal"
 else:
     _HERE = Path(__file__).parent
     _ROOT = _HERE.parent
+    _DATA_ROOT = _ROOT
 
 _ICONS = (
     _HERE / "launcher" / "resources" / "icons"
@@ -74,7 +81,7 @@ _WATCHDOG_MS     = 3_000         # ms between app-health checks
 _POLL_DEADLINE_S = 30            # seconds to wait for app to bind its port
 
 # ── Update checker ─────────────────────────────────────────────────────────────
-_CURRENT_VERSION   = "3.14-U13"
+_CURRENT_VERSION   = "3.14-U14"
 _GITHUB_API        = "https://api.github.com/repos/winklersllc2026-bit/Cursiv/releases/latest"
 _GITHUB_RELEASES   = "https://github.com/winklersllc2026-bit/Cursiv/releases"
 
@@ -232,8 +239,8 @@ def _terminate_safely(proc: Optional[subprocess.Popen]) -> None:
 
 # ── Terminal launcher ─────────────────────────────────────────────────────────
 
-def _open_terminal_window(title: str, cmd: str) -> None:
-    root = str(_ROOT)
+def _open_terminal_window(title: str, cmd: str, cwd: Optional[str] = None) -> None:
+    root = cwd or str(_ROOT)
     env  = _secrets_env()
     wt   = _find_wt()
 
@@ -1071,16 +1078,28 @@ class CursivLauncher(QMainWindow):
         # too (its internal Memory Tracker thread) -- this window's title
         # is deliberately NOT "Cursiv Tracker" to avoid looking like the
         # same thing twice.
+        #
+        # cwd is _DATA_ROOT, not _ROOT: under the frozen build, services/
+        # and cursiv_v215/ live under _internal/, not beside Cursiv.exe.
+        # Using _ROOT here used to silently fail (file/module not found)
+        # while the window still opened with the right title, making it
+        # look like Guardian/Watcher were running when they weren't.
         python = _find_python()
         _open_terminal_window(
             "Cursiv Guardian",
             f'"{python}" services/guardian_service.py debug',
+            cwd=str(_DATA_ROOT),
         )
         QTimer.singleShot(600, lambda: _open_terminal_window(
             "Cursiv Training Watcher",
             f'"{python}" -m cursiv_v215.training.watcher',
+            cwd=str(_DATA_ROOT),
         ))
-        self._set_status("Guardian + Training Watcher running")
+        # Eye of Horus terminal — most new users won't know the "Open the
+        # Eye" button exists, let alone the `cursiv` CLI command, so it
+        # needs to just be there on startup like the other two.
+        QTimer.singleShot(1200, self._launch_terminal_chat)
+        self._set_status("Guardian + Training Watcher + Eye of Horus running")
 
     # ── App health watchdog ───────────────────────────────────────────────
 
@@ -1385,11 +1404,18 @@ class CursivLauncher(QMainWindow):
     # ── Terminal chat (Eye of Horus) ────────────────────────────────────────
 
     def _launch_terminal_chat(self):
-        python = _find_python()
-        _open_terminal_window(
-            "Cursiv — Eye of Horus",
-            f'"{python}" main.py --terminal',
-        )
+        # main.py isn't shipped as a loose file in the frozen build at all
+        # (it's compiled into Cursiv.exe as the entry point) -- "python
+        # main.py --terminal" always failed here, whether auto-launched or
+        # clicked. Cursiv.exe itself already recognizes -t/--terminal and
+        # branches into terminal mode before any GUI/single-instance logic
+        # runs, so re-invoking the exe with that flag is the real fix.
+        if getattr(sys, "frozen", False):
+            cmd = f'"{sys.executable}" -t'
+        else:
+            python = _find_python()
+            cmd = f'"{python}" launcher/main.py --terminal'
+        _open_terminal_window("Cursiv — Eye of Horus", cmd)
         self._set_status("Eye of Horus opened in a new terminal")
 
     # ── App launch / stop ─────────────────────────────────────────────────
