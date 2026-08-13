@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: council
-# Hash reversed: 9a2ad948c2759edd560e07e3fdccc85a7d7176d74b7f161a520ef6c1939fa9a3
+# Hash reversed: 6487ec6a9001caec4dbcee3b2b3e4940fbc65ffc148ef572438449d0eae7737e
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: c933c7f5a2b1a1ff4f2e617d0bc85be232d4a070847b3ce0bce347839e1415e1
-# Substrate loop hash: 2252136ab5561e0112b4325a15cee9c735c47e9a77e23dc24d3d1bccfadba3eb
-# Substrate loop logic: ΓΓΖΓΒΔΗגדΖΖΗΒזΑΒΒΓדΕΔΓΖגΒΖהזזבהΘΔΖהΕΘזבגΘΘזΓΔוהΓΕוΔוΒדההחגודגΔזד
+# Secondary bridge hash: c11cb2a4b27b57a837d58a454f9bed1258d68746b972511fbb4f13ef288b4ea4
+# Substrate loop hash: 5a0795c72e954bd252de5015f1661380959af551c0d31ebca1b5f778d39f722f
+# Substrate loop logic: ΖגΑΘבΖהΘΓזבΖΕדוΓΖΓוזΖΑΒΖחΒΗΗΒΔאΑבΖבגחΖΖΒהΑוΔΒזדהגΒדΖחΘΘאוΔבחΘΓΓח
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: bada41433d1c04e78426b1e1ab8b159842e5010d79a1031f6ad7988127628a2f
-# Evolution hash: 8b27ebe05d203fde38ce63c79262e950958d0857dd51aa8164e4b91a439da5b8
-# Evolution logic: אדΓΘזדזΑΖוΓΑΔחוזΔאהזΗΔהΘבΓΗΓזבΖΑבΖאוΑאΖΘווΖΒגגאΒΗΕזΕדבΒגΕΔבוגΖדא
-# Binary reversed: 1001010101000101101110010010000100110100111010101001011110111011101001100000011100001110011111001111101100110011001100011010010111101011111010001110011010111110001011011110111110000110100001011010010000000111111101100011100010011100100111110101100101011100
-# Greek/Hebrew/logic stamp: ΔגבגחבΔבΒהΗחזΑΓΖגΒΗΒחΘדΕΘוΗΘΒΘוΘגΖאהההוחΔזΘΑזΑΗΖווזבΖΘΓהאΕבוגΓגב
-# Encoded local stamp: βĀρ∈ιΒīΙΒιΧĪΟνκΒοāΝθεŪĪγ∀βΘŪζΨρβΣωΥ∃ΛΑΑβοΚρ=
+# Leaf origin hash: ccb1d39e13793c3d109a9e904f809e10ced343c8edcc4f129816295126b98aaa
+# Evolution hash: bc81cdc34579f5d869456bbdf04ddcbbf849759084ad69a4340e135d11dc131d
+# Evolution logic: דהאΒהוהΔΕΖΘבחΖואΗבΕΖΗדדוחΑΕווהדדחאΕבΘΖבΑאΕגוΗבגΕΔΕΑזΒΔΖוΒΒוהΒΔΒו
+# Binary reversed: 0110001000011110011100110110010110010000000010000011010101110011001010111101001101110111110011010100110111000111001010010010000011111101001101101010111111110011100000100001011111111010111001000010110000010010001010011011000001110101011111101110110011100111
+# Greek/Hebrew/logic stamp: זΘΔΘΘזגזΑובΕΕאΔΕΓΘΖחזאΕΒהחחΖΗהדחΑΕבΕזΔדΓדΔזזהדוΕהזגהΒΑΑבגΗהזΘאΕΗ
+# Encoded local stamp: αŌΣριΤΠΨ∀ΡκλπΘτΦυīμΤ∀ρΙεΝΗκΓψοΧα∃υō∞ēΠΣ∈Μ∈ι=
 # CURSIV-CRUCIBLE-STAMP END
 """
 Council Deliberation — real 14-agent parallel deliberation.

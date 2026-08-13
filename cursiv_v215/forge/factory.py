@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: project
-# Hash reversed: 0ac79f49102ee8945bc5dbd0429b6568e5cbd683f54b9daea19109683705a2e5
+# Hash reversed: 52617f8da319617a134157576770eba8e3364c22ad8b75e2ee54929127811aab
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 4c7a85b7f825e874fa5ceee33be8c52c1993cbc9219158821d615d37b68367bc
-# Substrate loop hash: 56b477bba46cd6c4fdb6588b705f56e58693221ef0f3b4f7ab4f13743cce0c62
-# Substrate loop logic: ΖΗדΕΘΘדדגΕΗהוΗהΕחודΗΖאאדΘΑΖחΖΗזΖאΗבΔΓΓΒזחΑחΔדΕחΘגדΕחΒΔΘΕΔההזΑהΗΓ
+# Secondary bridge hash: bdb621f2e3b69203ef00b631cd87925c0561529a0c9eee00d349906ba4f1be02
+# Substrate loop hash: 546461d0dceca0a2c320ab3f0af302e7952c83074186a8d391ea263c8b63ba84
+# Substrate loop logic: ΖΕΗΕΗΒוΑוהזהגΑגΓהΔΓΑגדΔחΑגחΔΑΓזΘבΖΓהאΔΑΘΕΒאΗגאוΔבΒזגΓΗΔהאדΗΔדגאΕ
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: 31e3641b9d64faa4949760117e62e8da1d79098bc999972bab3cfb81bc3a3416
-# Evolution hash: bd3bc384b197830710a993fe40b2107733da7bda173d88c5ec89edbc04a01332
-# Evolution logic: דוΔדהΔאΕדΒבΘאΔΑΘΒΑגבבΔחזΕΑדΓΒΑΘΘΔΔוגΘדוגΒΘΔואאהΖזהאבזודהΑΕגΑΒΔΔΓ
-# Binary reversed: 0000010100111110100111110010100110000000010001110111000110010010101011010011101010111101101100000010010010011101011010100110000101111010001111011011011000011100111110100010110110011011010101110101100010011000000010010110000111001110000010100101010001111010
-# Greek/Hebrew/logic stamp: ΖזΓגΖΑΘΔאΗבΑΒבΒגזגובדΕΖחΔאΗודהΖזאΗΖΗדבΓΕΑודוΖהדΖΕבאזזΓΑΒבΕחבΘהגΑ
-# Encoded local stamp: θΑΣΡΜΙσĀΒĒΩēηυΓŪφĀε∞ΣΝΨΨηιΗτρΛΦāεΜΥγōūξκγΛΝ=
+# Leaf origin hash: abaeb83e32072102b52a4994ca09d432a38b0683ecae70fbe747e1e3c607f02f
+# Evolution hash: abc3a569bc98d6d2acf95d771e448a48b015e9427a0e0726f0c69a7c6e913bdf
+# Evolution logic: גדהΔגΖΗבדהבאוΗוΓגהחבΖוΘΘΒזΕΕאגΕאדΑΒΖזבΕΓΘגΑזΑΘΓΗחΑהΗבגΘהΗזבΒΔדוח
+# Binary reversed: 1010010001101000111011110001101101011100100010010110100011100101100011000010100010101110101011100110111011100000011111010101000101111100110001100010001101000100010110110001110111101010011101000111011110100010100101001001100001001110000110001000010101011101
+# Greek/Hebrew/logic stamp: דגגΒΒאΘΓΒבΓבΕΖזזΓזΖΘדאוגΓΓהΕΗΔΔזאגדזΑΘΘΗΘΖΘΖΒΕΔΒגΘΒΗבΒΔגואחΘΒΗΓΖ
+# Encoded local stamp: ξξΖυζΓΣωχβθŪΡΖοζ∀α∂ū∈ΔγαχΔΞΩΤδη∃υΩθυŪ∇βΘυΓŪ=
 # CURSIV-CRUCIBLE-STAMP END
 """
 Agent Factory — create agents from JSON knowledge packets.

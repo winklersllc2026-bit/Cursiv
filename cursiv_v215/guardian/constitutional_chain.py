@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: guardian
-# Hash reversed: 612a80e04e4b34291ce1faab6366f32d71dbee9e24c569e22de5d0a0e1f17b0a
+# Hash reversed: 05f169847d952a6b72598aa4555f7b83235f8596f3260d014a10586dd90c14d3
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 2b1f11c5da524cad4cb803d34d8bf766d9dc13fbc2c61b35efcfc89dd1d194ba
-# Substrate loop hash: c5818e04ea20e6a4ad8ded132f4b690bdfb56f5924d26f52b7589ef65067db50
-# Substrate loop logic: הΖאΒאזΑΕזגΓΑזΗגΕגואוזוΒΔΓחΕדΗבΑדוחדΖΗחΖבΓΕוΓΗחΖΓדΘΖאבזחΗΖΑΗΘודΖΑ
+# Secondary bridge hash: 0c6ce0dad7801e24a8e91b8f1c9b74852ceebb010b53addc6b0cc1d71d43d2f5
+# Substrate loop hash: 4ead95d750d4fa5b0d080ff7b6497baa8d8eebcdcc080d8278d5d55e56059a3a
+# Substrate loop logic: ΕזגובΖוΘΖΑוΕחגΖדΑוΑאΑחחΘדΗΕבΘדגגאואזזדהוההΑאΑואΓΘאוΖוΖΖזΖΗΑΖבגΔג
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: 35d889b7d6f3fdfd42ae2a6c969e84900c1204ba9a62f73ac4337ad596901ab4
-# Evolution hash: 5144bd9afb46558d5ca1afa81129fc6c3c941fddc01702be5a90dfb3382cb6d2
-# Evolution logic: ΖΒΕΕדובגחדΕΗΖΖאוΖהגΒגחגאΒΒΓבחהΗהΔהבΕΒחווהΑΒΘΑΓדזΖגבΑוחדΔΔאΓהדΗוΓ
-# Binary reversed: 0110100001000101000100000111000000100111001011011100001001001001100000110111100011110101010111010110110001100110111111000100101111101000101111010111011110010111010000100011101001101001011101000100101101111010101100000101000001111000111110001110110100000101
-# Greek/Hebrew/logic stamp: גΑדΘΒחΒזΑגΑוΖזוΓΓזבΗΖהΕΓזבזזדוΒΘוΓΔחΗΗΔΗדגגחΒזהΒבΓΕΔדΕזΕΑזΑאגΓΒΗ
-# Encoded local stamp: ηΖΓō∃ŪνΙζ∃ΨŌψΤΑΤ∀ΧΑνōψūκ∀∀ΔΑΦΝθμωΑāΚπΒθψζΗΑ=
+# Leaf origin hash: 45eb66619da8c62a93ac42aeca4c5ab7e2f2c3a9098a49bb0a256ca574cbd48e
+# Evolution hash: a387a82d26be09c41b91d3a42d8622b2de694c8962470671a7c7ce6908339811
+# Evolution logic: גΔאΘגאΓוΓΗדזΑבהΕΒדבΒוΔגΕΓואΗΓΓדΓוזΗבΕהאבΗΓΕΘΑΗΘΒגΘהΘהזΗבΑאΔΔבאΒΒ
+# Binary reversed: 0000101011111000011010010001001011101011100110100100010101101101111001001010100100010101010100101010101010101111111011010001110001001100101011110001101010010110111111000100011000001011000010000010010110000000101000010110101110111001000000111000001010111100
+# Greek/Hebrew/logic stamp: ΔוΕΒהΑבווΗאΖΑΒגΕΒΑוΑΗΓΔחΗבΖאחΖΔΓΔאדΘחΖΖΖΕגגאבΖΓΘדΗגΓΖבוΘΕאבΗΒחΖΑ
+# Encoded local stamp: γΜīνδΑχδΟβūτωξΑΙō∃∀ΞνΙλΟΟΓΙΞρ∂τŪ∈∞δειΣκīūΧε=
 # CURSIV-CRUCIBLE-STAMP END
 """
 Constitutional Chain — Cursiv guardian layer.

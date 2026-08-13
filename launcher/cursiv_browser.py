@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: desktop-browser
-# Hash reversed: b5980029e0b1a39b45e4166ca38ed6c63fc9f20ad40850b8d07349d212f189cf
+# Hash reversed: 1806a5bbe0c7cf9fd0b5067be333ff78afb87a8890406a4e5aa8d2afc9719269
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 86ade50f860c5ef8d979b0968849e070e8a9edabb1e1aeeeb5ca964a1dcdcb10
-# Substrate loop hash: 7ebe7e247fd55884f0468c3d06690e441b7ceb341176554270ee4c18eb13c9b4
-# Substrate loop logic: ΘזדזΘזΓΕΘחוΖΖאאΕחΑΕΗאהΔוΑΗΗבΑזΕΕΒדΘהזדΔΕΒΒΘΗΖΖΕΓΘΑזזΕהΒאזדΒΔהבדΕ
+# Secondary bridge hash: eb51a6e45af499857d67012c3183be484933cd25b372464a3f3da9544578c16a
+# Substrate loop hash: 3794cff9ce9d865e43d28372590edfb2a00a905c7f87693c2c948e7a0dc3f371
+# Substrate loop logic: ΔΘבΕהחחבהזבואΗΖזΕΔוΓאΔΘΓΖבΑזוחדΓגΑΑגבΑΖהΘחאΘΗבΔהΓהבΕאזΘגΑוהΔחΔΘΒ
 # Natural evolution depth: 2
 # Exponential evolution rate: 8
-# Leaf origin hash: 7000f836a49e4e6e3f819e2841754b262348e9c0c0f684e8b90308fad88e025b
-# Evolution hash: f47791939aa39fdceeef641a53d80238ad4a7c2d5447e4d801396a020246c2b7
-# Evolution logic: חΕΘΘבΒבΔבגגΔבחוהזזזחΗΕΒגΖΔואΑΓΔאגוΕגΘהΓוΖΕΕΘזΕואΑΒΔבΗגΑΓΑΓΕΗהΓדΘ
-# Binary reversed: 1101101010010001000000000100100101110000110110000101110010011101001010100111001010000110011000110101110000010111101101100011011011001111001110011111010000000101101100100000000110100000110100011011000011101100001010011011010010000100111110000001100100111111
-# Greek/Hebrew/logic stamp: חהבאΒחΓΒΓובΕΔΘΑואדΑΖאΑΕוגΑΓחבהחΔΗהΗוזאΔגהΗΗΒΕזΖΕדבΔגΒדΑזבΓΑΑאבΖד
-# Encoded local stamp: βυΡΓΛεΡōχδΕινεēΟŪξΣĪΣΣΟΞ∀γνŌ∂ΒΡΦψ∇∇λχιΩΕΩ∞Φ=
+# Leaf origin hash: f58fd446f25650dd728ab627e503b8c6b8bec786a5e2e9af4cbf0cbf22e40055
+# Evolution hash: bce5974c293a61e9c8b2841d96c53447b95bfafe4f42a45036e36535401ad144
+# Evolution logic: דהזΖבΘΕהΓבΔגΗΒזבהאדΓאΕΒובΗהΖΔΕΕΘדבΖדחגחזΕחΕΓגΕΖΑΔΗזΔΗΖΔΖΕΑΒגוΒΕΕ
+# Binary reversed: 1000000100000110010110101101110101110000001111100011111110011111101100001101101000000110111011010111110011001100111111111110000101011111110100011110010100010001100100000010000001100101001001111010010101010001101101000101111100111001111010001001010001101001
+# Greek/Hebrew/logic stamp: בΗΓבΒΘבהחגΓואגגΖזΕגΗΑΕΑבאאגΘאדחגאΘחחΔΔΔזדΘΗΑΖדΑוחבחהΘהΑזדדΖגΗΑאΒ
+# Encoded local stamp: ττιΗΔΙĒΖΔ∈ΥΓΘΨ∈∃āΣΓχΞīλσΣθΕΣξκθ∈ΥσπβκκŌ∂θūα=
 # CURSIV-CRUCIBLE-STAMP END
 """
 Cursiv Browser — substrate-layer desktop browser.

@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: rads-bridge
-# Hash reversed: 2ae0c9fc8ec937806bdf07039817c9da5146ad166664f955ea5440debeece2d5
+# Hash reversed: 989110d4c2fd8ddb2c53ed8a812ae9eae076a79254fddbe55c677f280a8f22c8
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 931dbf9736d1d06e24a5c9dc25169dca3ce20cfc9a75d3c54bcc0027aa776e9e
-# Substrate loop hash: 9541e3382e27e377612b4a28dfdecdf640fc07b45b1184988c2239a37539e2f1
-# Substrate loop logic: בΖΕΒזΔΔאΓזΓΘזΔΘΘΗΒΓדΕגΓאוחוזהוחΗΕΑחהΑΘדΕΖדΒΒאΕבאאהΓΓΔבגΔΘΖΔבזΓחΒ
+# Secondary bridge hash: 5f97453583a93d84caa0d088ba9b2392361fe47c8916c5ba71ded9a058d4d7e7
+# Substrate loop hash: 7a09d2fcdb604383eacae97db162099f722b46f66dd48bf9b8eaf52539ea4faa
+# Substrate loop logic: ΘגΑבוΓחהודΗΑΕΔאΔזגהגזבΘודΒΗΓΑבבחΘΓΓדΕΗחΗΗווΕאדחבדאזגחΖΓΖΔבזגΕחגג
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: 4a460856da00a90e7e3dd3b4098cc42c6c2c001ecafb34c2af0b1b55614ae22f
-# Evolution hash: 1755fa207177041c6804c3cdf93364b54f49c4dd2eb1762b1e907480a918683e
-# Evolution logic: ΒΘΖΖחגΓΑΘΒΘΘΑΕΒהΗאΑΕהΔהוחבΔΔΗΕדΖΕחΕבהΕווΓזדΒΘΗΓדΒזבΑΘΕאΑגבΒאΗאΔז
-# Binary reversed: 0100010101110000001110011111001100010111001110011100111000010000011011011011111100001110000011001001000110001110001110011011010110101000001001100101101110000110011001100110001011111001101010100111010110100010001000001011011111010111011100110111010010111010
-# Greek/Hebrew/logic stamp: ΖוΓזהזזדזוΑΕΕΖגזΖΖבחΕΗΗΗΗΒוגΗΕΒΖגובהΘΒאבΔΑΘΑחודΗΑאΘΔבהזאהחבהΑזגΓ
-# Encoded local stamp: ΧΣ∀ΞβΛφ∈∈κνΜπτδΖāΡōκ∂ωληο∞Οα∂Σρ∈ūŌρ∀ΠōζγĒΖΕ=
+# Leaf origin hash: 2c628794d0594023a5f26a27fdae2057fd8f3c16eb20374e6b7086d6c1e21bad
+# Evolution hash: 472884f49e97865a3f494021213438dcfa5b8725ea721803faad6aa8f6b0d379
+# Evolution logic: ΕΘΓאאΕחΕבזבΘאΗΖגΔחΕבΕΑΓΒΓΒΔΕΔאוהחגΖדאΘΓΖזגΘΓΒאΑΔחגגוΗגגאחΗדΑוΔΘב
+# Binary reversed: 1001000110011000100000001011001000110100111110110001101110111101010000111010110001111011000101010001100001000101011110010111010101110000111001100101111010010100101000101111101110111101011110101010001101101110111011110100000100000101000111110100010000110001
+# Greek/Hebrew/logic stamp: אהΓΓחאגΑאΓחΘΘΗהΖΖזדווחΕΖΓבΘגΗΘΑזגזבזגΓΒאגאוזΔΖהΓדוואוחΓהΕוΑΒΒבאב
+# Encoded local stamp: ΔχēκΛχΑΕΑŪΚγūēΩĪĪωΞαΦΣρτΧξΓμēλβξ∞ΣΠΦφŪΡĀεκε=
 # CURSIV-CRUCIBLE-STAMP END
 """
 RADS Threat Memory — persistent record of every player who has interacted with RADS.

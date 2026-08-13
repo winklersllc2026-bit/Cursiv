@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: rads-bridge
-# Hash reversed: b1945e9bb1067cc55ba1a9a307336ce1e8d51db7c0adced22f66632844a31a78
+# Hash reversed: 15e122b031dd19eaad66402d80b6dc75bfba40d405c75c816b8ac3b8f05049c8
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 685312aae7965c40f9a07d21478cec48c21085049e3c7a8cf6be58c35fb06a81
-# Substrate loop hash: 07da7fd7d8af670436434b9bb4dc4cfccbd70a5df9cbe55332fd264358363b73
-# Substrate loop logic: ΑΘוגΘחוΘואגחΗΘΑΕΔΗΕΔΕדבדדΕוהΕהחההדוΘΑגΖוחבהדזΖΖΔΔΓחוΓΗΕΔΖאΔΗΔדΘΔ
+# Secondary bridge hash: 8355b6e5bc2450f12f5f3cb913a0c0b4c8658f5ae13240ca46507524e742dde6
+# Substrate loop hash: 5a4027d26dc9894d97af9ac61d41bb4ad307fb5462564952cdf92ae48fa00e8a
+# Substrate loop logic: ΖגΕΑΓΘוΓΗוהבאבΕובΘגחבגהΗΒוΕΒדדΕגוΔΑΘחדΖΕΗΓΖΗΕבΖΓהוחבΓגזΕאחגΑΑזאג
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: c02b528a2a54bfc2cb47a26d9de50047d79e9e55316b8651a567523dc835e055
-# Evolution hash: b713533d0d788d2d76b3482c1762f865661e768e8950a5905b30459846dbe3c8
-# Evolution logic: דΘΒΔΖΔΔוΑוΘאאוΓוΘΗדΔΕאΓהΒΘΗΓחאΗΖΗΗΒזΘΗאזאבΖΑגΖבΑΖדΔΑΕΖבאΕΗודזΔהא
-# Binary reversed: 1101100010010010101001111001110111011000000001101110001100111010101011010101100001011001010111000000111011001100011000110111100001110001101110101000101111011110001100000101101100110111101101000100111101100110011011000100000100100010010111001000010111100001
-# Greek/Hebrew/logic stamp: אΘגΒΔגΕΕאΓΔΗΗΗחΓΓוזהוגΑהΘדוΒΖואזΒזהΗΔΔΘΑΔגבגΒגדΖΖההΘΗΑΒדדבזΖΕבΒד
-# Encoded local stamp: ρΞλĒραΛΝχ∈∃īΤΟĀīΥ∇ηηΦχηυφλΞρΜΞΣ∃ēχŌδīν∇ΖΒγΑ=
+# Leaf origin hash: e873eb1dda71a3e2631e1e3a6d2753b47585ca607ee5204154c0e8089e33bb02
+# Evolution hash: 5d9adbf7c334abf102c10f5b2ddb9a0cf84e80cedc1d2f0c411a358cf7771b84
+# Evolution logic: ΖובגודחΘהΔΔΕגדחΒΑΓהΒΑחΖדΓוודבגΑהחאΕזאΑהזוהΒוΓחΑהΕΒΒגΔΖאהחΘΘΘΒדאΕ
+# Binary reversed: 1000101001111000010001001101000011001000101110111000100101110101010110110110011000100000010010110001000011010110101100111110101011011111110101010010000010110010000010100011111010100011000110000110110100010101001111001101000111110000101000000010100100110001
+# Greek/Hebrew/logic stamp: אהבΕΑΖΑחאדΔהגאדΗΒאהΖΘהΖΑΕוΑΕגדחדΖΘהוΗדΑאוΓΑΕΗΗוגגזבΒווΒΔΑדΓΓΒזΖΒ
+# Encoded local stamp: πμπΘκχ∃ΙφΘιηΕΣχχξΛī∃κ∃∀∇ΕευΤΡīĀηΙΓνΧσΔΩŪŌβΦ=
 # CURSIV-CRUCIBLE-STAMP END
 """
 RADS Bridge Protocol — message types flowing between ACEmulator plugin and Python swarm.

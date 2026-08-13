@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: council
-# Hash reversed: 3cbdbd00749280fa7077cf2dc541c911d1d21edaad5b40be69fb7756090aeed0
+# Hash reversed: 98c5b7187d1f58db9b87cbf5ab678b45769c7798240b214ff0055fa1e021c5b3
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: b92286e7cf752283f542613349f06494017fb6313ba0858176a75d4cd5c226dd
-# Substrate loop hash: 1e02dc886f99ea1c31ef420897c2d9eaec1ea28f2d55b82252a7cc03d9c287b3
-# Substrate loop logic: ΒזΑΓוהאאΗחבבזגΒהΔΒזחΕΓΑאבΘהΓובזגזהΒזגΓאחΓוΖΖדאΓΓΖΓגΘההΑΔובהΓאΘדΔ
+# Secondary bridge hash: 1dd65cbc6aec2a5bcfb3930b1f291fd841beef62fb042e09583f962d460a4476
+# Substrate loop hash: a1c18ac54c3099f6c32cdfa71b547923194f86f356c85d576b71f56152a3bcbe
+# Substrate loop logic: גΒהΒאגהΖΕהΔΑבבחΗהΔΓהוחגΘΒדΖΕΘבΓΔΒבΕחאΗחΔΖΗהאΖוΖΘΗדΘΒחΖΗΒΖΓגΔדהדז
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: 62f739543f66db57f971ba83d625065d0f7f72fb6350f0ccb8479d22b7c80d28
-# Evolution hash: f0a191c130416fe5216fd017859385e9a866e6f628b5b35305aee525eb43822e
-# Evolution logic: חΑגΒבΒהΒΔΑΕΒΗחזΖΓΒΗחוΑΒΘאΖבΔאΖזבגאΗΗזΗחΗΓאדΖדΔΖΔΑΖגזזΖΓΖזדΕΔאΓΓז
-# Binary reversed: 1100001111011011110110110000000011100010100101000001000011110101111000001110111000111111010010110011101000101000001110011000100010111000101101001000011110110101010110111010110100100000110101110110100111111101111011101010011000001001000001010111011110110000
-# Greek/Hebrew/logic stamp: ΑוזזגΑבΑΗΖΘΘדחבΗזדΑΕדΖוגגוזΒΓוΒוΒΒבהΒΕΖהוΓחהΘΘΑΘגחΑאΓבΕΘΑΑודודהΔ
-# Encoded local stamp: ΝĪσōνΨτΤīīρŌ∀μκδωσΞēūΨδΑΤα∃ΙΕχθ∀γεāΗ∂ζΟΛΙσΕ=
+# Leaf origin hash: e6bc561a6e2e09275054416f06264fd79b149e0f36b74ba2d1b76a78ef0679b6
+# Evolution hash: 9579da6a1e5ce31932f5680ff6ff9dc6c88ed94aacd64d368e292031ca784ed4
+# Evolution logic: בΖΘבוגΗגΒזΖהזΔΒבΔΓחΖΗאΑחחΗחחבוהΗהאאזובΕגגהוΗΕוΔΗאזΓבΓΑΔΒהגΘאΕזוΕ
+# Binary reversed: 1001000100111010110111101000000111101011100011111010000110111101100111010001111000111101111110100101110101101110000111010010101011100110100100111110111010010001010000100000110101001000001011111111000000001010101011110101100001110000010010000011101011011100
+# Greek/Hebrew/logic stamp: ΔדΖהΒΓΑזΒגחΖΖΑΑחחΕΒΓדΑΕΓאבΘΘהבΗΘΖΕדאΘΗדגΖחדהΘאדבדואΖחΒוΘאΒΘדΖהאב
+# Encoded local stamp: ΙρθμμΠīēιΓρμΚσΘĒδΘβΒΖλΗūνĀ∂ΜΥΚΡΡδΔōπηΣ∀ΕōΛΡ=
 # CURSIV-CRUCIBLE-STAMP END
 """
 The 14 Council Agents — each with a distinct epistemic role.
