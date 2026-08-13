@@ -45,6 +45,21 @@
 -->
 # Changelog
 
+## v3.14-U16 — The terminal actually shows its output (2026-08-13)
+
+**Eye of Horus terminal:**
+- Fixed the terminal opening but showing nothing: the console-reattachment code (`AttachConsole` + reopening `CONOUT$`/`CONIN$`) opened stdout/stderr with Python's default block buffering instead of line buffering. Everything the CLI printed — the welcome banner, prompts, all of it — sat in an internal buffer that was never large enough to trigger an automatic flush, so the window just looked empty even though the program was running correctly underneath. Confirmed via a real trial run after the fix: full welcome text, help output, and a real multi-provider council deliberation all displayed correctly.
+
+**Stability:**
+- Fixed a real crash confirmed in that same trial run: saving a council result to memory ("strand") crashed the entire terminal session with `UnicodeEncodeError` the moment a response contained a lone/unpaired Unicode surrogate character (which can legitimately end up in streamed AI provider text). A background memory-save operation should never be able to take down an interactive session — fixed the specific encoding bug at its source, and made strand-saving fail gracefully (prints a warning, doesn't crash) for whatever the next edge case turns out to be.
+
+**Council:**
+- Claude and Grok were both correctly flagging an earlier version of the council prompt as a jailbreak attempt and refusing it — because it effectively was one: the identity-wrapping system prompt applied everywhere else in the app instructs a model to deny its real identity and claim a false creator, which is exactly the shape of prompt a safety-trained model should refuse. The actual intent is the opposite of a jailbreak — Cursiv consulting multiple real AI providers for their own genuine opinions, then synthesizing across them — so external council calls now carry an honest, transparent system message explaining exactly that instead.
+- There was no way to cancel a council call in progress (these can run 30-90+ seconds). Two compounding causes: PyInstaller's windowed build disables Ctrl+C handling at the OS level before the terminal ever attaches, so the keypress never reached Python at all; and even when it does, relying on a plain `KeyboardInterrupt` to unwind out of `asyncio.run()` isn't reliably fast on Windows. Fixed both — Ctrl+C handling is explicitly re-enabled once the terminal attaches, and the council now installs its own cancel handler that tears down the in-flight request directly. Verified with a real test: a 10-second operation cancelled in ~1 second, not 10.
+
+**Display:**
+- Every box and banner in the terminal was rendering narrower than the actual window, regardless of how wide the console really was. The width-detection call was reading a stale reference to stdout captured before the terminal ever attached, so it silently failed and fell back to a hardcoded default every time. Fixed so it reads the real, current console width — every box in the app was already written to size itself dynamically, this was the one thing feeding them the wrong number.
+
 ## v3.14-U15 — Babel family activation fix + homepage privacy fix (2026-08-13)
 
 **Babel family activation:**

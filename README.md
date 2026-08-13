@@ -43,7 +43,7 @@
 -->
 <!--
 -->
-# ⬡ Cursiv v3.14-U15 — Offline. Yours. Everywhere.
+# ⬡ Cursiv v3.14-U16 — Offline. Yours. Everywhere.
 
 > Not OpenAI. Not xAI. Not a subscription. A piece of AI infrastructure that lives on your machine, runs without the internet, and belongs entirely to you.
 
@@ -120,7 +120,17 @@ After the installer finishes, a **second window opens automatically** and downlo
 
 ---
 
-## What's New in v3.14-U15
+## What's New in v3.14-U16
+
+**The Eye of Horus terminal actually shows its output now** — it was opening but rendering completely blank; the console-reattachment code was using block buffering instead of line buffering, so everything printed just sat unflushed. Confirmed fixed with a real trial run: full welcome banner, help output, and a real 3-provider council deliberation all displayed correctly.
+
+**A real crash fixed** — saving a council result to memory used to crash the entire terminal session if the response contained a certain class of Unicode character. Fixed at the source, plus made memory-saving fail gracefully instead of crashing for any future edge case.
+
+**Council prompts are now honest with external providers** — Claude and Grok were correctly flagging the council prompt as jailbreak-shaped and refusing it. External council calls now carry a transparent system message explaining they're a genuine multi-AI consultation, not a request to roleplay as something else.
+
+**Ctrl+C now actually cancels a running council call** — previously there was no way to stop one once started; a Windows-specific issue meant the keypress never even reached the app. Verified with a real test cancelling a 10-second operation in ~1 second.
+
+**Terminal boxes and banners now fill the real console width** — they were always designed to size dynamically, but a stale width reading meant they silently used a fixed fallback width instead, every time.
 
 **Babel family activation fixed** — the PIN storage had the same install-path bug as Create Account below; a PIN that went missing after a reinstall looked exactly like "babel stopped working," with no error at all since PIN verification fails silently by design. Fixed.
 
@@ -229,4 +239,4 @@ Copyright © 2026 Joshua Winkler. All rights reserved.
 
 Released under the MIT License — you are free to use, modify, and distribute this software. See [LICENSE](LICENSE) for full terms.
 
-*Cursiv v3.14-U15 · Built by Joshua Winkler*
+*Cursiv v3.14-U16 · Built by Joshua Winkler*
