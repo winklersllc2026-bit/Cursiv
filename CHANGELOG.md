@@ -45,6 +45,10 @@
 -->
 # Changelog
 
+## v3.14-U22 — The `ref` command actually works now, on every install (2026-08-14)
+
+**Offline field reference, bundled with the app.** The `ref <question>` command (chat panel and terminal) has existed for a while, but it only ever worked on the one machine that also happened to have a separate 382MB SQLite database checked out from a sibling project — for everyone else it silently reported "not available." Pulled in the actually-differentiated ~85 entries from that database (survival, medical, science field references — water purification, bleeding control, food preservation, fire starting, navigation, hypothermia treatment, and more, written dense and specific rather than generic) as three small bundled JSON files (~47KB total, not the 382MB dictionary/thesaurus bulk that made up most of that database's size). `ref` now works out of the box on every install, offline, with no setup. If the full 741k-record database happens to be present, it's still used first — the bundled set is the guaranteed fallback, not a replacement.
+
 ## v3.14-U21 — Chat-panel-only window, and a real fix for the packaged-build startup freeze (2026-08-14)
 
 **Startup freeze in the packaged build, fixed for real this time:**
