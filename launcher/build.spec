@@ -116,6 +116,10 @@ hiddenimports = [
     "cursiv_browser",
     "login_dialog",
     "tray",
+    "chat_panel",
+    "chat_commands",
+    "legacy_vault_dialog",
+    "postal_compose_dialog",
     # PyQt6
     "PyQt6",
     "PyQt6.QtWidgets",

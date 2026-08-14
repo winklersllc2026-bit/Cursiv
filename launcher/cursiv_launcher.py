@@ -83,7 +83,7 @@ _WATCHDOG_MS     = 3_000         # ms between app-health checks
 _POLL_DEADLINE_S = 30            # seconds to wait for app to bind its port
 
 # ── Update checker ─────────────────────────────────────────────────────────────
-_CURRENT_VERSION   = "3.14-U17"
+_CURRENT_VERSION   = "3.14-U18"
 _GITHUB_API        = "https://api.github.com/repos/winklersllc2026-bit/Cursiv/releases/latest"
 _GITHUB_RELEASES   = "https://github.com/winklersllc2026-bit/Cursiv/releases"
 
@@ -1442,11 +1442,29 @@ class CursivLauncher(QMainWindow):
         code.setAlignment(Qt.AlignmentFlag.AlignCenter)
         hint_lay.addWidget(code)
 
-        sub = QLabel("Type that in any terminal window — or just chat on the right")
+        sub = QLabel("Type that in any terminal window — or open one below")
         sub.setStyleSheet(f"color: {SILV2}; font-size: 11px;")
         sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
         sub.setWordWrap(True)
         hint_lay.addWidget(sub)
+
+        open_term_btn = QPushButton("Open in Terminal")
+        open_term_btn.setFixedHeight(28)
+        open_term_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        open_term_btn.setToolTip(
+            "Open the full command-line Eye of Horus in its own terminal "
+            "window -- same underlying chat, plus every CLI-only command"
+        )
+        open_term_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: transparent; color: {SILV2};
+                font-size: 11px; border: 1px solid {BORDER}; border-radius: 4px;
+                padding: 2px 6px; margin-top: 6px;
+            }}
+            QPushButton:hover {{ color: {GOLD}; border-color: {LGOLD}; }}
+        """)
+        open_term_btn.clicked.connect(self._launch_terminal_chat)
+        hint_lay.addWidget(open_term_btn)
 
         col.addWidget(hint_box)
 
@@ -1642,6 +1660,26 @@ class CursivLauncher(QMainWindow):
         ver.setStyleSheet(f"color: {SILV2}; font-size: 10px;")
         row.addWidget(ver)
         return footer
+
+    # ── Terminal chat (Eye of Horus) — optional, user-triggered only ──────
+    # The embedded chat panel is the primary interface now; this stays
+    # available as an explicit choice (button click), never auto-launched,
+    # for the CLI-only commands the panel doesn't cover yet.
+
+    def _launch_terminal_chat(self):
+        # main.py isn't shipped as a loose file in the frozen build at all
+        # (it's compiled into Cursiv.exe as the entry point) -- "python
+        # main.py --terminal" always failed here, whether auto-launched or
+        # clicked. Cursiv.exe itself already recognizes -t/--terminal and
+        # branches into terminal mode before any GUI/single-instance logic
+        # runs, so re-invoking the exe with that flag is the real fix.
+        if getattr(sys, "frozen", False):
+            cmd = f'"{sys.executable}" -t'
+        else:
+            python = _find_python()
+            cmd = f'"{python}" launcher/main.py --terminal'
+        _open_terminal_window("Cursiv — Eye of Horus", cmd)
+        self._set_status("Eye of Horus opened in a new terminal")
 
     # ── Getting Started ──────────────────────────────────────────────────
 
