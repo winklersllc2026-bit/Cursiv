@@ -45,6 +45,11 @@
 -->
 # Changelog
 
+## v3.14-U19 — No more terminal windows at all, not just the Eye of Horus (2026-08-13)
+
+**Launcher:**
+- U18 replaced the Eye of Horus terminal with the embedded chat panel but left Guardian and the Training Watcher popping open their own two visible console windows on every launch — the actual original complaint ("everytime you open the cursiv app icon it opens new terminal windows, guardian tracker etc") only got half-fixed. Both are real background services, not dead weight, so the fix is running them hidden (same approach already used for the local web app process) rather than removing them. Since there's no window left for the user to close themselves anymore, both are now tracked and explicitly terminated on app exit so they can't pile up as orphaned background processes across restarts.
+
 ## v3.14-U18 — The Eye of Horus is a real window now, not a terminal (2026-08-13)
 
 **Launcher — native chat panel:**
