@@ -373,6 +373,16 @@ class ChatPanel(QWidget):
             self._append_system("Chat core isn't available -- see the message above.")
             return
 
+        # "clear" wipes the on-screen transcript and in-memory history --
+        # there's nothing for chat_commands.py (UI-agnostic, no widget
+        # access) to do here, so it's handled directly on the main thread.
+        if text.strip().lower() == "clear":
+            self._input.clear()
+            self._transcript.clear()
+            self._history = []
+            self._append_system("History cleared.")
+            return
+
         # A handful of commands need a real dialog, not a single line of
         # text -- intercept them here on the main thread before anything
         # reaches the background-thread command router.

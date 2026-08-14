@@ -10,20 +10,25 @@ underlying functions (babel_agent, codex_agent, async_council, strand
 store, postal, etc.) to a UI-agnostic form the GUI chat panel can render,
 without touching or duplicating the terminal CLI itself.
 
-Not ported here (need a genuinely different widget, not a text command):
-  - voice / listen        -- needs a microphone record/stop control
-  - image / paste         -- need an image-display widget
-  - write to / letters /
-    postal *              -- multi-line compose + PIN-entry dialogs
-  - legacy *               -- same, family-letter vault has its own PIN flow
-These still work from the terminal (Open in Terminal button).
+Not handled here at all (need a real dialog or widget, not a text command --
+these are intercepted directly in chat_panel.py's _try_dialog_command /
+_send instead of ever reaching this module):
+  - voice / listen / paste  -- mic control + clipboard-image widgets
+  - write to / legacy       -- multi-line compose + PIN-entry dialogs
+  - clear                   -- wipes the transcript widget + in-memory
+                                history, neither of which this UI-agnostic
+                                module has a handle to
 
-Everything else -- key/openai/anthropic, files, workspace, mode, tier,
-offline, governor, status, codex, hermes, council/full/deliberate,
-anchor this, strands/remember, grow, ref, search, pull, rate, funforge
-(start/done/extend), babel, blast, substrate, obsidian, grok/claude
-direct retry, overseer, "hey <provider>" routing -- is handled here,
-calling the exact same lower-level functions the CLI calls.
+Everything else the terminal CLI has -- key/openai/anthropic, files,
+workspace, mode, tier, offline, governor, status, help, codex, hermes,
+council/full/deliberate, anchor this, strands/remember/strand export/
+strand import, grow, ref, search, pull, rate, funforge (start/done/
+extend), babel, blast, substrate, obsidian, letters/open letter/council
+letter, postal *, legacy import, image, queue, grok/claude direct retry,
+overseer, "hey <provider>" routing -- is handled here, calling the exact
+same lower-level functions the CLI calls. Full parity with the terminal's
+command set as of the chat-panel-only window (v3.14-U21); "exit" is the
+one deliberate omission, since there's no terminal process to quit.
 """
 from __future__ import annotations
 
@@ -271,6 +276,34 @@ except Exception:
     def _babel_encode(t): return b""
     def _babel_decode(b): return ""
 
+try:
+    from cursiv_v215.agents.offline_queue import (
+        enqueue as _queue_enqueue,
+        format_queue as _queue_format,
+        count as _queue_count,
+    )
+    _QUEUE_OK = True
+except Exception:
+    _QUEUE_OK = False
+    def _queue_enqueue(t, **kw): return {}
+    def _queue_format(): return ""
+    def _queue_count(): return 0
+
+try:
+    from cursiv_v215.core.strand_federation import (
+        export_pack as _sfed_export,
+        import_pack as _sfed_import,
+        pack_summary as _sfed_summary,
+        PACK_EXT as _PACK_EXT,
+    )
+    _SFED_OK = True
+except Exception:
+    _SFED_OK = False
+    def _sfed_export(*a, **kw): return ""
+    def _sfed_import(t): return [], {}, {}
+    def _sfed_summary(s, m): return ""
+    _PACK_EXT = ".cursivpack"
+
 
 # ── Result types ─────────────────────────────────────────────────────────
 
@@ -351,6 +384,87 @@ def _cascade_gen(cfg: dict, messages: list[dict], max_tokens: int = 900):
     return _call_ollama(messages, max_tokens=max_tokens), "Ollama"
 
 
+_HELP_TEXT = """\
+KEYS & ACCESS
+  key <xai-key>            set xAI Grok API key       (starts with xai-)
+  openai <key>              set OpenAI API key          (starts with sk-)
+  anthropic <key>          set Anthropic API key       (starts with sk-ant-)
+  files on / off            enable / disable file-system access
+  workspace <path>          sandbox root for file tools
+  mode                      toggle write mode  (auto <-> confirm)
+
+CODEX AGENT (offline code specialist)
+  codex <prompt>            call Codex directly -- also fires automatically
+                            for any code-classified message
+
+WEB SEARCH
+  search <query>            search the web right now + AI synthesis
+  pull <url>                fetch + analyze any URL -> auto-strand the insight
+
+VOICE (mic button, or type these)
+  voice / voice <seconds>   record -> speech-to-text -> Babel clean -> send
+  voice raw / listen        speech-to-text only, no cleaning pass
+  paste                     paste a clipboard image -> vision analysis
+
+BABEL (universal translation)
+  babel <text>              any language -> English
+  babel <text> into <lang>  English -> one or more target languages
+
+COUNCIL (parallel multi-model deliberation)
+  council <question>        all providers fire at once, synthesis deliberates
+  /full <question>          full deliberation, no signal extraction
+  hey council <question>    inline routing prefix (same as council)
+
+SUBSTRATE FORK -- RUW / Curs.
+  substrate                 activate last council synthesis into RUW layer
+  substrate status          show RUW layer state
+  substrate weave <query>   find resonant nodes for a query
+
+BLAST (public board)
+  blast register / login / logout / who
+  blast                     post last council synthesis to the public board
+
+FAMILY & SEALED LETTERS -- private, PIN-protected
+  write to <name>           compose a sealed letter (opens a dialog)
+  letters                   list letters waiting for you / sent by you
+  open letter <id>          read one sealed letter
+  legacy                    open the family Legacy Vault (opens a dialog)
+  legacy import <path>      import a .legacypack file into the vault
+
+BOARD IDENTITY (Ed25519-signed public letters)
+  postal setup <name>       create your signing identity
+  postal my key             show your public key
+  postal add user <n> <k>   add a contact's public key
+  postal contacts           list known contacts
+  postal rotate             rotate your signing key
+
+STRAND ARCHIVE (persistent memory)
+  anchor this               save last exchange as a Strand
+  strands / strands <territory> / strands search <query>
+  strand export / strand export <territory>
+  strand import <file>      Guardian-verified import from a pack
+  remember <query>          pure local memory search, zero cloud
+
+FUNFORGE (bounded creative spike)
+  funforge <topic> / spike <topic>
+  forge extend               add 30 minutes
+  forge done                 close and produce artifact
+
+MODEL & TRUST
+  grok / claude              re-run last message with that model
+  overseer on / off          Claude reviews every Grok response
+  tier 1 / tier 2 / tier 3    offline-only -> local-first -> full council
+  offline on / off           hard-block all external APIs
+
+OTHER
+  rate good / bad / <1-5>    rate the last response
+  image <description>        generate an image (DALL-E 3)
+  queue list / queue add <task>   offline task queue
+  obsidian on/off/path/export/status
+  clear                      wipe this conversation's on-screen history
+  help                       this list"""
+
+
 def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextResult | StreamResult]:
     """
     Returns None if `raw` isn't a recognized built-in command -- caller
@@ -360,6 +474,9 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
     if not text:
         return None
     cmd = text.lower()
+
+    if cmd == "help":
+        return TextResult(_HELP_TEXT)
 
     # ── Simple state toggles ────────────────────────────────────────────
     if cmd == "status":
@@ -576,6 +693,87 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
         if recent:
             out += "\n\n" + _strand_fmt(recent)
         return TextResult(out)
+
+    if cmd.startswith("strand export") or cmd == "strand export":
+        if not (_STRAND_OK and _SFED_OK):
+            return TextResult("Strand federation unavailable.")
+        parts = cmd.split()
+        territory = parts[2] if len(parts) >= 3 else None
+        all_s = _strand_list(territory=territory, limit=5000)
+        if not all_s:
+            t_label = f" in '{territory}'" if territory else ""
+            return TextResult(f"No strands{t_label} to export.")
+        terr_defs = _strand_territories()
+        label = f"cursiv-{territory or 'all'}"
+        pack_text = _sfed_export(all_s, terr_defs, label=label)
+        out_path = _CHAT_ROOT / f"{label}-{int(datetime.now().timestamp())}{_PACK_EXT}"
+        try:
+            out_path.write_text(pack_text, encoding="utf-8")
+        except Exception as e:
+            return TextResult(f"Export failed: {e}")
+        t_label = territory or "all territories"
+        return TextResult(
+            f"⬡ Strand Pack Exported\nFile    :  {out_path.name}\n"
+            f"Strands :  {len(all_s)}\nScope   :  {t_label}\n\n"
+            f"Transfer via USB / LAN. Import with:  strand import {out_path.name}"
+        )
+
+    if cmd.startswith("strand import "):
+        if not (_STRAND_OK and _SFED_OK):
+            return TextResult("Strand federation unavailable.")
+        pack_path = Path(text[14:].strip().strip('"').strip("'"))
+        if not pack_path.is_absolute() and not pack_path.exists():
+            # "strand export" always writes into _CHAT_ROOT and tells the
+            # user to import the bare filename back -- the terminal CLI
+            # gets away with resolving that relative to cwd because it's
+            # always launched from the repo root, but the packaged GUI's
+            # cwd isn't guaranteed to match, so fall back to where the
+            # file would actually have landed.
+            fallback = _CHAT_ROOT / pack_path
+            if fallback.exists():
+                pack_path = fallback
+        if not pack_path.exists():
+            return TextResult(f"File not found: {pack_path}")
+        try:
+            pack_text = pack_path.read_text(encoding="utf-8")
+            in_strands, _in_terr, meta = _sfed_import(pack_text)
+        except ValueError as e:
+            return TextResult(f"Pack verification failed: {e}")
+        except Exception as e:
+            return TextResult(f"Import failed: {e}")
+        imported = 0
+        for s in in_strands:
+            try:
+                _strand_save(
+                    s.get("query", ""), s.get("synthesis", ""),
+                    tags=(s.get("tags") or []) + ["federated_import"],
+                    score=s.get("score", 0.70),
+                    territory_tag=s.get("territory_tag", "general"),
+                    source="federation", model=s.get("model", "unknown"),
+                    provenance={"source_models": [s.get("model", "?")],
+                                "federated": True, "pack_label": meta.get("label", "?")},
+                )
+                imported += 1
+            except Exception:
+                pass
+        note = ""
+        if not meta.get("same_machine"):
+            note = "\n(Cross-machine pack — signature does not match this instance; expected for transfers between machines.)"
+        return TextResult(f"⬡ Strand Pack Import\n{_sfed_summary(in_strands, meta)}\n\nImported {imported}/{len(in_strands)} strands.{note}")
+
+    if cmd == "queue" or cmd.startswith("queue "):
+        if not _QUEUE_OK:
+            return TextResult("Offline Queue not available.")
+        sub = text[6:].strip() if cmd.startswith("queue ") else ""
+        if not sub or sub == "list":
+            return TextResult(_queue_format() or "Queue is empty.")
+        if sub.startswith("add "):
+            task = sub[4:].strip()
+            if not task:
+                return TextResult("Usage: queue add <task>")
+            entry = _queue_enqueue(task)
+            return TextResult(f"Queued:  {entry.get('id', '?')} — {task[:60]}")
+        return TextResult("Usage:  queue list  |  queue add <task>")
 
     if cmd.startswith("remember ") or cmd == "remember":
         if not _STRAND_OK:
