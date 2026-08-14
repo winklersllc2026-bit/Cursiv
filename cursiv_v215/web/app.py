@@ -157,7 +157,12 @@ async def _run_sentinel(request: Request) -> JSONResponse | None:
     path  = request.url.path
     token = request.headers.get("X-Fleet-Token") or request.headers.get("Authorization", "").replace("Bearer ", "")
 
-    ring  = _sentinel_classify(token or None, ip, path)  # type: ignore[arg-type]
+    # classify() can hit the fleet-token DB on a bad/expired token -- that's
+    # a blocking sqlite call, and this whole function runs on the event
+    # loop, so it goes through a worker thread rather than risking a stall
+    # on every request that carries a stray Authorization header (which is
+    # most background-scanner traffic hitting the catch-all).
+    ring = await asyncio.to_thread(_sentinel_classify, token or None, ip, path)  # type: ignore[arg-type]
 
     if ring == Ring.TRUSTED:
         return None     # needlepoint — pass through
@@ -932,8 +937,9 @@ async def remote_heartbeat(
     trap = await _run_sentinel(request)
     if trap is not None:
         return trap
-    _require_fleet(x_fleet_token)
-    upsert_fleet_node(
+    await asyncio.to_thread(_require_fleet, x_fleet_token)
+    await asyncio.to_thread(
+        upsert_fleet_node,
         body.machine_id, body.machine_name, body.username,
         body.version, body.status, body.ip_hint,
     )
@@ -949,8 +955,8 @@ async def remote_fleet(
     trap = await _run_sentinel(request)
     if trap is not None:
         return trap
-    _require_fleet(x_fleet_token)
-    nodes = get_fleet_nodes(since_minutes=since)
+    await asyncio.to_thread(_require_fleet, x_fleet_token)
+    nodes = await asyncio.to_thread(get_fleet_nodes, since_minutes=since)
     return {"nodes": nodes, "count": len(nodes)}
 
 
@@ -976,8 +982,9 @@ async def fleet_list_tokens(
     trap = await _run_sentinel(request)
     if trap is not None:
         return trap
-    _require_owner(x_fleet_token)
-    return {"tokens": list_fleet_tokens()}
+    await asyncio.to_thread(_require_owner, x_fleet_token)
+    tokens = await asyncio.to_thread(list_fleet_tokens)
+    return {"tokens": tokens}
 
 
 @app.post("/remote/fleet/tokens", status_code=201)
@@ -989,8 +996,8 @@ async def fleet_add_token(
     trap = await _run_sentinel(request)
     if trap is not None:
         return trap
-    _require_owner(x_fleet_token)
-    result = create_fleet_token(body.label, added_by="owner")
+    await asyncio.to_thread(_require_owner, x_fleet_token)
+    result = await asyncio.to_thread(create_fleet_token, body.label, added_by="owner")
     return result
 
 
@@ -1003,8 +1010,8 @@ async def fleet_revoke_token(
     trap = await _run_sentinel(request)
     if trap is not None:
         return trap
-    _require_owner(x_fleet_token)
-    if not deactivate_fleet_token(token_id):
+    await asyncio.to_thread(_require_owner, x_fleet_token)
+    if not await asyncio.to_thread(deactivate_fleet_token, token_id):
         raise HTTPException(404, "Token not found")
     return {"ok": True}
 
