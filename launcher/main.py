@@ -251,8 +251,25 @@ def main():
         QMessageBox.critical(None, "Cursiv — Import Error", str(e))
         sys.exit(1)
 
-    window = CursivLauncher(username=username)
-    window.show()
+    # Constructing the window does real work now (the chat panel loads its
+    # own command router, which pulls in a long chain of cursiv_v215
+    # modules) -- previously nothing here caught a failure, so any error
+    # partway through construction meant total silence: no window, no tray
+    # icon, no message, the process just exits. Surfacing it explicitly so
+    # a real failure is at least visible and reportable instead of looking
+    # like "login worked, then nothing happened."
+    try:
+        window = CursivLauncher(username=username)
+        window.show()
+    except Exception:
+        import traceback
+        details = traceback.format_exc()
+        QMessageBox.critical(
+            None, "Cursiv — Startup Error",
+            "Cursiv couldn't finish opening its main window.\n\n"
+            f"{details}",
+        )
+        sys.exit(1)
 
     sys.exit(app.exec())
 

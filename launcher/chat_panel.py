@@ -35,22 +35,22 @@ _ROOT = _HERE.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-try:
-    import chat_commands as cc
-    _CHAT_OK = True
-    _CHAT_IMPORT_ERROR = ""
-except Exception as _e:  # pragma: no cover - surfaced in the UI instead
-    _CHAT_OK = False
-    _CHAT_IMPORT_ERROR = str(_e)
-    cc = None  # type: ignore
-
-if _CHAT_OK:
-    _cursiv_chat = cc._chat
-    _CHAT_ROOT = cc._CHAT_ROOT
-    _RATE_SENTINEL = cc.RATE_SENTINEL
-else:
-    _CHAT_ROOT = _ROOT
-    _RATE_SENTINEL = object()
+# chat_commands.py pulls in roughly a dozen cursiv_v215 subsystems (postal,
+# family, voice, babel, council, strand memory, board client, obsidian,
+# substrate...) that, before this chat panel existed, were only ever loaded
+# by the terminal CLI running as its own separate process -- never by the
+# main GUI's startup path. Importing it eagerly here would make the main
+# window's very first paint depend on all of that succeeding (and being
+# fast) every single time, with no way to show anything -- not even the
+# window itself -- if one of them is slow or broken. It's loaded on a
+# background thread instead (see ChatPanel._load_backend), so the window
+# always appears immediately; chat is simply not sendable until it's ready.
+cc = None            # type: ignore  -- set once the background load finishes
+_CHAT_OK = False
+_CHAT_IMPORT_ERROR = ""
+_cursiv_chat = None
+_CHAT_ROOT = _ROOT
+_RATE_SENTINEL = object()
 
 # ── Palette (matches cursiv_launcher.py exactly) ────────────────────────────
 BG     = "#0b0b12"
@@ -80,6 +80,7 @@ class _ChatSignals(QObject):
     voice_result = pyqtSignal(str, bool)   # transcribed text, auto_send
     pending_write = pyqtSignal(str)     # raw WRITE_SENTINEL JSON payload, needs approval
     write_complete = pyqtSignal(str)    # result text once an approved write finishes (or fails)
+    backend_ready = pyqtSignal(bool, str)  # chat_commands finished loading: ok, error message
 
 
 class _ChatInput(QPlainTextEdit):
@@ -125,6 +126,7 @@ class ChatPanel(QWidget):
         super().__init__(parent)
         self._history: list[dict] = []          # [{"role": "user"|"assistant", "content": str}]
         self._streaming = False
+        self._backend_ready = False
         self._reply_text = ""
         self._pending_history_append: Optional[list[tuple[str, str]]] = None
         self._signals = _ChatSignals()
@@ -135,24 +137,48 @@ class ChatPanel(QWidget):
         self._signals.voice_result.connect(self._on_voice_result)
         self._signals.pending_write.connect(self._on_pending_write)
         self._signals.write_complete.connect(self._finish_pending_write)
+        self._signals.backend_ready.connect(self._on_backend_ready)
         self._pending_write_context: dict = {}
+        self._cfg: dict = {}
 
-        self._cfg: dict = cc._default_cfg() if _CHAT_OK else {}
-        if _CHAT_OK:
+        self._build_ui()
+        self._send_btn.setEnabled(False)
+        self._voice_btn.setEnabled(False)
+        self._append_system("Loading Cursiv's core…")
+
+        # The window itself must never wait on this -- it's already visible
+        # and interactive by the time this thread finishes, whether that
+        # takes 50ms or 5s. See the comment above the module-level `cc`
+        # placeholder for why this can't just be a plain top-of-file import.
+        threading.Thread(target=self._load_backend, daemon=True).start()
+
+    def _load_backend(self) -> None:
+        try:
+            import chat_commands as _cc_module  # noqa: F401 -- caches in sys.modules
+            self._signals.backend_ready.emit(True, "")
+        except Exception as e:
+            self._signals.backend_ready.emit(False, str(e))
+
+    def _on_backend_ready(self, ok: bool, error: str) -> None:
+        global cc, _CHAT_OK, _CHAT_IMPORT_ERROR, _cursiv_chat, _CHAT_ROOT, _RATE_SENTINEL
+        if ok:
+            import chat_commands as _cc_module   # already loaded -- instant, from sys.modules
+            cc = _cc_module
+            _CHAT_OK = True
+            _cursiv_chat = cc._chat
+            _CHAT_ROOT = cc._CHAT_ROOT
+            _RATE_SENTINEL = cc.RATE_SENTINEL
+
+            self._cfg = cc._default_cfg()
             keys = _load_saved_keys()
             self._cfg["api_key"] = keys.get("api_key", "")
             self._cfg["openai_key"] = keys.get("openai_key", "")
             self._cfg["anthropic_key"] = keys.get("anthropic_key", "")
             self._cfg["postal_user"] = "joshua"
 
-        self._build_ui()
-
-        if not _CHAT_OK:
-            self._append_system(
-                f"Chat core failed to load: {_CHAT_IMPORT_ERROR}\n"
-                "This usually means a required package didn't install correctly."
-            )
-        else:
+            self._backend_ready = True
+            self._send_btn.setEnabled(True)
+            self._voice_btn.setEnabled(True)
             has_key = any(self._cfg.get(k) for k in ("api_key", "openai_key", "anthropic_key"))
             self._append_system(
                 "Talk to Cursiv here — no terminal needed. Runs through Ollama "
@@ -163,6 +189,12 @@ class ChatPanel(QWidget):
                 "configured yet, so this runs on your local Ollama model. Type "
                 "'key xai-...', 'openai sk-...', or 'anthropic sk-ant-...' to add one. "
                 "Type 'help' for the full command list."
+            )
+        else:
+            _CHAT_IMPORT_ERROR = error
+            self._append_system(
+                f"Chat core failed to load: {error}\n"
+                "This usually means a required package didn't install correctly."
             )
 
     # ── UI ────────────────────────────────────────────────────────────────
