@@ -19,32 +19,29 @@
 Generate cursiv.ico and tray.ico for the Cursiv launcher.
 Run: python launcher/resources/gen_icons.py
 """
-import math
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 OUT = Path(__file__).parent / "icons"
 OUT.mkdir(exist_ok=True)
 
-BG    = (11,  11, 18,  255)
+BG    = (8,   9,  12, 255)   # matches the website's --bg: #08090C
 GOLD  = (255, 215,  0, 255)
-LAPIS = (34,  85, 221, 230)
-_BG3  = (40,  40, 60,  255)
 
 SIZES = [16, 32, 48, 64, 128, 256]
 
-# The Eye of Horus glyph (U+13080, Egyptian Hieroglyphs block) is the mark
-# used everywhere else in the product -- website nav, terminal chat header,
-# "Open the Eye" button. Windows ships a font that covers this block.
-_EYE_GLYPH = "\U00013080"
-_EYE_FONT_CANDIDATES = [
-    "C:/Windows/Fonts/seguihis.ttf",   # Segoe UI Historic (Win10/11)
-    "seguihis.ttf",
+# Bold serif "C" (for Cursiv) -- Georgia Bold is the closest system font to
+# the site's EB Garamond branding, and stays legible down to 16px, which a
+# thinner or more decorative face would not.
+_C_GLYPH = "C"
+_C_FONT_CANDIDATES = [
+    "C:/Windows/Fonts/georgiab.ttf",   # Georgia Bold
+    "georgiab.ttf",
 ]
 
 
-def _eye_font(size: int) -> ImageFont.FreeTypeFont | None:
-    for path in _EYE_FONT_CANDIDATES:
+def _c_font(size: int) -> ImageFont.FreeTypeFont | None:
+    for path in _C_FONT_CANDIDATES:
         try:
             return ImageFont.truetype(path, size)
         except OSError:
@@ -52,8 +49,27 @@ def _eye_font(size: int) -> ImageFont.FreeTypeFont | None:
     return None
 
 
+def _draw_c(draw: ImageDraw.ImageDraw, cx: float, cy: float, size: int, scale: float):
+    """Gold serif 'C', centered -- falls back to a drawn arc if no font is found."""
+    font = _c_font(int(size * scale))
+    if font is not None:
+        bbox = draw.textbbox((0, 0), _C_GLYPH, font=font)
+        gw, gh = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        draw.text(
+            (cx - gw / 2 - bbox[0], cy - gh / 2 - bbox[1]),
+            _C_GLYPH, font=font, fill=GOLD,
+        )
+        return
+
+    # Font unavailable on this machine -- draw a plain arc so the icon is
+    # never blank.
+    r = size * scale * 0.36
+    w = max(2, int(size * scale * 0.12))
+    draw.arc([cx - r, cy - r, cx + r, cy + r], start=55, end=305, fill=GOLD, width=w)
+
+
 def _draw_cursiv(size: int) -> Image.Image:
-    """Dark circle, lapis ring, gold Eye of Horus -- matches the site/login look."""
+    """Black circle, gold serif 'C' -- the app icon."""
     img  = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     cx = cy = size / 2
@@ -62,70 +78,16 @@ def _draw_cursiv(size: int) -> Image.Image:
     pad = max(1, int(size * 0.04))
     draw.ellipse([pad, pad, size - pad, size - pad], fill=BG)
 
-    # Lapis accent ring
-    rp = max(2, int(size * 0.08))
-    rw = max(1, int(size * 0.045))
-    draw.ellipse([rp, rp, size - rp, size - rp], outline=LAPIS, width=rw)
-
-    # Gold Eye of Horus glyph, centered
-    font = _eye_font(int(size * 0.6))
-    if font is not None:
-        bbox = draw.textbbox((0, 0), _EYE_GLYPH, font=font)
-        gw, gh = bbox[2] - bbox[0], bbox[3] - bbox[1]
-        draw.text(
-            (cx - gw / 2 - bbox[0], cy - gh / 2 - bbox[1]),
-            _EYE_GLYPH, font=font, fill=GOLD,
-        )
-    else:
-        # Font unavailable on this machine -- fall back to the old star
-        # rather than shipping a blank icon.
-        arm, short = size * 0.28, size * 0.10
-
-        def pt(deg, r):
-            a = math.radians(deg)
-            return cx + r * math.sin(a), cy - r * math.cos(a)
-
-        pts = [pt(a, r) for a, r in zip(
-            [0, 45, 90, 135, 180, 225, 270, 315],
-            [arm, short, arm, short, arm, short, arm, short],
-        )]
-        draw.polygon(pts, fill=GOLD)
-
+    _draw_c(draw, cx, cy, size, 0.62)
     return img
 
 
 def _draw_tray(size: int) -> Image.Image:
-    """Transparent bg, gold Eye of Horus only (looks good on dark/light taskbar)."""
+    """Transparent bg, gold 'C' only (looks good on dark/light taskbar)."""
     img  = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     cx = cy = size / 2
-
-    font = _eye_font(int(size * 0.85))
-    if font is not None:
-        bbox = draw.textbbox((0, 0), _EYE_GLYPH, font=font)
-        gw, gh = bbox[2] - bbox[0], bbox[3] - bbox[1]
-        draw.text(
-            (cx - gw / 2 - bbox[0], cy - gh / 2 - bbox[1]),
-            _EYE_GLYPH, font=font, fill=GOLD,
-        )
-        return img
-
-    # Font unavailable -- fall back to the old star.
-    arm, short = size * 0.40, size * 0.15
-
-    def pt(deg, r):
-        a = math.radians(deg)
-        return cx + r * math.sin(a), cy - r * math.cos(a)
-
-    pts = [pt(a, r) for a, r in zip(
-        [0, 45, 90, 135, 180, 225, 270, 315],
-        [arm, short, arm, short, arm, short, arm, short],
-    )]
-    draw.polygon(pts, fill=GOLD)
-
-    dot = max(1, int(size * 0.07))
-    draw.ellipse([cx - dot, cy - dot, cx + dot, cy + dot], fill=_BG3)
-
+    _draw_c(draw, cx, cy, size, 0.85)
     return img
 
 
