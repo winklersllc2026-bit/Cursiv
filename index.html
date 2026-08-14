@@ -775,7 +775,7 @@ footer {
     </div>
     <div id="soft-demo-msgs" style="height: 260px; overflow-y: auto; padding: 16px; background: #080c0c; font-size: 14px; line-height: 1.5; display: flex; flex-direction: column; gap: 10px;">
       <div style="align-self: flex-start; max-width: 80%; background: #11151f; color: #d8d0c0; padding: 9px 13px; border-radius: 12px; border-bottom-left-radius: 3px; border-left: 3px solid #c9a741;">
-        Ask me anything — a question, something you're working through, or just to see how this works. Want to share something publicly? Use the Board below.
+        Ask me anything — a question, something you're working through, or just to see how this works.
       </div>
     </div>
     <div style="padding: 10px 12px; border-top: 1px solid #1e3030; background: #0a0c12; display: flex; gap: 8px;">
@@ -787,33 +787,6 @@ footer {
   <p style="text-align: center; margin-top: 12px; font-size: 11px; color: #6b6f7a;">
     This is a lightweight web preview. Download the desktop app for the full offline experience — real streaming, voice, file tools, and every feature below.
   </p>
-</section>
-
-<!-- ══ THE BOARD — COMMUNITY BOARD ═══════════════════════════════════ -->
-<section id="the-board" class="section layer" style="max-width: 1120px; margin: 0 auto 70px; padding: 0 20px;">
-  <div style="margin-bottom: 22px; text-align: center;">
-    <div style="font-family: var(--mono); font-size: 10px; letter-spacing: 3.5px; color: var(--gold); text-transform: uppercase; opacity: .75;">COMMUNITY BOARD</div>
-    <h2 style="font-family: var(--serif); font-size: 36px; color: var(--silver); margin: 6px 0 6px;">The Board</h2>
-    <p style="color: var(--silver2); max-width: 620px; margin: 0 auto; font-size: 15px;">
-      A shared space, visible to anyone visiting this site. Post from the demo above, or write directly below.
-    </p>
-  </div>
-
-  <div style="display: grid; grid-template-columns: 1fr 380px; gap: 18px;">
-    <!-- Posts feed -->
-    <div style="background: #0a0c12; border: 1px solid var(--border2); padding: 22px;">
-      <div style="font-family: var(--mono); font-size: 10px; color: var(--gold); letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase;">Recent Posts</div>
-      <div id="board-posts" style="min-height: 280px; font-size: 14.5px; line-height: 1.75; color: var(--silver2);"></div>
-    </div>
-
-    <!-- Composer to post to the main message board -->
-    <div style="background: #0a0c12; border: 1px solid var(--border2); padding: 22px; display: flex; flex-direction: column;">
-      <div style="font-family: var(--mono); font-size: 10px; color: var(--gold); letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase;">Post to the Board</div>
-      <textarea id="board-text" placeholder="Write a message for the Board..." style="flex:1; min-height: 160px; background:#08090C; border:1px solid var(--border); color:var(--silver); font-family:inherit; font-size:14px; padding:14px; resize:vertical; outline:none;"></textarea>
-      <button id="board-blast-btn" style="margin-top:12px; padding:13px; background:#c9a741; color:#08090C; border:none; font-size:13px; letter-spacing:1.5px; text-transform:uppercase; font-weight:600; cursor:pointer;">POST TO THE BOARD</button>
-      <div id="board-status" style="margin-top:8px; font-size:11px; color:#6b6f7a; min-height:16px;"></div>
-    </div>
-  </div>
 </section>
 
 <!-- ══ FAMILY LETTERS ═══════════════════════════════════════════════ -->
@@ -835,9 +808,7 @@ footer {
     <a href="https://github.com/winklersllc2026-bit/Cursiv/releases/latest/download/Cursiv-Setup-latest.exe" style="background: #c9a741; color: #08090C; padding: 10px 22px; text-decoration: none; font-weight: 600; font-size: 13px;">Download the Full Desktop</a>
   </div>
   <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 14px;">
-    <a href="/board" style="color: var(--silver2); padding: 8px 18px; text-decoration: none; font-size: 12px; border-bottom: 1px solid var(--border2);">Full Board Page ↗</a>
     <a href="/chat" style="color: var(--silver2); padding: 8px 18px; text-decoration: none; font-size: 12px; border-bottom: 1px solid var(--border2);">Local Chat Client (bring your own Ollama) ↗</a>
-    <a href="/mailbox" style="color: var(--silver2); padding: 8px 18px; text-decoration: none; font-size: 12px; border-bottom: 1px solid var(--border2);">Mailbox — Seal a Letter for Another User ↗</a>
     <a href="/profile" style="color: var(--silver2); padding: 8px 18px; text-decoration: none; font-size: 12px; border-bottom: 1px solid var(--border2);">Profile &amp; Memory Settings ↗</a>
   </div>
 </section>
@@ -854,16 +825,16 @@ footer {
 
   <div style="display: grid; gap: 18px;">
     <div style="background: #0a0c12; border: 1px solid var(--border2); padding: 20px 24px;">
-      <div style="font-family: var(--mono); font-size: 10px; color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; text-transform: uppercase;">1 · Seal a letter for someone</div>
+      <div style="font-family: var(--mono); font-size: 10px; color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; text-transform: uppercase;">1 · Try the demo — no signup</div>
       <p style="color: var(--silver2); font-size: 14px; line-height: 1.7;">
-        Register or log in from <a href="/board" style="color:#c9a741;">the Board</a>, then open <a href="/mailbox" style="color:#c9a741;">Mailbox</a>. Type their exact username, write what you came to say, and hit Seal &amp; Send. It's encrypted at rest — nobody browsing the raw database sees plain text.
+        Type a question into <a href="#demo" style="color:#c9a741;">the chat box above</a> and see how it responds. No account, no install, no commitment.
       </p>
     </div>
 
     <div style="background: #0a0c12; border: 1px solid var(--border2); padding: 20px 24px;">
-      <div style="font-family: var(--mono); font-size: 10px; color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; text-transform: uppercase;">2 · Read what's been sealed for you</div>
+      <div style="font-family: var(--mono); font-size: 10px; color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; text-transform: uppercase;">2 · See everything it can do</div>
       <p style="color: var(--silver2); font-size: 14px; line-height: 1.7;">
-        Log in with the same username the sender used, open <a href="/mailbox" style="color:#c9a741;">Mailbox</a>, and check the Inbox tab. Click a letter to open it — it's marked read the moment you do. Your own outgoing letters live under the Sent tab.
+        The <a href="#features" style="color:#c9a741;">full feature list below</a> covers the 14-agent council, offline operation, provider cascade, family letters, community board, and everything else that ships in the desktop app.
       </p>
     </div>
 
@@ -875,9 +846,9 @@ footer {
     </div>
 
     <div style="background: #0a0c12; border: 1px solid var(--border2); padding: 20px 24px;">
-      <div style="font-family: var(--mono); font-size: 10px; color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; text-transform: uppercase;">4 · Post a message to the Board</div>
+      <div style="font-family: var(--mono); font-size: 10px; color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; text-transform: uppercase;">4 · Download the full app</div>
       <p style="color: var(--silver2); font-size: 14px; line-height: 1.7;">
-        Try the <a href="#demo" style="color:#c9a741;">live demo</a> above, or go straight to <a href="#the-board" style="color:#c9a741;">the Board section</a> on this page (or the <a href="/board" style="color:#c9a741;">full Board page</a>). Write your message in the composer and hit Post — it's visible to anyone visiting the site, up to 4 posts a day per account.
+        The community board and sealed letters both live in the desktop app — reachable through plain chat commands (<code>blast</code>, <code>write to &lt;name&gt;</code>). <a href="https://github.com/winklersllc2026-bit/Cursiv/releases/latest/download/Cursiv-Setup-latest.exe" style="color:#c9a741;">Download it above</a> to unlock all of it, running fully offline on your own machine.
       </p>
     </div>
   </div>
@@ -963,6 +934,11 @@ footer {
       <span class="feat-icon">👥</span>
       <h3 class="feat-name">Multiple Accounts</h3>
       <p class="feat-desc">One install, several logins — a spouse or kids can each set up their own username and password on the same machine, sharing the same underlying data.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">📋</span>
+      <h3 class="feat-name">Community Board</h3>
+      <p class="feat-desc">Post a thought publicly and see what others have shared — right from the chat panel. <code>blast register</code>, <code>blast login</code>, then <code>blast</code> to post. No separate site or browser tab needed.</p>
     </div>
   </div>
 </section>
@@ -1372,7 +1348,7 @@ footer {
   <p class="footer-copy">Built by Joshua Winkler &nbsp;·&nbsp; v3.14 &nbsp;·&nbsp; MIT License</p>
 </footer>
 
-<!-- JS for soft demo chat and Board (soft/public for the website) -->
+<!-- JS for the soft demo chat (public, rate-limited web preview) -->
 <script>
 'use strict';
 
@@ -1429,69 +1405,6 @@ send.onclick = async () => {
 };
 
 input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); send.click(); } });
-
-// Board (loads from /api if available, posts if the backend allows public)
-const boardPosts = document.getElementById('board-posts');
-const boardText = document.getElementById('board-text');
-const boardBtn = document.getElementById('board-blast-btn');
-const boardStatus = document.getElementById('board-status');
-
-async function loadBoard() {
-  try {
-    const r = await fetch('/api/posts');
-    if (!r.ok) throw 0;
-    const j = await r.json();
-    const posts = (j.posts || []).slice(0, 6);
-    if (!posts.length) {
-      boardPosts.innerHTML = '<div style="color:#6b6f7a;font-size:13px;">The Board is quiet. Be the first to post.</div>';
-      return;
-    }
-    boardPosts.innerHTML = posts.map(p => {
-      const d = (p.timestamp || '').slice(0,10);
-      return `<div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #1e3030;">
-        <div style="font-size:11px;color:#c9a741;">${p.username || 'visitor'} <span style="opacity:.4;">${d}</span></div>
-        <div style="margin-top:2px;color:#d8d0c0;">${(p.text || '').replace(/</g,'&lt;')}</div>
-      </div>`;
-    }).join('');
-  } catch(e) {
-    boardPosts.innerHTML = '<div style="color:#6b6f7a;font-size:13px;">Board feed (demo mode — full posts in the desktop or when the web backend is updated).</div>';
-  }
-}
-
-boardBtn.onclick = async () => {
-  const msg = (boardText.value || '').trim();
-  if (!msg) return;
-  boardBtn.disabled = true;
-  boardStatus.textContent = 'Posting...';
-  boardStatus.style.color = '#c9a741';
-  try {
-    const r = await fetch('/api/blast', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({text: msg, source:'broadcast'})
-    });
-    if (!r.ok) throw 0;
-    boardText.value = '';
-    boardStatus.textContent = 'Posted to the Board.';
-    boardStatus.style.color = '#27C97A';
-    await loadBoard();
-  } catch(e) {
-    boardStatus.textContent = 'Posted locally for this visit (could not reach the live Board — try again in a moment).';
-    boardStatus.style.color = '#c9a741';
-    // soft demo: add to feed manually
-    const d = new Date().toISOString().slice(0,10);
-    boardPosts.innerHTML = `<div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #1e3030;">
-      <div style="font-size:11px;color:#c9a741;">visitor <span style="opacity:.4;">${d}</span></div>
-      <div style="margin-top:2px;color:#d8d0c0;">${msg.replace(/</g,'&lt;')}</div>
-    </div>` + boardPosts.innerHTML;
-  } finally {
-    boardBtn.disabled = false;
-    setTimeout(() => { boardStatus.textContent = ''; }, 1800);
-  }
-};
-
-loadBoard();
-setInterval(loadBoard, 45000);
 </script>
 
 <!-- ══════════════════════════════════════════════════════════
