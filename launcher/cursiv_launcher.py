@@ -262,13 +262,13 @@ def _secrets_env() -> dict:
     return env
 
 
-def _launch_hidden(cmd: list[str]) -> subprocess.Popen:
+def _launch_hidden(cmd: list[str], cwd: Optional[str] = None) -> subprocess.Popen:
     si = subprocess.STARTUPINFO()
     si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     si.wShowWindow = 0
     return subprocess.Popen(
         cmd,
-        cwd=str(_ROOT),
+        cwd=cwd or str(_ROOT),
         env=_secrets_env(),
         startupinfo=si,
         creationflags=subprocess.CREATE_NO_WINDOW,
@@ -1241,6 +1241,8 @@ class CursivLauncher(QMainWindow):
         self._username   = username
         self._app_proc:  Optional[subprocess.Popen] = None
         self._app_alive  = False           # True while app process is running
+        self._guardian_proc: Optional[subprocess.Popen] = None
+        self._watcher_proc:  Optional[subprocess.Popen] = None
 
         self.setWindowTitle("Cursiv")
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window)
@@ -1264,14 +1266,16 @@ class CursivLauncher(QMainWindow):
         # Cleanup hook — fires on every quit path (TitleBar X, tray Quit, etc.)
         QApplication.instance().aboutToQuit.connect(self._cleanup)
 
-        # Auto-open Guardian + Training Watcher terminals after first paint.
-        # The Eye of Horus terminal used to auto-open here too -- it's now
-        # the embedded chat panel built into this window instead, so there's
-        # nothing left to spawn for it.
+        # Start Guardian + Training Watcher (hidden background services,
+        # see _launch_terminals) after first paint. The Eye of Horus
+        # terminal used to auto-open here too -- it's now the embedded
+        # chat panel built into this window instead, so there's nothing
+        # left to spawn for it, and neither Guardian nor the Watcher pop
+        # open a console window anymore either.
         QTimer.singleShot(200, self._launch_terminals)
 
         # First run only: show Getting Started automatically once the
-        # terminal windows have had a moment to appear on their own.
+        # window has had a moment to finish rendering.
         if not _getting_started_seen():
             QTimer.singleShot(1800, self._show_getting_started)
 
@@ -1288,32 +1292,38 @@ class CursivLauncher(QMainWindow):
 
     def _cleanup(self):
         _terminate_safely(self._app_proc)
+        # Guardian + Training Watcher run hidden now (no console window the
+        # user could close themselves) -- without this they'd become
+        # invisible orphaned processes piling up across app restarts.
+        _terminate_safely(self._guardian_proc)
+        _terminate_safely(self._watcher_proc)
         _release_instance_lock()
 
-    # ── Auto-launch terminals ─────────────────────────────────────────────
+    # ── Auto-launch background services ────────────────────────────────────
 
     def _launch_terminals(self):
-        # Note: the Guardian window's own log lines are prefixed "Tracker"
-        # too (its internal Memory Tracker thread) -- this window's title
-        # is deliberately NOT "Cursiv Tracker" to avoid looking like the
-        # same thing twice.
+        # Guardian and the Training Watcher are real background services --
+        # they used to run as two extra visible terminal windows that
+        # popped up on every launch (on top of the old Eye of Horus
+        # terminal, which is now the embedded chat panel instead). Neither
+        # needs a console; they run hidden now, the same way the local web
+        # app process already does via _launch_hidden().
         #
         # cwd is _DATA_ROOT, not _ROOT: under the frozen build, services/
         # and cursiv_v215/ live under _internal/, not beside Cursiv.exe.
         # Using _ROOT here used to silently fail (file/module not found)
         # while the window still opened with the right title, making it
-        # look like Guardian/Watcher were running when they weren't.
+        # look like Guardian/Watcher were running when they weren't --
+        # that failure mode is exactly why this stays called out here even
+        # though there's no window left to be misleading about it.
         python = _find_python()
-        _open_terminal_window(
-            "Cursiv Guardian",
-            f'"{python}" services/guardian_service.py debug',
-            cwd=str(_DATA_ROOT),
+        data_root = str(_DATA_ROOT)
+        self._guardian_proc = _launch_hidden(
+            [python, "services/guardian_service.py", "debug"], cwd=data_root,
         )
-        QTimer.singleShot(600, lambda: _open_terminal_window(
-            "Cursiv Training Watcher",
-            f'"{python}" -m cursiv_v215.training.watcher',
-            cwd=str(_DATA_ROOT),
-        ))
+        self._watcher_proc = _launch_hidden(
+            [python, "-m", "cursiv_v215.training.watcher"], cwd=data_root,
+        )
         self._set_status("Guardian + Training Watcher running")
 
     # ── App health watchdog ───────────────────────────────────────────────
