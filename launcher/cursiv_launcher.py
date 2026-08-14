@@ -111,6 +111,24 @@ def _is_ollama_installed() -> bool:
     return bool(shutil.which("ollama")) or _OLLAMA_EXE_PATH.exists()
 
 
+def _ollama_ps_invocation() -> str:
+    """
+    PowerShell call-prefix that resolves to a working `ollama`, for use in
+    scripts spawned as fresh subprocesses. shutil.which() here reflects
+    Cursiv.exe's own PATH snapshot from whenever it was launched -- if
+    Ollama was installed after that (or PATH just hasn't propagated to
+    this already-running process), a spawned shell inheriting the same
+    stale environment won't find "ollama" as a bare command either, even
+    though the exe is really there. Falling back to the known install
+    path sidesteps that instead of trusting PATH resolution twice.
+    """
+    import shutil
+    found = shutil.which("ollama")
+    if found:
+        return "ollama"
+    return "& '" + str(_OLLAMA_EXE_PATH).replace("'", "''") + "'"
+
+
 # Windows' default UI font (Segoe UI) has no Egyptian Hieroglyphs glyphs, and
 # -- confirmed by directly rendering both to a pixmap and inspecting the
 # result -- Qt's automatic font-fallback does NOT pick up "Segoe UI
@@ -1766,12 +1784,13 @@ class CursivLauncher(QMainWindow):
 
         self._set_status("Launching llama3.1 download — see terminal window…")
 
+        _ollama = _ollama_ps_invocation()
         script = (
             "Write-Host '' ;"
             "Write-Host '  Cursiv — llama3.1' -ForegroundColor DarkYellow ;"
             "Write-Host '' ;"
             "Write-Host '  Pulling llama3.1...' -ForegroundColor Cyan ;"
-            "ollama pull llama3.1 ;"
+            f"{_ollama} pull llama3.1 ;"
             "if ($LASTEXITCODE -eq 0) { Write-Host '  [OK] llama3.1 ready.' -ForegroundColor Green }"
             "else { Write-Host '  [!] Pull failed -- run: ollama pull llama3.1' -ForegroundColor Yellow } ;"
             "Write-Host '' ;"
@@ -1834,13 +1853,14 @@ class CursivLauncher(QMainWindow):
         self._codex_dl_btn.setText("Downloading…")
         self._set_status("Launching Winkler-Codex download — see terminal window…")
 
+        _ollama = _ollama_ps_invocation()
         script = (
             "Write-Host '' ;"
             "Write-Host '  Winkler-Codex — Offline Code Council' -ForegroundColor DarkYellow ;"
             "Write-Host '' ;"
             "foreach ($m in @('qwen2.5-coder:14b','deepseek-coder-v2:16b')) {"
             "  Write-Host \"  Pulling $m...\" -ForegroundColor Cyan ;"
-            "  ollama pull $m ;"
+            f"  {_ollama} pull $m ;"
             "  if ($LASTEXITCODE -eq 0) { Write-Host \"  [OK] $m ready.\" -ForegroundColor Green }"
             "  else { Write-Host \"  [!] $m pull failed — run: ollama pull $m\" -ForegroundColor Yellow }"
             "} ;"
