@@ -55,6 +55,8 @@ from PyQt6.QtWidgets import (
     QProgressDialog, QSystemTrayIcon, QTextEdit, QVBoxLayout, QWidget,
 )
 
+from chat_panel import ChatPanel
+
 if getattr(sys, "frozen", False):
     _HERE = Path(sys.executable).parent
     _ROOT = _HERE
@@ -1140,22 +1142,23 @@ class GettingStartedDialog(QDialog):
         vlay.addWidget(header)
 
         intro = self._body_label(
-            "Cursiv talks to you through a terminal — the “Eye of Horus” "
-            "chat interface — not a chat window in this launcher. Here's how "
-            "to reach it, and what to download so it can actually think "
-            "locally."
+            "Talk to Cursiv right here — the “Eye of Horus” chat panel on "
+            "the right side of this window. No terminal to open, nothing "
+            "extra to launch. Here's what to know, and what to download so "
+            "it can actually think locally."
         )
         vlay.addWidget(intro)
 
-        # ── Reaching the terminal ────────────────────────────────────────
-        vlay.addWidget(self._section_label("REACHING THE TERMINAL — THREE WAYS"))
+        # ── Reaching the chat ────────────────────────────────────────────
+        vlay.addWidget(self._section_label("TALKING TO CURSIV"))
         vlay.addWidget(self._body_label(
-            "1. It opens automatically a moment after you log in.\n"
-            "2. Click \U0001F53B Open the Eye (Terminal) on the main window any "
-            "time you've closed it.\n"
-            "3. Type  cursiv  in any terminal window already open on your "
-            "machine (PowerShell, cmd, Windows Terminal — cd into the "
-            "install folder first if it's not on your PATH yet)."
+            "Just type in the chat panel on the right and press Enter. "
+            "It's part of this window — closing it closes Cursiv itself, "
+            "the same as any other tab here.\n"
+            "Prefer a terminal you already have open? Type  cursiv  in "
+            "PowerShell, cmd, or Windows Terminal for the full command-line "
+            "version (cd into the install folder first if it's not on your "
+            "PATH yet)."
         ))
         vlay.addWidget(self._body_label(
             "The Substrate Browser desktop icon is a different, optional "
@@ -1187,7 +1190,15 @@ class GettingStartedDialog(QDialog):
         llama_btn = QPushButton("Download llama3.1  (~4.7 GB — Cursiv's default model)")
         llama_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         llama_btn.setStyleSheet(btn_style)
-        llama_btn.clicked.connect(self._launcher._download_llama_model)
+        # QPushButton.clicked emits clicked(bool checked=False) -- connecting
+        # it directly to _download_llama_model would bind that bool to its
+        # on_done parameter, and on_done=False (not None) then reaches
+        # QTimer.singleShot(500, False) at the end of that method, which
+        # raises a TypeError for a non-callable slot and crashes the whole
+        # app (PyQt6 aborts the process on an unhandled exception crossing
+        # back into Qt's C++ event loop). The lambda discards the argument
+        # so on_done stays at its real default of None.
+        llama_btn.clicked.connect(lambda: self._launcher._download_llama_model())
         vlay.addWidget(llama_btn)
 
         codex_btn = QPushButton("Download Winkler-Codex  (~18 GB — coding specialist pair)")
@@ -1233,12 +1244,16 @@ class CursivLauncher(QMainWindow):
 
         self.setWindowTitle("Cursiv")
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window)
-        self.setFixedWidth(420)
+        # Wide enough to host a real chat panel alongside the control
+        # sidebar -- the old 420px width was sized for a pure control panel
+        # with no chat view. Frameless windows don't get free edge-resize
+        # handling from Qt, so this is a fixed size rather than a minimum;
+        # true drag-to-resize is a follow-up, not part of this pass.
+        self.setFixedSize(980, 680)
         self.setStyleSheet(QSS)
 
         self._build_ui()
         self._build_tray()
-        self.adjustSize()
 
         screen = QApplication.primaryScreen().availableGeometry()
         self.move(
@@ -1249,7 +1264,10 @@ class CursivLauncher(QMainWindow):
         # Cleanup hook — fires on every quit path (TitleBar X, tray Quit, etc.)
         QApplication.instance().aboutToQuit.connect(self._cleanup)
 
-        # Auto-open Guardian + Tracker terminals after first paint
+        # Auto-open Guardian + Training Watcher terminals after first paint.
+        # The Eye of Horus terminal used to auto-open here too -- it's now
+        # the embedded chat panel built into this window instead, so there's
+        # nothing left to spawn for it.
         QTimer.singleShot(200, self._launch_terminals)
 
         # First run only: show Getting Started automatically once the
@@ -1296,11 +1314,7 @@ class CursivLauncher(QMainWindow):
             f'"{python}" -m cursiv_v215.training.watcher',
             cwd=str(_DATA_ROOT),
         ))
-        # Eye of Horus terminal — most new users won't know the "Open the
-        # Eye" button exists, let alone the `cursiv` CLI command, so it
-        # needs to just be there on startup like the other two.
-        QTimer.singleShot(1200, self._launch_terminal_chat)
-        self._set_status("Guardian + Training Watcher + Eye of Horus running")
+        self._set_status("Guardian + Training Watcher running")
 
     # ── App health watchdog ───────────────────────────────────────────────
 
@@ -1325,9 +1339,40 @@ class CursivLauncher(QMainWindow):
         vlay.setSpacing(0)
 
         vlay.addWidget(TitleBar(self, self._username))
-        vlay.addSpacing(20)
-        vlay.addLayout(self._build_center())
-        vlay.addSpacing(20)
+
+        body = QHBoxLayout()
+        body.setContentsMargins(0, 0, 0, 0)
+        body.setSpacing(0)
+
+        # ── Sidebar: the original control-panel content, now a scrollable
+        # rail alongside the chat view instead of the whole window.
+        sidebar_inner = QWidget()
+        side_lay = QVBoxLayout(sidebar_inner)
+        side_lay.setContentsMargins(24, 20, 24, 20)
+        side_lay.setSpacing(16)
+        side_lay.addLayout(self._build_center())
+        side_lay.addStretch(1)
+
+        sidebar_scroll = QScrollArea()
+        sidebar_scroll.setWidget(sidebar_inner)
+        sidebar_scroll.setWidgetResizable(True)
+        sidebar_scroll.setFixedWidth(340)
+        sidebar_scroll.setStyleSheet(
+            f"QScrollArea {{ background: {BG}; border: none; border-right: 1px solid {BORDER}; }}"
+            f"QScrollArea > QWidget > QWidget {{ background: {BG}; }}"
+        )
+        body.addWidget(sidebar_scroll)
+
+        # ── Chat panel: the primary view, replacing the old terminal
+        chat_wrap = QWidget()
+        chat_wrap.setStyleSheet(f"background: {BG};")
+        chat_lay = QVBoxLayout(chat_wrap)
+        chat_lay.setContentsMargins(16, 16, 16, 16)
+        self._chat_panel = ChatPanel()
+        chat_lay.addWidget(self._chat_panel)
+        body.addWidget(chat_wrap, 1)
+
+        vlay.addLayout(body, 1)
         vlay.addWidget(self._build_footer())
 
     def _build_center(self) -> QVBoxLayout:
@@ -1368,26 +1413,12 @@ class CursivLauncher(QMainWindow):
         self._getting_started_btn.clicked.connect(self._show_getting_started)
         col.addWidget(self._getting_started_btn)
 
-        self._eye_btn = QPushButton("𓂀  Open the Eye (Terminal)")
-        self._eye_btn.setFixedHeight(44)
-        self._eye_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        # Mixed hieroglyph + Latin text in one widget -- see
-        # _ensure_hieroglyph_font() for why this font-family fallback list
-        # (not just a plain color/size stylesheet) is required for the eye
-        # glyph to render as the actual symbol instead of a tofu box.
-        self._eye_btn.setStyleSheet(f"""
-            QPushButton {{
-                background: transparent; color: {GOLD};
-                font-size: 13px; font-weight: 600;
-                font-family: "Segoe UI", "Segoe UI Historic";
-                border: 1px solid {GOLD}; border-radius: 8px;
-            }}
-            QPushButton:hover   {{ background: rgba(201,162,39,0.12); }}
-            QPushButton:pressed {{ background: rgba(201,162,39,0.22); }}
-        """)
-        self._eye_btn.clicked.connect(self._launch_terminal_chat)
-        col.addWidget(self._eye_btn)
-
+        # The Eye of Horus used to be a separate spawned terminal reached
+        # via a button here -- it's now the embedded chat panel to the
+        # right, part of this same window, so there's no launch button
+        # needed. The "cursiv" CLI command still works from an external
+        # terminal for anyone who prefers it (advanced/scriptable use),
+        # it's just no longer the primary or auto-launched path.
         hint_box = QWidget()
         hint_box.setStyleSheet(
             f"background: {BG2}; border: 1px solid {BORDER}; border-radius: 6px;"
@@ -1411,7 +1442,7 @@ class CursivLauncher(QMainWindow):
         code.setAlignment(Qt.AlignmentFlag.AlignCenter)
         hint_lay.addWidget(code)
 
-        sub = QLabel("Type that in any terminal window, or just use the button above")
+        sub = QLabel("Type that in any terminal window — or just chat on the right")
         sub.setStyleSheet(f"color: {SILV2}; font-size: 11px;")
         sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
         sub.setWordWrap(True)
@@ -1612,23 +1643,6 @@ class CursivLauncher(QMainWindow):
         row.addWidget(ver)
         return footer
 
-    # ── Terminal chat (Eye of Horus) ────────────────────────────────────────
-
-    def _launch_terminal_chat(self):
-        # main.py isn't shipped as a loose file in the frozen build at all
-        # (it's compiled into Cursiv.exe as the entry point) -- "python
-        # main.py --terminal" always failed here, whether auto-launched or
-        # clicked. Cursiv.exe itself already recognizes -t/--terminal and
-        # branches into terminal mode before any GUI/single-instance logic
-        # runs, so re-invoking the exe with that flag is the real fix.
-        if getattr(sys, "frozen", False):
-            cmd = f'"{sys.executable}" -t'
-        else:
-            python = _find_python()
-            cmd = f'"{python}" launcher/main.py --terminal'
-        _open_terminal_window("Cursiv — Eye of Horus", cmd)
-        self._set_status("Eye of Horus opened in a new terminal")
-
     # ── Getting Started ──────────────────────────────────────────────────
 
     def _show_getting_started(self):
@@ -1806,6 +1820,10 @@ class CursivLauncher(QMainWindow):
             )
         except Exception as exc:
             self._set_status(f"Could not launch download: {exc}")
+        # The new console window steals focus on open -- bring Cursiv's own
+        # window back afterward so starting a download doesn't feel like it
+        # kicked the user out of the app.
+        QTimer.singleShot(400, lambda: (self.raise_(), self.activateWindow()))
         if on_done is not None:
             QTimer.singleShot(500, on_done)
 
@@ -1882,6 +1900,11 @@ class CursivLauncher(QMainWindow):
             self._codex_dl_btn.setEnabled(True)
             self._codex_dl_btn.setText("Winkler-Codex Download")
             return
+
+        # The new console window steals focus on open -- bring Cursiv's own
+        # window back afterward so starting a download doesn't feel like it
+        # kicked the user out of the app.
+        QTimer.singleShot(400, lambda: (self.raise_(), self.activateWindow()))
 
         # Re-enable after a short delay so user can re-run if needed
         QTimer.singleShot(8000, lambda: (
