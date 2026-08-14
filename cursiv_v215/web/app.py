@@ -183,13 +183,17 @@ async def _run_sentinel(request: Request) -> JSONResponse | None:
         if _SENTINEL_ALERT_WEBHOOK:
             try:
                 import urllib.request as _ur, json as _j
+
+                def _send_alert() -> None:
+                    _ur.urlopen(_ur.Request(
+                        _SENTINEL_ALERT_WEBHOOK, data=_data,
+                        headers={"Content-Type": "application/json"}, method="POST"
+                    ), timeout=4)
+
                 _data = _j.dumps({
                     "text": f"⬡ PROBE ESCALATED — {ip} | {hits} hits | {profile['unique_paths']} unique paths"
                 }).encode()
-                _ur.urlopen(_ur.Request(
-                    _SENTINEL_ALERT_WEBHOOK, data=_data,
-                    headers={"Content-Type": "application/json"}, method="POST"
-                ), timeout=4)
+                await asyncio.wait_for(asyncio.to_thread(_send_alert), timeout=5.0)
             except Exception:
                 pass
 
@@ -441,18 +445,29 @@ async def _demo_llm(message: str) -> str:
     import json as _json, urllib.request as _ur
 
     # ── Anthropic API ────────────────────────────────────────────────────
+    # The SDK client is synchronous (blocking network I/O) but this function
+    # runs on the single Uvicorn event loop -- calling it directly here would
+    # freeze every other request on the server (including /health) for the
+    # entire duration of the call, since nothing else can run until a
+    # blocking call returns control to the loop. Running it in a worker
+    # thread via asyncio.to_thread keeps the loop free, and wait_for gives
+    # a hard ceiling instead of trusting the SDK's own (multi-minute) default.
     _ak = os.environ.get("ANTHROPIC_API_KEY", "")
     if _ak:
         try:
             import anthropic as _ant
-            client = _ant.Anthropic(api_key=_ak)
-            msg = client.messages.create(
-                model="claude-haiku-4-5-20251001",
-                max_tokens=350,
-                system=_DEMO_SYSTEM,
-                messages=[{"role": "user", "content": message}],
-            )
-            return msg.content[0].text.strip()
+
+            def _call_anthropic() -> str:
+                client = _ant.Anthropic(api_key=_ak, timeout=10.0)
+                msg = client.messages.create(
+                    model="claude-haiku-4-5-20251001",
+                    max_tokens=350,
+                    system=_DEMO_SYSTEM,
+                    messages=[{"role": "user", "content": message}],
+                )
+                return msg.content[0].text.strip()
+
+            return await asyncio.wait_for(asyncio.to_thread(_call_anthropic), timeout=12.0)
         except Exception as _e:
             _log.warning("Anthropic demo call failed: %s: %s", type(_e).__name__, _e)
 
