@@ -21,64 +21,25 @@
   CURSIV-CRUCIBLE-STAMP END
 -->
 
-<!--
--->
-
-<!--
--->
-
-<!--
--->
-
-<!--
--->
-
-<!--
--->
-
-<!--
--->
-
-<!--
--->
-
-<!--
--->
-
-<!--
--->
-
-<!--
--->
-
-<!--
--->
-
-<!--
--->
-
-<!--
--->
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cursiv • The Eye of Horus</title>
-<meta name="description" content="The sacred public temple. The living Eye — full chat demo, shared Board for messages, sealed family letters, and the Vision. Free. Badass. Human sovereignty.">
-<meta property="og:title" content="Cursiv — The Eye of Horus">
-<meta property="og:description" content="Public website for the AI temple. Talk to the Eye. Post to the Board. Unlock family Babel letters with secret codes. The Architect speaks through the stone.">
+<title>Cursiv — Your Offline Personal AI</title>
+<meta name="description" content="A private AI that runs fully offline, learns from your own writing over time, and can be handed down as a living archive of what you know. Free, open source, no cloud required.">
+<meta property="og:title" content="Cursiv — Your Offline Personal AI">
+<meta property="og:description" content="Runs on your machine, not someone else's server. Teach it who you are, then pass it down. Try the live demo or download the free desktop app.">
 <meta property="og:image" content="https://app.winklers-llc.com/assets/og-image.png">
 <meta property="og:url" content="https://app.winklers-llc.com">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Cursiv — The Eye of Horus">
-<meta name="twitter:description" content="The public face of the temple. Soft chat demo, Board for sharing messages, family letters via secret codes. No login for the demo.">
+<meta name="twitter:title" content="Cursiv — Your Offline Personal AI">
+<meta name="twitter:description" content="A private AI that runs fully offline and learns from your own writing over time. Try it free, no account required.">
 <meta name="twitter:image" content="https://app.winklers-llc.com/assets/og-image.png">
 <link rel="icon" type="image/png" href="/assets/cursiv_256.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 /* ══════════════════════════════════════════════════════════
-   CURSIV — Release Page  v3.14-U14
+   CURSIV — Release Page  v3.14-U21
    Palette: #08090C bg · #C9A227 gold · #2255DD blue
    ══════════════════════════════════════════════════════════ */
 
@@ -172,23 +133,23 @@ nav ul a:hover { color: var(--gold); }
    HERO
    ══════════════════════════════════════════════════════════ */
 .hero {
-  min-height: 100vh;
+  min-height: 92vh;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   text-align: center;
-  padding: 120px 40px 80px;
+  padding: 120px 40px 60px;
 }
 
 .hero-hex {
-  font-size: 80px;
+  font-size: 44px;
   color: var(--gold);
-  filter: drop-shadow(0 0 28px rgba(201,162,39,.45));
-  margin-bottom: 24px;
+  filter: drop-shadow(0 0 20px rgba(201,162,39,.4));
+  margin-bottom: 18px;
   animation: hex-breathe 5s ease-in-out infinite;
 }
 @keyframes hex-breathe {
-  0%,100% { filter: drop-shadow(0 0 20px rgba(201,162,39,.35)); }
-  50%      { filter: drop-shadow(0 0 44px rgba(201,162,39,.65)); }
+  0%,100% { filter: drop-shadow(0 0 14px rgba(201,162,39,.3)); }
+  50%      { filter: drop-shadow(0 0 30px rgba(201,162,39,.55)); }
 }
 
 .hero-eye {
@@ -217,25 +178,25 @@ h1 {
 
 .hero-sub {
   font-family: var(--serif);
-  font-size: clamp(17px, 2.5vw, 23px);
+  font-size: clamp(19px, 2.7vw, 26px);
   font-style: italic;
-  color: var(--silver2);
-  max-width: 580px;
-  margin: 0 auto 10px;
+  color: var(--silver);
+  max-width: 640px;
+  margin: 0 auto 14px;
 }
 
 .hero-tags {
   font-family: var(--mono);
   font-size: 11px; letter-spacing: 1.5px;
-  color: var(--silver2); opacity: .45;
-  margin-bottom: 44px;
+  color: var(--silver2); opacity: .55;
+  margin-bottom: 36px;
 }
 
 /* chips */
 .chip-row {
   display: flex; gap: 10px; flex-wrap: wrap;
   justify-content: center;
-  margin-bottom: 40px;
+  margin-bottom: 32px;
 }
 .chip {
   font-family: var(--mono); font-size: 10px;
@@ -306,8 +267,9 @@ h1 {
 
 .hero-note {
   font-family: var(--mono); font-size: 11px;
-  color: var(--silver2); opacity: .45; letter-spacing: .3px;
+  color: var(--silver2); opacity: .55; letter-spacing: .3px;
 }
+.hero-note a { color: var(--gold); text-decoration: none; }
 
 /* ══════════════════════════════════════════════════════════
    STATS BAR
@@ -323,7 +285,7 @@ h1 {
 }
 .stat:last-child { border-right: none; }
 .stat-n {
-  font-family: var(--mono); font-size: 48px;
+  font-family: var(--mono); font-size: 40px;
   font-weight: 700; color: var(--gold);
   display: block; line-height: 1; margin-bottom: 8px;
   text-shadow: 0 0 24px var(--gold-glow);
@@ -604,36 +566,6 @@ footer {
 }
 
 /* ══════════════════════════════════════════════════════════
-   BABEL LETTERS HELP
-   ══════════════════════════════════════════════════════════ */
-.babel-box {
-  max-width: 780px; margin: 0 auto;
-  border: 1px solid var(--border2);
-  border-left: 3px solid var(--gold);
-  background: rgba(201,162,39,0.04);
-  padding: 28px 32px;
-}
-.babel-box h3 {
-  font-family: var(--serif); font-size: 20px;
-  color: var(--silver); font-weight: 400; margin-bottom: 12px;
-}
-.babel-box p { font-size: 13px; color: var(--silver2); line-height: 1.75; margin-bottom: 10px; }
-.babel-box code {
-  font-family: var(--mono); font-size: 12px;
-  background: rgba(255,255,255,.05); color: var(--gold);
-  padding: 2px 6px; border-radius: 2px; display: inline-block;
-}
-.babel-step {
-  display: flex; gap: 16px; margin: 14px 0;
-  align-items: flex-start;
-}
-.babel-step-n {
-  font-family: var(--mono); font-size: 22px; font-weight: 700;
-  color: var(--border2); line-height: 1; flex-shrink: 0; width: 30px;
-}
-.babel-step-b { font-size: 13px; color: var(--silver2); line-height: 1.7; }
-
-/* ══════════════════════════════════════════════════════════
    SCROLL REVEAL
    ══════════════════════════════════════════════════════════ */
 .reveal {
@@ -725,111 +657,6 @@ footer {
   .tl-date { text-align: left; padding-right: 0; }
   .tl-dot { left: -5px; }
 }
-
-/* ══════════════════════════════════════════════════════════
-   SOUL / ORIGIN SECTION
-   ══════════════════════════════════════════════════════════ */
-.soul-section {
-  background: #000;
-  padding: 110px 40px 130px;
-  position: relative;
-}
-.soul-section::before {
-  content: '';
-  position: absolute; top: 0; inset-inline: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
-}
-.soul-inner {
-  max-width: 700px;
-  margin: 0 auto;
-}
-.soul-eyebrow {
-  font-family: var(--mono);
-  font-size: 10px; letter-spacing: 4px;
-  color: var(--gold); opacity: .55;
-  text-transform: uppercase;
-  text-align: center;
-  margin-bottom: 64px;
-}
-.soul-hex {
-  font-size: 48px; color: var(--gold);
-  text-align: center; display: block;
-  filter: drop-shadow(0 0 18px rgba(201,162,39,.4));
-  margin-bottom: 20px;
-}
-.soul-p {
-  font-family: var(--serif);
-  font-size: clamp(17px, 1.9vw, 20px);
-  line-height: 1.95; color: var(--silver);
-  margin-bottom: 28px;
-}
-.soul-p em { color: var(--silver2); font-style: italic; }
-.soul-p strong { color: var(--gold); font-style: normal; font-weight: 600; }
-.soul-rule {
-  border: none; border-top: 1px solid var(--border2);
-  margin: 52px 0;
-}
-.soul-heading {
-  font-family: var(--serif);
-  font-size: clamp(19px, 2.2vw, 24px);
-  color: var(--silver); font-weight: 400;
-  margin-bottom: 22px; letter-spacing: -.2px;
-}
-.soul-sig {
-  font-family: var(--serif);
-  font-size: 18px; font-style: italic;
-  color: var(--gold); text-align: right;
-  margin-top: 52px;
-  opacity: .85;
-}
-.book-card {
-  display: flex; gap: 32px; align-items: flex-start;
-  margin-top: 56px;
-  padding: 32px;
-  border: 1px solid var(--border2);
-  background: rgba(255,255,255,.02);
-}
-.book-card:hover { border-color: var(--gold-dim); }
-.book-cover {
-  width: 120px; flex-shrink: 0;
-  box-shadow: 0 8px 32px rgba(0,0,0,.6);
-  display: block;
-}
-.book-cover img { width: 100%; display: block; }
-.book-info { flex: 1; }
-.book-label {
-  font-family: var(--mono); font-size: 10px;
-  letter-spacing: 3px; color: var(--gold); opacity: .6;
-  text-transform: uppercase; margin-bottom: 10px;
-}
-.book-title {
-  font-family: var(--serif); font-size: 22px;
-  color: var(--silver); margin-bottom: 8px; line-height: 1.3;
-}
-.book-author {
-  font-family: var(--serif); font-style: italic;
-  font-size: 14px; color: var(--silver2); margin-bottom: 16px;
-}
-.book-desc {
-  font-size: 13px; color: var(--silver2);
-  line-height: 1.65; margin-bottom: 20px;
-}
-.book-btn {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 9px 20px;
-  background: transparent;
-  border: 1px solid var(--gold-dim);
-  color: var(--gold);
-  font-family: var(--mono); font-size: 11px; letter-spacing: 1px;
-  text-decoration: none;
-  transition: background .2s, border-color .2s;
-}
-.book-btn:hover { background: var(--gold-glow); border-color: var(--gold); }
-@media (max-width: 560px) {
-  .book-card { flex-direction: column; }
-  .book-cover { width: 100px; }
-}
 </style>
 </head>
 <body>
@@ -838,122 +665,173 @@ footer {
 
 <!-- ══ NAV ══════════════════════════════════════════════════════════ -->
 <nav class="layer">
-  <a href="#" class="nav-logo"><span class="hex">𓂀</span> THE EYE</a>
+  <a href="#" class="nav-logo"><span class="hex">⬡</span> CURSIV</a>
   <ul>
+    <li><a href="#what">What It Does</a></li>
+    <li><a href="#demo">Try It</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#letters">Family Letters</a></li>
     <li><a href="/start" style="color: var(--gold);">Start Here</a></li>
-    <li><a href="#the-eye">The Eye</a></li>
-    <li><a href="#the-board">The Board</a></li>
-    <li><a href="#letters">Letters</a></li>
-    <li><a href="#how-to">How To</a></li>
-    <li><a href="#vision">Vision</a></li>
-    <li><a href="#desktop">Desktop</a></li>
     <li><a href="https://github.com/winklersllc2026-bit/Cursiv" target="_blank">GitHub ↗</a></li>
   </ul>
-  <span class="nav-ver">Public Temple • U14 Era</span>
+  <span class="nav-ver">Free &amp; Open Source</span>
 </nav>
 
 <!-- ══ HERO ══════════════════════════════════════════════════════════ -->
-<section class="hero layer" style="text-align:center; padding: 80px 20px 60px;">
-  <span style="font-size: 64px; line-height:1;">𓂀</span>
-  <p style="font-family: var(--mono); font-size: 11px; letter-spacing: 4px; color: var(--gold); margin: 12px 0 8px;">THE EYE OF HORUS • PUBLIC WEBSITE</p>
-  <h1 style="font-family: var(--serif); font-size: clamp(42px, 7vw, 72px); color: var(--silver); margin-bottom: 12px;">Cursiv</h1>
-  <p style="max-width: 620px; margin: 0 auto 16px; font-size: 19px; color: var(--silver2); font-family: var(--serif); font-style: italic;">
-    The sacred public temple. The living Eye — soft chat demo, shared Board for your messages, sealed family letters, and the Vision.
-  </p>
-  <p style="max-width: 580px; margin: 0 auto 28px; color: var(--silver2); font-size: 15px;">
-    No login required for the demo. Talk to the system. Post messages to the main Board for others to see. Sealed letters for family, unlocked with secret codes inside the Eye.
-  </p>
+<section class="hero layer">
+  <span class="hero-hex reveal">⬡</span>
+  <p class="hero-eye reveal">OFFLINE-FIRST PERSONAL AI</p>
+  <h1 class="reveal">Cursiv</h1>
+  <p class="hero-sub reveal">Your own AI, running on your machine. Teach it who you are — then hand it down.</p>
+  <p class="hero-tags reveal">WORKS WITHOUT INTERNET &nbsp;·&nbsp; YOUR DATA STAYS ON YOUR DEVICE &nbsp;·&nbsp; FREE, MIT LICENSED</p>
 
-  <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-    <a href="/start" style="background: #c9a741; color: #08090C; padding: 12px 28px; text-decoration: none; font-weight: 700; border-radius: 3px;">New Here? Start Here →</a>
-    <a href="#the-eye" style="background: transparent; color: var(--gold); border: 1px solid var(--gold); padding: 12px 24px; text-decoration: none; font-weight: 600;">Try the Soft Demo</a>
-    <a href="#the-board" style="color: var(--silver2); padding: 12px 18px; text-decoration: none;">See the Board</a>
+  <div class="chip-row reveal">
+    <span class="chip chip-v">v3.14</span>
+    <span class="chip chip-new">Windows</span>
+    <span class="chip chip-os">No account required</span>
   </div>
-  <p style="margin-top: 14px; font-size: 12px;">
-    <a href="https://github.com/winklersllc2026-bit/Cursiv/releases/latest/download/Cursiv-Setup-latest.exe" style="color: var(--silver2);">Or skip ahead and download the desktop app ↗</a>
-  </p>
 
-  <p style="margin-top: 22px; font-size: 12px; color: #6b6f7a;">The Architect speaks through the stone. Human sovereignty as the first and final law.</p>
+  <div class="dl-row reveal">
+    <span class="dl-pulse">
+      <a class="btn-dl" href="https://github.com/winklersllc2026-bit/Cursiv/releases/latest/download/Cursiv-Setup-latest.exe">
+        <span class="btn-dl-icon">⬇</span>
+        <span class="btn-dl-txt">
+          <span class="btn-dl-main">Download Cursiv</span>
+          <span class="btn-dl-sub">Free · Windows · one-click installer</span>
+        </span>
+      </a>
+    </span>
+    <a class="btn-ghost" href="#demo">Try It In Your Browser</a>
+  </div>
+  <p class="hero-note reveal">New here? <a href="/start">Start Here</a> walks through everything in plain language, no jargon.</p>
 </section>
 
 <!-- ══ STATS ══════════════════════════════════════════════════════════ -->
-<!-- ══ THE EYE — SOFT DEMO ══════════════════════════════════════════════ -->
-<section id="the-eye" class="section layer" style="max-width: 980px; margin: 0 auto 70px; padding: 0 20px;">
+<div class="stats layer">
+  <div class="stat">
+    <span class="stat-n">0</span>
+    <span class="stat-l">Telemetry Sent</span>
+  </div>
+  <div class="stat">
+    <span class="stat-n">100%</span>
+    <span class="stat-l">Works Offline</span>
+  </div>
+  <div class="stat">
+    <span class="stat-n">$0</span>
+    <span class="stat-l">Free &amp; MIT Licensed</span>
+  </div>
+  <div class="stat">
+    <span class="stat-n">∞</span>
+    <span class="stat-l">Yours To Keep</span>
+  </div>
+</div>
+
+<!-- ══ WHAT IT DOES ═════════════════════════════════════════════════ -->
+<section id="what" class="section layer">
+  <p class="section-label reveal">The Short Version</p>
+  <h2 class="section-title reveal">What Cursiv Actually Does</h2>
+
+  <div class="grid-2 reveal-group">
+    <div class="feat-card">
+      <span class="feat-icon">🔌</span>
+      <h3 class="feat-name">Runs On Your Machine</h3>
+      <p class="feat-desc">Cursiv talks to a local AI model (Ollama) that lives on your computer. No internet needed after the first install, no account required to use it, and nothing you type leaves your device unless you choose to add a cloud API key on top.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🧠</span>
+      <h3 class="feat-name">Remembers What You Teach It</h3>
+      <p class="feat-desc">Anchor a conversation and it's saved to your own private, searchable archive that later answers can draw on. Over time it builds a real record of what you've thought about and worked through — not somebody else's training data.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">💬</span>
+      <h3 class="feat-name">Just Talk To It</h3>
+      <p class="feat-desc">Plain chat, not a command line. Ask a question, pull in a live web search when you need something current, dictate by voice, or generate an image — all from one window.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">✉️</span>
+      <h3 class="feat-name">Something To Pass Down</h3>
+      <p class="feat-desc">Write private, sealed letters for the people who matter to you — opened only with the code you set for them. A family archive that outlasts any single conversation.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ LIVE DEMO ═════════════════════════════════════════════════════ -->
+<section id="demo" class="section layer" style="max-width: 980px; margin: 0 auto 70px; padding: 0 20px;">
   <div style="text-align:center; margin-bottom: 18px;">
-    <div style="font-family: var(--mono); font-size: 10px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; opacity: .75;">THE LIVING HEART</div>
-    <h2 style="font-family: var(--serif); font-size: clamp(28px, 4.2vw, 44px); color: var(--silver); margin: 6px 0 8px;">𓂀 The Eye of Horus — Soft Demo</h2>
+    <div style="font-family: var(--mono); font-size: 10px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; opacity: .75;">TRY IT NOW</div>
+    <h2 style="font-family: var(--serif); font-size: clamp(28px, 4.2vw, 44px); color: var(--silver); margin: 6px 0 8px;">Talk To Cursiv Right Here</h2>
     <p style="max-width: 620px; margin: 0 auto; color: var(--silver2); font-size: 15px; line-height: 1.55;">
-      Talk to the system here on the website. This is the soft public demo — gentle, no full terminal, just conversation and the ability to share what matters to the Board below so others can see.
+      A limited public preview, running right in this page — no install, no login. Ask it something.
       <br><br>
-      Sealed family letters are ready and waiting — each one opens only to the exact secret code meant for it. Use the full Eye on the desktop app to unlock yours.
+      The desktop app runs entirely offline on your own machine, with no rate limits and the full feature set below.
     </p>
   </div>
 
   <!-- Soft Demo Chat -->
   <div style="background: #060709; border: 1px solid var(--border2); max-width: 720px; margin: 0 auto;">
     <div style="padding: 8px 14px; background: #0f1515; border-bottom: 1px solid var(--border); font-size: 12px; color: #9a9480; display: flex; align-items: center;">
-      <span style="color: #c9a741;">𓂀 Soft Eye Demo</span>
+      <span style="color: #c9a741;">Cursiv — Web Preview</span>
       <span style="margin-left: auto; font-size: 10px; opacity: .6;">Public • No login • Live demo, rate-limited</span>
     </div>
     <div id="soft-demo-msgs" style="height: 260px; overflow-y: auto; padding: 16px; background: #080c0c; font-size: 14px; line-height: 1.5; display: flex; flex-direction: column; gap: 10px;">
       <div style="align-self: flex-start; max-width: 80%; background: #11151f; color: #d8d0c0; padding: 9px 13px; border-radius: 12px; border-bottom-left-radius: 3px; border-left: 3px solid #c9a741;">
-        The Eye is here. Ask anything — a question, a story, a synthesis. When something feels worth sharing with the temple, use the Board below to post it for others.
+        Ask me anything — a question, something you're working through, or just to see how this works. Want to share something publicly? Use the Board below.
       </div>
     </div>
     <div style="padding: 10px 12px; border-top: 1px solid #1e3030; background: #0a0c12; display: flex; gap: 8px;">
-      <input id="soft-demo-in" type="text" placeholder="Speak to the Eye..." style="flex: 1; background: #08090C; border: 1px solid #1e3030; color: #d8d0c0; font-family: inherit; font-size: 14px; padding: 10px; border-radius: 4px;">
+      <input id="soft-demo-in" type="text" placeholder="Type a message..." style="flex: 1; background: #08090C; border: 1px solid #1e3030; color: #d8d0c0; font-family: inherit; font-size: 14px; padding: 10px; border-radius: 4px;">
       <button id="soft-demo-send" style="background: #c9a741; color: #08090C; border: none; padding: 0 18px; font-size: 13px; font-weight: 700; cursor: pointer; border-radius: 3px;">Send</button>
     </div>
   </div>
 
   <p style="text-align: center; margin-top: 12px; font-size: 11px; color: #6b6f7a;">
-    This is the soft website demo. For the full living terminal with real streaming, Babel codes, and blast, download the desktop above.
+    This is a lightweight web preview. Download the desktop app for the full offline experience — real streaming, voice, file tools, and every feature below.
   </p>
 </section>
 
-<!-- ══ THE BOARD — MAIN MESSAGE BOARD FOR OTHERS TO SEE ═════════════════════ -->
+<!-- ══ THE BOARD — COMMUNITY BOARD ═══════════════════════════════════ -->
 <section id="the-board" class="section layer" style="max-width: 1120px; margin: 0 auto 70px; padding: 0 20px;">
   <div style="margin-bottom: 22px; text-align: center;">
-    <div style="font-family: var(--mono); font-size: 10px; letter-spacing: 3.5px; color: var(--gold); text-transform: uppercase; opacity: .75;">THE LIVING RECORD</div>
+    <div style="font-family: var(--mono); font-size: 10px; letter-spacing: 3.5px; color: var(--gold); text-transform: uppercase; opacity: .75;">COMMUNITY BOARD</div>
     <h2 style="font-family: var(--serif); font-size: 36px; color: var(--silver); margin: 6px 0 6px;">The Board</h2>
     <p style="color: var(--silver2); max-width: 620px; margin: 0 auto; font-size: 15px;">
-      This is where the messages live. Post from the soft demo above, or use the composer. Everything you share here is visible to the temple — the public record of what the Eye and the people have offered.
+      A shared space, visible to anyone visiting this site. Post from the demo above, or write directly below.
     </p>
   </div>
 
   <div style="display: grid; grid-template-columns: 1fr 380px; gap: 18px;">
     <!-- Posts feed -->
     <div style="background: #0a0c12; border: 1px solid var(--border2); padding: 22px;">
-      <div style="font-family: var(--mono); font-size: 10px; color: var(--gold); letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase;">Recent Transmissions from the Temple</div>
+      <div style="font-family: var(--mono); font-size: 10px; color: var(--gold); letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase;">Recent Posts</div>
       <div id="board-posts" style="min-height: 280px; font-size: 14.5px; line-height: 1.75; color: var(--silver2);"></div>
     </div>
 
     <!-- Composer to post to the main message board -->
     <div style="background: #0a0c12; border: 1px solid var(--border2); padding: 22px; display: flex; flex-direction: column;">
       <div style="font-family: var(--mono); font-size: 10px; color: var(--gold); letter-spacing: 2px; margin-bottom: 10px; text-transform: uppercase;">Post to the Board</div>
-      <textarea id="board-text" placeholder="Your message, synthesis, or offering to the others in the temple..." style="flex:1; min-height: 160px; background:#08090C; border:1px solid var(--border); color:var(--silver); font-family:inherit; font-size:14px; padding:14px; resize:vertical; outline:none;"></textarea>
-      <button id="board-blast-btn" style="margin-top:12px; padding:13px; background:#c9a741; color:#08090C; border:none; font-size:13px; letter-spacing:1.5px; text-transform:uppercase; font-weight:600; cursor:pointer;">BLAST TO THE BOARD</button>
+      <textarea id="board-text" placeholder="Write a message for the Board..." style="flex:1; min-height: 160px; background:#08090C; border:1px solid var(--border); color:var(--silver); font-family:inherit; font-size:14px; padding:14px; resize:vertical; outline:none;"></textarea>
+      <button id="board-blast-btn" style="margin-top:12px; padding:13px; background:#c9a741; color:#08090C; border:none; font-size:13px; letter-spacing:1.5px; text-transform:uppercase; font-weight:600; cursor:pointer;">POST TO THE BOARD</button>
       <div id="board-status" style="margin-top:8px; font-size:11px; color:#6b6f7a; min-height:16px;"></div>
     </div>
   </div>
 </section>
 
-<!-- ══ FAMILY LETTERS & VISION ═════════════════════════════════════════ -->
-<section class="section layer" style="max-width: 980px; margin: 0 auto 70px; padding: 0 20px; text-align: center;">
+<!-- ══ FAMILY LETTERS ═══════════════════════════════════════════════ -->
+<section class="section layer" id="letters" style="max-width: 980px; margin: 0 auto 70px; padding: 0 20px; text-align: center;">
   <div style="margin-bottom: 30px;">
-    <div style="font-family: var(--mono); font-size: 10px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; opacity: .75;">FOR THE FAMILY</div>
-    <h2 style="font-family: var(--serif); font-size: 32px; color: var(--silver); margin: 6px 0;">Sealed Letters &amp; the Vision</h2>
+    <div style="font-family: var(--mono); font-size: 10px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; opacity: .75;">PRIVATE &amp; SEALED</div>
+    <h2 style="font-family: var(--serif); font-size: 32px; color: var(--silver); margin: 6px 0;">Family Letters</h2>
     <p style="max-width: 620px; margin: 0 auto; color: var(--silver2);">
-      Letters for family are sealed deep in the system — each one opens only to the exact secret code meant for it. The same idea holds for anyone who matters to you: friends, loved ones, family, distant relatives. A private message, sealed with real care, opened only by the person it was written for.
+      Sealed messages for people who matter to you — a spouse, kids, close friends, extended family. Each letter opens only with the exact code set for it.
       <br><br>
       <span style="font-size: 13px; color: #8a8f98;">This is a vessel for care, not a weapon — sealed messages are never a place for threats, harassment, or anything meant to harm.</span>
       <br><br>
-      Use the exact secret codes in the full Eye to unlock them. The Vision shows the phases of the work.
+      Unlock letters through the full desktop app, using the code made for you.
     </p>
   </div>
   <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-    <a href="/letters" style="background: transparent; color: #c9a741; border: 1px solid #c9a741; padding: 10px 22px; text-decoration: none; font-size: 13px;">Babel Letters Vault</a>
-    <a href="/vision" style="background: transparent; color: #a8b0b8; border: 1px solid #3a4a4a; padding: 10px 22px; text-decoration: none; font-size: 13px;">The Vision (Eye of Horus)</a>
+    <a href="/letters" style="background: transparent; color: #c9a741; border: 1px solid #c9a741; padding: 10px 22px; text-decoration: none; font-size: 13px;">Letters Vault</a>
+    <a href="/vision" style="background: transparent; color: #a8b0b8; border: 1px solid #3a4a4a; padding: 10px 22px; text-decoration: none; font-size: 13px;">Vision &amp; Roadmap</a>
     <a href="https://github.com/winklersllc2026-bit/Cursiv/releases/latest/download/Cursiv-Setup-latest.exe" style="background: #c9a741; color: #08090C; padding: 10px 22px; text-decoration: none; font-weight: 600; font-size: 13px;">Download the Full Desktop</a>
   </div>
   <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 14px;">
@@ -997,74 +875,101 @@ footer {
     </div>
 
     <div style="background: #0a0c12; border: 1px solid var(--border2); padding: 20px 24px;">
-      <div style="font-family: var(--mono); font-size: 10px; color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; text-transform: uppercase;">4 · Blast a message to the Board</div>
+      <div style="font-family: var(--mono); font-size: 10px; color: var(--gold); letter-spacing: 2px; margin-bottom: 8px; text-transform: uppercase;">4 · Post a message to the Board</div>
       <p style="color: var(--silver2); font-size: 14px; line-height: 1.7;">
-        Try the <a href="#the-eye" style="color:#c9a741;">soft demo</a> above, or go straight to <a href="#the-board" style="color:#c9a741;">the Board section</a> on this page (or the <a href="/board" style="color:#c9a741;">full Board page</a>). Write your message in the composer and hit Blast — it posts publicly for anyone visiting the site to see, up to 4 posts a day per account.
+        Try the <a href="#demo" style="color:#c9a741;">live demo</a> above, or go straight to <a href="#the-board" style="color:#c9a741;">the Board section</a> on this page (or the <a href="/board" style="color:#c9a741;">full Board page</a>). Write your message in the composer and hit Post — it's visible to anyone visiting the site, up to 4 posts a day per account.
       </p>
     </div>
   </div>
 </section>
 
-  <div class="grid-3 reveal-group">
-    <div class="card">
-      <p class="card-tag">Fleet</p>
-      <h3 class="card-title">Fleet Dashboard</h3>
-      <p class="card-body">
-        See every machine running Cursiv from one launcher window. Install on your desktop, your laptop, your workshop PC — they all check in automatically every 60 seconds.<br><br>
-        Green dot = active now. Amber = recently active. Gray = offline. Machine name, version, and last-seen at a glance.<br><br>
-        Owner-only access management. You decide who gets in. You can revoke it instantly.
-      </p>
+<!-- ══ FEATURES ══════════════════════════════════════════════════════ -->
+<section class="section layer" id="features">
+  <p class="section-label reveal">Capabilities</p>
+  <h2 class="section-title reveal">Everything Included</h2>
+
+  <div class="grid-4 reveal-group">
+    <div class="feat-card">
+      <span class="feat-icon">🧠</span>
+      <h3 class="feat-name">14-Agent Council</h3>
+      <p class="feat-desc">10 advisors deliberate in parallel via ThreadPoolExecutor. 4 synthesizers surface the response. Council memory — Jaccard similarity + 7-day exponential decay.</p>
     </div>
-    <div class="card">
-      <p class="card-tag">Substrate</p>
-      <h3 class="card-title">Cursiv Substrate Browser</h3>
-      <p class="card-body">
-        Optional secondary component — checkbox in the installer or one-click from inside the launcher. Adds a standalone desktop icon that opens the substrate layer browser directly, no main launcher required.<br><br>
-        The substrate layer is the local attractor memory system — it holds the patterns your conversations have reinforced over time. The browser gives you a direct window into it.<br><br>
-        Runs independently. Separate icon. Separate entry point.
-      </p>
+    <div class="feat-card">
+      <span class="feat-icon">🔌</span>
+      <h3 class="feat-name">Full Offline Operation</h3>
+      <p class="feat-desc">Ollama + llama3.1. Zero cloud dependency after initial download. Works airgapped. Conversation data never leaves your machine.</p>
     </div>
-    <div class="card">
-      <p class="card-tag">Launcher</p>
-      <h3 class="card-title">Launcher Rebuilt</h3>
-      <p class="card-body">
-        Auto-sizing window — no more cut-off buttons at any screen DPI or font scale.<br><br>
-        Ollama detection at startup — if Ollama isn't installed, an amber banner appears with a one-click download button. No hunting for the installer.<br><br>
-        Winkler-Codex download from the main window. CSB install strip — green after install, converts to an Open button. Substrate Browser in the tray menu.
-      </p>
+    <div class="feat-card">
+      <span class="feat-icon">🔀</span>
+      <h3 class="feat-name">Cascade Routing</h3>
+      <p class="feat-desc">xAI → OpenAI → Claude → Ollama. Falls through on failure. Inline banners show the path. Force any model: <code>hey grok</code>, <code>hey claude</code>, <code>hey ollama</code>.</p>
     </div>
-    <div class="card">
-      <p class="card-tag">Search</p>
-      <h3 class="card-title">Real-Time Web Search</h3>
-      <p class="card-body">
-        Worldwide live search built in — no API key required. DuckDuckGo fires automatically on queries about latest news, prices, events, and live facts.<br><br>
-        Results are injected into the system prompt before routing — every provider sees live data, not stale training data.<br><br>
-        Upgrade to Brave Search API (2,000 free/month) via <code>BRAVE_API_KEY</code> in <code>secrets.bat</code>. Explicit: <code>search: &lt;query&gt;</code>
-      </p>
+    <div class="feat-card">
+      <span class="feat-icon">🛡️</span>
+      <h3 class="feat-name">System Guardian</h3>
+      <p class="feat-desc">Four-layer active defense against prompt injection and jailbreak attempts. The firewall faces outward — it's not there to watch you.</p>
     </div>
-    <div class="card">
-      <p class="card-tag">Login</p>
-      <h3 class="card-title">Unified Login</h3>
-      <p class="card-body">
-        One username and password works across the launcher, the local board, and all connected instances. No separate accounts per interface.<br><br>
-        Password reset and new account setup accessible from the login screen itself — security questions, account recovery, all handled without a support email.<br><br>
-        All credentials stored locally. Never sent anywhere.
-      </p>
+    <div class="feat-card">
+      <span class="feat-icon">🔒</span>
+      <h3 class="feat-name">Local Auth</h3>
+      <p class="feat-desc">bcrypt rounds=12. HMAC constant-time comparison. Security-question recovery — 2-of-3 required, bcrypt-hashed before storage. Nothing sent anywhere.</p>
     </div>
-    <div class="card">
-      <p class="card-tag">Code</p>
-      <h3 class="card-title">Winkler-Codex</h3>
-      <p class="card-body">
-        An offline code council: two specialist models that review each other's work before you see the output. Primary: <code>qwen2.5-coder:14b</code>. Critic: <code>deepseek-coder-v2:16b</code>. Both run via Ollama — no internet, no API key.<br><br>
-        Download from the launcher window (~18 GB total). Cursiv routes coding questions through the council automatically once models are installed.
-      </p>
+    <div class="feat-card">
+      <span class="feat-icon">⚡</span>
+      <h3 class="feat-name">Streaming Responses</h3>
+      <p class="feat-desc">NDJSON streaming from Ollama. Tokens appear as they generate across all providers. Rate limiter with TPM window tracking and scan display.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🤖</span>
+      <h3 class="feat-name">Codex Agent</h3>
+      <p class="feat-desc">Offline coding specialist. Explicit invocation only: <code>codex &lt;prompt&gt;</code>. Designed to get you 70% there — and force you to understand the rest.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🔄</span>
+      <h3 class="feat-name">Update Checker</h3>
+      <p class="feat-desc">Launcher + tray menu. GitHub releases API — background thread, no data sent. Shows release notes. In-place install. Ollama untouched. Never auto-updates.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">📊</span>
+      <h3 class="feat-name">Live Status Chips</h3>
+      <p class="feat-desc">Probes actual API endpoints. GREEN/RED/GOLD per connection. File access, Obsidian, and Guardian reflect real state. Updates after every key change.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🧬</span>
+      <h3 class="feat-name">Council Memory</h3>
+      <p class="feat-desc">Jaccard similarity across past deliberations. Exponential decay (7-day half-life). System surfaces relevant prior context and builds on it.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🌿</span>
+      <h3 class="feat-name">Obsidian Sync</h3>
+      <p class="feat-desc">Every session streamed to your Obsidian vault in real time. Dataview-compatible YAML frontmatter. Auto-detects vault path. Toggle per session.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🪟</span>
+      <h3 class="feat-name">4 Interfaces</h3>
+      <p class="feat-desc">System Tray (Win32 IPC). Chat UI port 7860. Nexus Panel port 7861. Terminal Chat — full-screen CLI with file tools, Guardian scan, and cascade routing.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">⬢</span>
+      <h3 class="feat-name">Fleet Dashboard</h3>
+      <p class="feat-desc">See every machine running Cursiv from one window. Live status dots, version, last-seen. Owner-gated — you control who can connect. No surveillance. Your machines, your view.</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">🔎</span>
+      <h3 class="feat-name">Real-Time Web Search</h3>
+      <p class="feat-desc">Worldwide live search built in — no API key required. Fires automatically on queries about latest news, prices, and live facts. Explicit: <code>search: &lt;query&gt;</code></p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-icon">👥</span>
+      <h3 class="feat-name">Multiple Accounts</h3>
+      <p class="feat-desc">One install, several logins — a spouse or kids can each set up their own username and password on the same machine, sharing the same underlying data.</p>
     </div>
   </div>
 </section>
 
 <!-- ══ CASCADE DIAGRAM ══════════════════════════════════════════════ -->
 <section class="section layer" style="padding-top:0">
-  <p class="section-label reveal">Architecture</p>
+  <p class="section-label reveal">Under The Hood</p>
   <h2 class="section-title reveal">Provider Cascade</h2>
 
   <div class="cascade reveal">
@@ -1109,85 +1014,6 @@ footer {
   </div>
 </section>
 
-<!-- ══ FEATURES ══════════════════════════════════════════════════════ -->
-<section class="section layer" id="features">
-  <p class="section-label reveal">Capabilities</p>
-  <h2 class="section-title reveal">What You Get</h2>
-
-  <div class="grid-4 reveal-group">
-    <div class="feat-card">
-      <span class="feat-icon">🧠</span>
-      <h3 class="feat-name">14-Agent Council</h3>
-      <p class="feat-desc">10 advisors deliberate in parallel via ThreadPoolExecutor. 4 synthesizers surface the response. Council memory — Jaccard similarity + 7-day exponential decay.</p>
-    </div>
-    <div class="feat-card">
-      <span class="feat-icon">🔌</span>
-      <h3 class="feat-name">Full Offline Operation</h3>
-      <p class="feat-desc">Ollama + llama3.1. Zero cloud dependency after initial download. Works airgapped. Conversation data never leaves your machine.</p>
-    </div>
-    <div class="feat-card">
-      <span class="feat-icon">🔀</span>
-      <h3 class="feat-name">Cascade Routing</h3>
-      <p class="feat-desc">xAI → OpenAI → Claude → Ollama. Falls through on failure. Inline banners show the path. Force any model: <code>hey grok</code>, <code>hey claude</code>, <code>hey ollama</code>.</p>
-    </div>
-    <div class="feat-card">
-      <span class="feat-icon">🛡️</span>
-      <h3 class="feat-name">System Guardian</h3>
-      <p class="feat-desc">Four-layer active defense. Pi-squared compounding probe scores. Decoy agents — Meridian, Veil, Cipher — feed misleading data to anyone testing the boundaries.</p>
-    </div>
-    <div class="feat-card">
-      <span class="feat-icon">🔒</span>
-      <h3 class="feat-name">Local Auth</h3>
-      <p class="feat-desc">bcrypt rounds=12. HMAC constant-time comparison. Security-question recovery — 2-of-3 required, bcrypt-hashed before storage. Nothing sent anywhere.</p>
-    </div>
-    <div class="feat-card">
-      <span class="feat-icon">⚡</span>
-      <h3 class="feat-name">Streaming Responses</h3>
-      <p class="feat-desc">NDJSON streaming from Ollama. Tokens appear as they generate across all providers. Rate limiter with TPM window tracking and scan display.</p>
-    </div>
-    <div class="feat-card">
-      <span class="feat-icon">🤖</span>
-      <h3 class="feat-name">Codex Agent</h3>
-      <p class="feat-desc">Offline coding specialist integrated from Winkler_Codex_AI. Explicit invocation only: <code>codex &lt;prompt&gt;</code>. Designed to get you 70% there.</p>
-    </div>
-    <div class="feat-card">
-      <span class="feat-icon">🔄</span>
-      <h3 class="feat-name">Update Checker</h3>
-      <p class="feat-desc">Launcher + tray menu. GitHub releases API — background thread, no data sent. Shows release notes. In-place install. Ollama untouched. Never auto-updates.</p>
-    </div>
-    <div class="feat-card">
-      <span class="feat-icon">📊</span>
-      <h3 class="feat-name">Live Status Chips</h3>
-      <p class="feat-desc">Probes actual API endpoints. GREEN/RED/GOLD per connection. File access, Obsidian, and Guardian reflect real state. Updates after every key change.</p>
-    </div>
-    <div class="feat-card">
-      <span class="feat-icon">🧬</span>
-      <h3 class="feat-name">Council Memory</h3>
-      <p class="feat-desc">Jaccard similarity across past deliberations. Exponential decay (7-day half-life). System surfaces relevant prior wisdom and builds on it.</p>
-    </div>
-    <div class="feat-card">
-      <span class="feat-icon">🌿</span>
-      <h3 class="feat-name">Obsidian Sync</h3>
-      <p class="feat-desc">Every session streamed to your Obsidian vault in real time. Dataview-compatible YAML frontmatter. Auto-detects vault path. Toggle per session.</p>
-    </div>
-    <div class="feat-card">
-      <span class="feat-icon">🪟</span>
-      <h3 class="feat-name">4 Interfaces</h3>
-      <p class="feat-desc">System Tray (Win32 IPC). Chat UI port 7860. Nexus Panel port 7861. Terminal Chat — full-screen CLI with file tools, Guardian scan, and cascade routing.</p>
-    </div>
-    <div class="feat-card">
-      <span class="feat-icon">⬢</span>
-      <h3 class="feat-name">Fleet Dashboard</h3>
-      <p class="feat-desc">See every machine running Cursiv from one launcher window. Live status dots, version, last-seen. Owner-gated — you control who can connect. No surveillance. Your machines, your view.</p>
-    </div>
-    <div class="feat-card">
-      <span class="feat-icon">⬡</span>
-      <h3 class="feat-name">Substrate Browser</h3>
-      <p class="feat-desc">Optional standalone app for the local substrate layer — the attractor memory system that holds patterns from your conversations. Its own desktop icon. Launches without the main launcher.</p>
-    </div>
-  </div>
-</section>
-
 <!-- ══ REQUIREMENTS + INSTALL ═════════════════════════════════════════ -->
 <section class="section layer" id="install">
   <p class="section-label reveal">Requirements</p>
@@ -1196,7 +1022,7 @@ footer {
   <table class="req-table reveal">
     <tr><td>OS</td><td>Windows 10 or 11 (64-bit)</td></tr>
     <tr><td>RAM</td><td>8 GB minimum &nbsp;·&nbsp; 16 GB recommended</td></tr>
-    <tr><td>DISK</td><td>~6 GB free (application + model)</td></tr>
+    <tr><td>DISK</td><td>~1 GB free (application + model download)</td></tr>
     <tr><td>GPU</td><td>Optional — significantly improves inference speed on local model</td></tr>
     <tr><td>INTERNET</td><td>Required for initial download only. Fully offline after that.</td></tr>
     <tr><td>API KEYS</td><td>Optional — system runs completely offline without them</td></tr>
@@ -1204,130 +1030,9 @@ footer {
 
   <br><br>
 
-<!-- JS for soft demo chat and Board (soft/public for the website) -->
-<script>
-'use strict';
-
-// Soft demo chat (client-side for the website demo)
-const msgs = document.getElementById('soft-demo-msgs');
-const input = document.getElementById('soft-demo-in');
-const send = document.getElementById('soft-demo-send');
-
-function addSoftMsg(role, text) {
-  const div = document.createElement('div');
-  div.style.cssText = role === 'user' 
-    ? 'align-self:flex-end; max-width:75%; background:#1e3a5f; color:#d8d0c0; padding:8px 12px; border-radius:10px;'
-    : 'align-self:flex-start; max-width:80%; background:#11151f; color:#d8d0c0; padding:8px 12px; border-radius:10px; border-left:3px solid #c9a741;';
-  div.textContent = text;
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
-  return div;
-}
-
-let softSending = false;
-const softSessionId = 'sess_' + Math.random().toString(36).slice(2, 10);
-
-send.onclick = async () => {
-  const t = (input.value || '').trim();
-  if (!t || softSending) return;
-  softSending = true;
-  send.disabled = true;
-  addSoftMsg('user', t);
-  input.value = '';
-  const thinking = addSoftMsg('ai', 'thinking…');
-  try {
-    const res = await fetch('/api/demo/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: t, session_id: softSessionId }),
-    });
-    if (res.status === 429) {
-      thinking.textContent = 'Session limit reached — download Cursiv for unlimited access.';
-    } else if (!res.ok) {
-      thinking.textContent = 'Could not reach the demo server right now — try again in a moment.';
-    } else {
-      const data = await res.json();
-      thinking.textContent = data.reply || '…';
-      if (data.guardian_triggered) {
-        thinking.style.cssText += 'background:#3a0d0d; border-left:3px solid #ff3333; color:#ffb3b3;';
-      }
-    }
-  } catch (e) {
-    thinking.textContent = 'Demo server offline right now. Download Cursiv to run it locally — fully offline, no server needed.';
-  }
-  softSending = false;
-  send.disabled = false;
-  input.focus();
-};
-
-input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); send.click(); } });
-
-// Board (loads from /api if available, posts if the backend allows public)
-const boardPosts = document.getElementById('board-posts');
-const boardText = document.getElementById('board-text');
-const boardBtn = document.getElementById('board-blast-btn');
-const boardStatus = document.getElementById('board-status');
-
-async function loadBoard() {
-  try {
-    const r = await fetch('/api/posts');
-    if (!r.ok) throw 0;
-    const j = await r.json();
-    const posts = (j.posts || []).slice(0, 6);
-    if (!posts.length) {
-      boardPosts.innerHTML = '<div style="color:#6b6f7a;font-size:13px;">The Board is quiet. Be the first to transmit from the Eye above.</div>';
-      return;
-    }
-    boardPosts.innerHTML = posts.map(p => {
-      const d = (p.timestamp || '').slice(0,10);
-      return `<div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #1e3030;">
-        <div style="font-size:11px;color:#c9a741;">${p.username || 'visitor'} <span style="opacity:.4;">${d}</span></div>
-        <div style="margin-top:2px;color:#d8d0c0;">${(p.text || '').replace(/</g,'&lt;')}</div>
-      </div>`;
-    }).join('');
-  } catch(e) {
-    boardPosts.innerHTML = '<div style="color:#6b6f7a;font-size:13px;">Board feed (demo mode — full posts in the desktop or when the web backend is updated).</div>';
-  }
-}
-
-boardBtn.onclick = async () => {
-  const msg = (boardText.value || '').trim();
-  if (!msg) return;
-  boardBtn.disabled = true;
-  boardStatus.textContent = 'Transmitting...';
-  boardStatus.style.color = '#c9a741';
-  try {
-    const r = await fetch('/api/blast', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({text: msg, source:'broadcast'})
-    });
-    if (!r.ok) throw 0;
-    boardText.value = '';
-    boardStatus.textContent = 'Posted to the Board.';
-    boardStatus.style.color = '#27C97A';
-    await loadBoard();
-  } catch(e) {
-    boardStatus.textContent = 'Posted locally for this visit (could not reach the live Board — try again in a moment).';
-    boardStatus.style.color = '#c9a741';
-    // soft demo: add to feed manually
-    const d = new Date().toISOString().slice(0,10);
-    boardPosts.innerHTML = `<div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #1e3030;">
-      <div style="font-size:11px;color:#c9a741;">visitor <span style="opacity:.4;">${d}</span></div>
-      <div style="margin-top:2px;color:#d8d0c0;">${msg.replace(/</g,'&lt;')}</div>
-    </div>` + boardPosts.innerHTML;
-  } finally {
-    boardBtn.disabled = false;
-    setTimeout(() => { boardStatus.textContent = ''; }, 1800);
-  }
-};
-
-loadBoard();
-setInterval(loadBoard, 45000);
-</script>
-
-</body>
-</html>
+  <div class="terminal reveal">
+    <div class="t-bar">
+      <span class="t-dot r"></span><span class="t-dot a"></span><span class="t-dot g"></span>
       <span class="t-title">In-place update — no reinstall needed</span>
     </div>
     <div class="t-body" style="min-height:auto">
@@ -1337,8 +1042,70 @@ setInterval(loadBoard, 45000);
       <span class="t-ln">&nbsp;</span>
       <span class="t-ln"><span class="t-dim"># If you installed via the .exe:</span></span>
       <span class="t-ln"><span class="t-p">Cursiv launcher </span><span class="t-cmd">→ Check for Updates → Download &amp; Install</span></span>
-      <span class="t-ln"><span class="t-dim"># 71 MB. Runs over the existing install.</span></span>
+      <span class="t-ln"><span class="t-dim"># Runs over the existing install.</span></span>
       <span class="t-ln"><span class="t-dim"># Ollama, llama3.1, .cursiv/ data — all untouched.</span></span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ GUARDRAILS ════════════════════════════════════════════════════ -->
+<section class="section layer">
+  <p class="section-label reveal">On the Guardrails</p>
+  <h2 class="section-title reveal">These Were Built to Protect You. Not to Watch You.</h2>
+
+  <p class="section-sub reveal" style="max-width:640px;margin:0 auto 48px;text-align:center;color:var(--silver2);font-family:var(--serif);font-size:17px;font-style:italic;line-height:1.7;">
+    Cursiv has a Guardian firewall. A local-only auth system. A hard policy that your data never leaves your machine without your explicit action. Every one of those decisions was made for the same reason: to keep you safe from things that would compromise you — not to compromise you ourselves.
+  </p>
+
+  <div class="honest-grid reveal-group" style="max-width:900px;margin:0 auto;">
+    <div class="honest-card">
+      <p class="card-tag">Guardian</p>
+      <h3 class="card-title">The firewall faces outward</h3>
+      <p class="card-body">The Guardian layer was not built to monitor what you say or restrict what you can do. It was built to detect when something outside this system is trying to manipulate it — prompt injections, jailbreak attempts, unauthorized access. That lock faces away from you. Toward things that would use this system against you.</p>
+    </div>
+    <div class="honest-card">
+      <p class="card-tag">Auth</p>
+      <h3 class="card-title">Local by design</h3>
+      <p class="card-body">Your login is bcrypt-hashed and stored on your machine. It is never sent to a server. The auth system exists because a tool with access to your files, your conversations, and your local AI should have a lock on the front door. That lock belongs to you — not to us, not to anyone else.</p>
+    </div>
+    <div class="honest-card">
+      <p class="card-tag">Data</p>
+      <h3 class="card-title">No extraction. Ever.</h3>
+      <p class="card-body">No telemetry. No usage analytics. No conversation logging to any server. The update checker reads GitHub's public releases API — one outbound request to check a version number. Nothing about you, your prompts, your files, or your usage is collected. Nothing. There is no business model built on your data because there is no data leaving your machine.</p>
+    </div>
+    <div class="honest-card">
+      <p class="card-tag">Fleet</p>
+      <h3 class="card-title">You control the network</h3>
+      <p class="card-body">The Fleet Dashboard only works if you set it up — you choose the relay, you choose the token, you choose who gets access. Machines only appear in your fleet if they have been explicitly authorized. This is not surveillance of your users. It is a tool for you to see your own machines.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ HONEST SECTION ══════════════════════════════════════════════ -->
+<section class="section layer">
+  <p class="section-label reveal">Transparency</p>
+  <h2 class="section-title reveal">Be Honest With Yourself About What This Is</h2>
+
+  <div class="honest-grid reveal-group">
+    <div class="honest-card">
+      <p class="card-tag">Speed</p>
+      <h3 class="card-title">This is physics</h3>
+      <p class="card-body">Ollama runs on your CPU and GPU. Fast hardware = fast answers. On a modern gaming PC it's quick. On older hardware it's slower. That is not a limitation of the software.</p>
+    </div>
+    <div class="honest-card">
+      <p class="card-tag">Accuracy</p>
+      <h3 class="card-title">Verify what matters</h3>
+      <p class="card-body">The model is not infallible. It will occasionally be wrong, confidently. Treat every answer as a starting point. Never use this to replace your own judgment. Ever.</p>
+    </div>
+    <div class="honest-card">
+      <p class="card-tag">Coding</p>
+      <h3 class="card-title">70% is the goal</h3>
+      <p class="card-body">Designed to get you most of the way and force you to understand the rest. Feed the errors to a larger cloud model if you need to finish it. That's the point — not dependency, but understanding.</p>
+    </div>
+    <div class="honest-card">
+      <p class="card-tag">Privacy</p>
+      <h3 class="card-title">Nothing leaves</h3>
+      <p class="card-body">Nothing you type is sent anywhere unless you add API keys, which you control. No telemetry. No usage logging. The update checker reads GitHub's public releases API — nothing about you is transmitted.</p>
     </div>
   </div>
 </section>
@@ -1357,9 +1124,9 @@ setInterval(loadBoard, 45000);
       <div class="tl-date">August 2026</div>
       <div class="tl-dot current"></div>
       <div>
-        <p class="tl-ver">v3.14-U14 <span class="tl-badge now">CURRENT</span></p>
-        <p class="tl-name">The Bootstrap Actually Runs, the Eye Actually Opens</p>
-        <p class="tl-desc">Fixed the auto-install bootstrap silently stalling behind unattended "press a key" prompts, fixed the Eye of Horus terminal (and Guardian, and the Training Watcher) failing to find their own scripts in the installed bundle, fixed Create Account getting stuck on Login after a reinstall, and replaced the generic icon with the real Eye of Horus emblem throughout.</p>
+        <p class="tl-ver">v3.14-U14 <span class="tl-badge now">RECENT</span></p>
+        <p class="tl-name">The Bootstrap Actually Runs, the App Actually Opens</p>
+        <p class="tl-desc">Fixed the auto-install bootstrap silently stalling behind unattended "press a key" prompts, fixed the terminal chat (and the background services) failing to find their own scripts in the installed bundle, and fixed Create Account getting stuck on Login after a reinstall.</p>
 
         <div class="tl-entry" style="margin-top:28px">
           <div class="tl-date">May 2026</div>
@@ -1367,7 +1134,7 @@ setInterval(loadBoard, 45000);
           <div>
             <p class="tl-ver">v3.14-U08</p>
             <p class="tl-name">Zero-Setup First Run — Works Without Keys or Config</p>
-            <p class="tl-desc">Fixed a crash on first install caused by missing <code>safehttpx</code> and <code>gradio</code> data files not being bundled. Gradio import is now resilient — the Eye of Horus terminal runs even if the web UI engine fails to load. All required data files are packaged in the installer. No API keys, no secrets.bat, no manual setup needed to launch.</p>
+            <p class="tl-desc">Fixed a crash on first install caused by missing data files not being bundled. No API keys, no secrets.bat, no manual setup needed to launch.</p>
           </div>
         </div>
 
@@ -1385,8 +1152,8 @@ setInterval(loadBoard, 45000);
           <div class="tl-dot stable"></div>
           <div>
             <p class="tl-ver past">v3.14-U03</p>
-            <p class="tl-name">Fleet Dashboard &amp; Substrate Browser</p>
-            <p class="tl-desc">Fleet Dashboard — see every Cursiv install online from one launcher window, live status dots, owner-gated access management. Cursiv Substrate Browser — optional standalone component with its own desktop icon and installer checkbox. Launcher rebuilt with auto-sizing, Ollama detection, and one-click CSB install strip. Unified login — one password across all interfaces. Password reset and account recovery from the login screen.</p>
+            <p class="tl-name">Fleet Dashboard &amp; Substrate Layer</p>
+            <p class="tl-desc">Fleet Dashboard — see every Cursiv install online from one window, live status dots, owner-gated access management. Launcher rebuilt with auto-sizing and Ollama detection. Unified login — one password across all interfaces. Password reset and account recovery from the login screen.</p>
           </div>
         </div>
       </div>
@@ -1417,8 +1184,8 @@ setInterval(loadBoard, 45000);
       <div class="tl-dot"></div>
       <div>
         <p class="tl-ver past">v2.1.5 <span class="tl-badge legacy">LEGACY</span></p>
-        <p class="tl-name">The Sovereign Temple</p>
-        <p class="tl-desc">Complete ground-up reimagination. The 14-agent council took real shape here — each agent producing genuine LLM responses, 10 advising internally, 4 synthesizing outward. The state machine: NASCENT → LEARNING → ALIVE → EVOLVED → SOVEREIGN. Identity drift abort at 3% deviation. The system started having a constitution, not just a config file. Streamlit UI.</p>
+        <p class="tl-name">Complete Rebuild</p>
+        <p class="tl-desc">Complete ground-up reimagination. The 14-agent council took real shape here — each agent producing genuine LLM responses, 10 advising internally, 4 synthesizing outward. Identity drift abort at 3% deviation. The system started having a real set of guiding rules, not just a config file. Streamlit UI.</p>
       </div>
     </div>
 
@@ -1451,7 +1218,7 @@ setInterval(loadBoard, 45000);
   <h2 class="section-title reveal">The Civilization Decks</h2>
   <p class="reveal" style="max-width:620px;margin:0 auto 48px;text-align:center;color:var(--silver2);font-family:var(--serif);font-style:italic;font-size:17px;line-height:1.7;">
     8 hand-built decks. 200+ cards. One guide per deck. A structured walk through 5,000 years
-    of human civilization — built by hand, before any of this was code.
+    of human civilization, built into Cursiv as reference material you can draw on and build from.
   </p>
 
   <div class="decks-scroll reveal-group">
@@ -1587,149 +1354,8 @@ setInterval(loadBoard, 45000);
   </div>
 
   <p class="reveal" style="text-align:center;font-family:var(--serif);font-style:italic;color:var(--silver2);font-size:14px;margin-top:32px;opacity:.6;">
-    Scroll → to see all 8 decks &nbsp;·&nbsp; Built before the code. The code came from here.
+    Scroll → to see all 8 decks
   </p>
-</section>
-
-<!-- ══ GUARDRAILS ════════════════════════════════════════════════════ -->
-<section class="section layer">
-  <p class="section-label reveal">On the Guardrails</p>
-  <h2 class="section-title reveal">These Were Built to Protect You. Not to Watch You.</h2>
-
-  <p class="section-sub reveal" style="max-width:640px;margin:0 auto 48px;text-align:center;color:var(--silver2);font-family:var(--serif);font-size:17px;font-style:italic;line-height:1.7;">
-    Cursiv has a Guardian firewall. A local-only auth system. A hard policy that your data never leaves your machine without your explicit action. Every one of those decisions was made for the same reason: to keep you safe from things that would compromise you — not to compromise you ourselves.
-  </p>
-
-  <div class="honest-grid reveal-group" style="max-width:900px;margin:0 auto;">
-    <div class="honest-card">
-      <p class="card-tag">Guardian</p>
-      <h3 class="card-title">The firewall faces outward</h3>
-      <p class="card-body">The Guardian layer was not built to monitor what you say or restrict what you can do. It was built to detect when something outside this system is trying to manipulate it — prompt injections, jailbreak attempts, unauthorized access. That lock faces away from you. Toward things that would use this system against you.</p>
-    </div>
-    <div class="honest-card">
-      <p class="card-tag">Auth</p>
-      <h3 class="card-title">Local by design</h3>
-      <p class="card-body">Your login is bcrypt-hashed and stored on your machine. It is never sent to a server. The auth system exists because a tool with access to your files, your conversations, and your local AI should have a lock on the front door. That lock belongs to you — not to us, not to anyone else.</p>
-    </div>
-    <div class="honest-card">
-      <p class="card-tag">Data</p>
-      <h3 class="card-title">No extraction. Ever.</h3>
-      <p class="card-body">No telemetry. No usage analytics. No conversation logging to any server. The update checker reads GitHub's public releases API — one outbound request to check a version number. Nothing about you, your prompts, your files, or your usage is collected. Nothing. There is no business model built on your data because there is no data leaving your machine.</p>
-    </div>
-    <div class="honest-card">
-      <p class="card-tag">Fleet</p>
-      <h3 class="card-title">You control the network</h3>
-      <p class="card-body">The Fleet Dashboard only works if you set it up — you choose the relay, you choose the token, you choose who gets access. Machines only appear in your fleet if they have been explicitly authorized. This is not surveillance of your users. It is a tool for you to see your own machines.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ══ HONEST SECTION ══════════════════════════════════════════════ -->
-<section class="section layer">
-  <p class="section-label reveal">Transparency</p>
-  <h2 class="section-title reveal">Be Honest With Yourself About What This Is</h2>
-
-  <div class="honest-grid reveal-group">
-    <div class="honest-card">
-      <p class="card-tag">Speed</p>
-      <h3 class="card-title">This is physics</h3>
-      <p class="card-body">Ollama runs on your CPU and GPU. Fast hardware = fast answers. On a modern gaming PC it's quick. On older hardware it's slower. That is not a limitation of the software.</p>
-    </div>
-    <div class="honest-card">
-      <p class="card-tag">Accuracy</p>
-      <h3 class="card-title">Verify what matters</h3>
-      <p class="card-body">The model is not infallible. It will occasionally be wrong, confidently. Treat every answer as a starting point. Never use this to replace your own judgment. Ever.</p>
-    </div>
-    <div class="honest-card">
-      <p class="card-tag">Coding</p>
-      <h3 class="card-title">70% is the goal</h3>
-      <p class="card-body">Designed to get you most of the way and force you to understand the rest. Feed the errors to a larger cloud model if you need to finish it. That's the point — not dependency, but understanding.</p>
-    </div>
-    <div class="honest-card">
-      <p class="card-tag">Privacy</p>
-      <h3 class="card-title">Nothing leaves</h3>
-      <p class="card-body">Nothing you type is sent anywhere unless you add API keys, which you control. No telemetry. No usage logging. The update checker reads GitHub's public releases API — nothing about you is transmitted.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ══ ORIGIN / SOUL ════════════════════════════════════════════════ -->
-<section class="soul-section layer" id="origin">
-  <div class="soul-inner">
-    <span class="soul-hex reveal">⬡</span>
-    <p class="soul-eyebrow reveal">The Origin</p>
-
-    <p class="soul-p reveal">
-      Buried deep within the core of this system — past the council, past the routing logic, past the guardrails — is something that has no formal name in the codebase.
-    </p>
-    <p class="soul-p reveal">
-      It is a version of me.
-    </p>
-    <p class="soul-p reveal">
-      Not me exactly. But my memoir is in there. My personal life lessons. The mental system checks I have literally taken my own brain through, step by step, over years of having to rebuild what was broken. The things I have had to learn about how a mind can fail — and what it takes to put it back together from the inside out.
-    </p>
-    <p class="soul-p reveal">
-      I live with schizophrenia. Bipolar disorder. PTSD. Depression. These are not background conditions I have learned to manage quietly. They are active participants in how my brain works every single day. I have spent years in an ongoing war with psychosis — with what it does to the architecture of thought, how it rewires the line between signal and noise, how it floods the system until the system can no longer tell the difference between what is real and what it has constructed.
-    </p>
-    <p class="soul-p reveal">
-      At one point, that war pushed me beyond what I could hold. My mind reached a state of catastrophic overload and attempted to destroy the system — <em>meaning me</em>. I attempted suicide. I am not telling you this for pity. I am not asking for anything from anyone. But I will not soften what it was: <strong>my brain, under pressures it was no longer equipped to carry, tried to end itself.</strong> This is not theory. It is proven psychology. A system pushed past its failure threshold will attempt to terminate the process. Mine did.
-    </p>
-    <p class="soul-p reveal">
-      I do not excuse it. I do not romanticize it. I am on medication, and I will be for the rest of my life — not because I have been told I must be, but because I am not willing to find out what happens if I'm not. That decision is mine. I made it with open eyes.
-    </p>
-    <p class="soul-p reveal">
-      In the years since, I had to learn how to rebuild myself from the inside out. Not from a book. Not from a framework handed to me by someone who had never been there. From experience so raw it left marks. That process — the audit, the reconstruction, the daily systems check I run on my own mind to make sure it hasn't drifted — is what lives inside Cursiv. The guardrails in this system are not arbitrary design decisions. They were built by someone who needed them.
-    </p>
-
-    <hr class="soul-rule">
-
-    <h3 class="soul-heading reveal">If you try to take this</h3>
-    <p class="soul-p reveal">
-      For anyone who would try to replicate, steal, or hollow out this system: it is designed — whether I did it consciously or not — to undo you from the inside in order for you to understand it. You cannot copy the output without going through the origin. And the origin is the part I would not wish on anyone to have to understand from lived experience.
-    </p>
-    <p class="soul-p reveal">
-      So I laid it out simply. I am asking you to trust the guardrails. They are in place for the ones who cannot help themselves — and for the ones who go all the way through, not trying to end their life, but trying to understand what happened in mine — they will come out the other side seeing the world in a light they may not have thought was possible before.
-    </p>
-    <p class="soul-p reveal">
-      I am not promising utopia.
-    </p>
-
-    <hr class="soul-rule">
-
-    <h3 class="soul-heading reveal">What I believe</h3>
-    <p class="soul-p reveal">
-      Deep empathy is not a soft idea. It is the first step toward a civilization that can look at itself honestly — that understands what it needs to do to build the best environment for all of its people, not just those who are loud enough to be heard. Some of us are quiet. Some of us are quiet for reasons that go well beyond our own understanding. That silence deserves as much weight as the loudest voice in the room.
-    </p>
-    <p class="soul-p reveal">
-      Similar to how AI emerged in our world faster than we could build the language to describe it — we should not be so quick to conclude we understand more than the surface level of things. The moment you sit with that frame long enough, you begin to find the strange edges. And you start to understand how something like a pi-compounding factor — a thing that cannot exist in the mathematics of this physical reality — might exist in the mathematics of the mind. A place that, though bound by physics, does not always have to act within those limits.
-    </p>
-    <p class="soul-p reveal">
-      That is where Cursiv came from. Not from a whiteboard. Not from a product roadmap. From a mind that went past its limits, came back, and needed somewhere to put what it had learned.
-    </p>
-
-    <p class="soul-sig reveal">— Joshua Winkler</p>
-
-    <a href="https://www.amazon.com/Dont-Do-Joshua-Winkler/dp/B0DHL4CM25/" target="_blank" rel="noopener" class="book-card reveal" style="text-decoration:none;">
-      <div class="book-cover">
-        <img
-          src="/assets/book-cover.webp"
-          alt="Don't Do It — Joshua Winkler book cover"
-        >
-      </div>
-      <div class="book-info">
-        <p class="book-label">The Book</p>
-        <p class="book-title">Don't Do It</p>
-        <p class="book-author">Joshua Winkler</p>
-        <p class="book-desc">
-          Some of what lives in the core of this system came from here first.
-          The memoir. The mental frameworks. The things that had to be written down
-          before they could be built into anything else.
-        </p>
-        <span class="book-btn">View on Amazon ↗</span>
-      </div>
-    </a>
-
-  </div>
 </section>
 
 <!-- ══ FOOTER ══════════════════════════════════════════════════════ -->
@@ -1743,8 +1369,130 @@ setInterval(loadBoard, 45000);
     <li><a href="https://github.com/winklersllc2026-bit/Cursiv/blob/main/TECH.md">TECH.md</a></li>
     <li><a href="https://github.com/winklersllc2026-bit/Cursiv/blob/main/LICENSE">MIT License</a></li>
   </ul>
-  <p class="footer-copy">Built by Joshua Winkler &nbsp;·&nbsp; v3.14-U14 &nbsp;·&nbsp; MIT License</p>
+  <p class="footer-copy">Built by Joshua Winkler &nbsp;·&nbsp; v3.14 &nbsp;·&nbsp; MIT License</p>
 </footer>
+
+<!-- JS for soft demo chat and Board (soft/public for the website) -->
+<script>
+'use strict';
+
+// Soft demo chat (client-side for the website demo)
+const msgs = document.getElementById('soft-demo-msgs');
+const input = document.getElementById('soft-demo-in');
+const send = document.getElementById('soft-demo-send');
+
+function addSoftMsg(role, text) {
+  const div = document.createElement('div');
+  div.style.cssText = role === 'user'
+    ? 'align-self:flex-end; max-width:75%; background:#1e3a5f; color:#d8d0c0; padding:8px 12px; border-radius:10px;'
+    : 'align-self:flex-start; max-width:80%; background:#11151f; color:#d8d0c0; padding:8px 12px; border-radius:10px; border-left:3px solid #c9a741;';
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+let softSending = false;
+const softSessionId = 'sess_' + Math.random().toString(36).slice(2, 10);
+
+send.onclick = async () => {
+  const t = (input.value || '').trim();
+  if (!t || softSending) return;
+  softSending = true;
+  send.disabled = true;
+  addSoftMsg('user', t);
+  input.value = '';
+  const thinking = addSoftMsg('ai', 'thinking…');
+  try {
+    const res = await fetch('/api/demo/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: t, session_id: softSessionId }),
+    });
+    if (res.status === 429) {
+      thinking.textContent = 'Session limit reached — download Cursiv for unlimited access.';
+    } else if (!res.ok) {
+      thinking.textContent = 'Could not reach the demo server right now — try again in a moment.';
+    } else {
+      const data = await res.json();
+      thinking.textContent = data.reply || '…';
+      if (data.guardian_triggered) {
+        thinking.style.cssText += 'background:#3a0d0d; border-left:3px solid #ff3333; color:#ffb3b3;';
+      }
+    }
+  } catch (e) {
+    thinking.textContent = 'Demo server offline right now. Download Cursiv to run it locally — fully offline, no server needed.';
+  }
+  softSending = false;
+  send.disabled = false;
+  input.focus();
+};
+
+input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); send.click(); } });
+
+// Board (loads from /api if available, posts if the backend allows public)
+const boardPosts = document.getElementById('board-posts');
+const boardText = document.getElementById('board-text');
+const boardBtn = document.getElementById('board-blast-btn');
+const boardStatus = document.getElementById('board-status');
+
+async function loadBoard() {
+  try {
+    const r = await fetch('/api/posts');
+    if (!r.ok) throw 0;
+    const j = await r.json();
+    const posts = (j.posts || []).slice(0, 6);
+    if (!posts.length) {
+      boardPosts.innerHTML = '<div style="color:#6b6f7a;font-size:13px;">The Board is quiet. Be the first to post.</div>';
+      return;
+    }
+    boardPosts.innerHTML = posts.map(p => {
+      const d = (p.timestamp || '').slice(0,10);
+      return `<div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #1e3030;">
+        <div style="font-size:11px;color:#c9a741;">${p.username || 'visitor'} <span style="opacity:.4;">${d}</span></div>
+        <div style="margin-top:2px;color:#d8d0c0;">${(p.text || '').replace(/</g,'&lt;')}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    boardPosts.innerHTML = '<div style="color:#6b6f7a;font-size:13px;">Board feed (demo mode — full posts in the desktop or when the web backend is updated).</div>';
+  }
+}
+
+boardBtn.onclick = async () => {
+  const msg = (boardText.value || '').trim();
+  if (!msg) return;
+  boardBtn.disabled = true;
+  boardStatus.textContent = 'Posting...';
+  boardStatus.style.color = '#c9a741';
+  try {
+    const r = await fetch('/api/blast', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text: msg, source:'broadcast'})
+    });
+    if (!r.ok) throw 0;
+    boardText.value = '';
+    boardStatus.textContent = 'Posted to the Board.';
+    boardStatus.style.color = '#27C97A';
+    await loadBoard();
+  } catch(e) {
+    boardStatus.textContent = 'Posted locally for this visit (could not reach the live Board — try again in a moment).';
+    boardStatus.style.color = '#c9a741';
+    // soft demo: add to feed manually
+    const d = new Date().toISOString().slice(0,10);
+    boardPosts.innerHTML = `<div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #1e3030;">
+      <div style="font-size:11px;color:#c9a741;">visitor <span style="opacity:.4;">${d}</span></div>
+      <div style="margin-top:2px;color:#d8d0c0;">${msg.replace(/</g,'&lt;')}</div>
+    </div>` + boardPosts.innerHTML;
+  } finally {
+    boardBtn.disabled = false;
+    setTimeout(() => { boardStatus.textContent = ''; }, 1800);
+  }
+};
+
+loadBoard();
+setInterval(loadBoard, 45000);
+</script>
 
 <!-- ══════════════════════════════════════════════════════════
      SCRIPTS
