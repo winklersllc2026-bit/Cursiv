@@ -16,8 +16,8 @@
 ; Encoded local stamp: ΧκΖ∈ηβōΡν∀λ∂ψΩāΣγφΨδĀΨνā∇αΗĪΩŪχΥīΚκεδΜΟδζ∂Ι=
 ; CURSIV-CRUCIBLE-STAMP END
 ; ============================================================
-; Cursiv v3.14-U16 — Fully-automatic bootstrap (no more silent stalls)
-; Produces: installer\Output\Cursiv-Setup-3.14-U16.exe
+; Cursiv v3.14-U17 — Fully-automatic bootstrap (no more silent stalls)
+; Produces: installer\Output\Cursiv-Setup-3.14-U17.exe
 ;
 ; Single PyInstaller bundle: Cursiv.exe (GUI launcher, tray, guardian,
 ; feedback loops, substrate browser, and terminal/chat mode via -t).
@@ -28,7 +28,7 @@
 ; ============================================================
 
 #define AppName      "Cursiv"
-#define AppVer       "3.14-U16"
+#define AppVer       "3.14-U17"
 #define AppPublisher "Joshua Winkler"
 #define AppURL       "https://github.com/winklersllc2026-bit/Cursiv"
 #define AppExe       "Cursiv.exe"
@@ -50,7 +50,7 @@ LicenseFile=..\LICENSE
 InfoAfterFile=..\CHANGELOG.md
 AppComments=Offline AI workspace with cascade routing (xAI → OpenAI → Claude → Ollama), live status indicators, and security-question password recovery. No internet required after install. Your data never leaves your machine.
 OutputDir=Output
-OutputBaseFilename=Cursiv-Setup-3.14-U16
+OutputBaseFilename=Cursiv-Setup-3.14-U17
 SetupIconFile=..\launcher\resources\icons\cursiv.ico
 WizardSmallImageFile=..\launcher\resources\icons\cursiv_256.png
 Compression=lzma2/ultra64
@@ -101,8 +101,14 @@ Name: "{group}\Uninstall {#AppName}";  Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#AppName}";                  Filename: "{app}\{#AppExe}"; Tasks: desktopicon
 
 ; Desktop shortcut — Cursiv Substrate Browser (optional CSB task)
-Name: "{autodesktop}\Cursiv Substrate Browser";    Filename: "cmd.exe"; \
-  Parameters: "/c ""{app}\{#AppExe}"" --browser & pause"; \
+; Launches Cursiv.exe --browser directly -- it's a windowed PyQt6 app with
+; its own window, it never needed a console. The old cmd.exe /c ... & pause
+; wrapper popped a bare, empty console window on every launch with nothing
+; in it but "Press any key to continue" once the browser closed -- easy to
+; mistake for a broken/pointless "terminal", because from the outside
+; that's exactly what it looked like.
+Name: "{autodesktop}\Cursiv Substrate Browser";    Filename: "{app}\{#AppExe}"; \
+  Parameters: "--browser"; \
   IconFilename: "{app}\{#AppExe}"; \
   Comment: "Open the Cursiv substrate layer browser (curs.http://)"; \
   Tasks: csb

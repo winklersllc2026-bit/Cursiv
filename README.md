@@ -43,7 +43,7 @@
 -->
 <!--
 -->
-# ⬡ Cursiv v3.14-U16 — Offline. Yours. Everywhere.
+# ⬡ Cursiv v3.14-U17 — Offline. Yours. Everywhere.
 
 > Not OpenAI. Not xAI. Not a subscription. A piece of AI infrastructure that lives on your machine, runs without the internet, and belongs entirely to you.
 
@@ -120,7 +120,13 @@ After the installer finishes, a **second window opens automatically** and downlo
 
 ---
 
-## What's New in v3.14-U16
+## What's New in v3.14-U17
+
+**Found why the terminal looked broken but "something else" seemed to work** — the Substrate Browser desktop icon was launching through a needless console wrapper, popping an empty black window that looked exactly like a broken terminal. Fixed to launch directly, no console.
+
+**New Getting Started screen** — replaces the old "Open Cursiv" button, shown automatically on first login. Explains the three ways to reach the terminal and gives one-click downloads for llama3.1 and Winkler-Codex.
+
+**Hieroglyphs actually render now** — the Eye of Horus button (and the new Anubis emblem) had been showing a tofu box instead of the real glyph; Windows' default UI font doesn't cover that Unicode block and Qt wasn't falling back automatically. Fixed everywhere it appears.
 
 **The Eye of Horus terminal actually shows its output now** — it was opening but rendering completely blank; the console-reattachment code was using block buffering instead of line buffering, so everything printed just sat unflushed. Confirmed fixed with a real trial run: full welcome banner, help output, and a real 3-provider council deliberation all displayed correctly.
 
@@ -239,4 +245,4 @@ Copyright © 2026 Joshua Winkler. All rights reserved.
 
 Released under the MIT License — you are free to use, modify, and distribute this software. See [LICENSE](LICENSE) for full terms.
 
-*Cursiv v3.14-U16 · Built by Joshua Winkler*
+*Cursiv v3.14-U17 · Built by Joshua Winkler*

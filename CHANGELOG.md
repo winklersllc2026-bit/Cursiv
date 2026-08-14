@@ -45,6 +45,13 @@
 -->
 # Changelog
 
+## v3.14-U17 — Getting Started, and the Substrate Browser wasn't the terminal (2026-08-13)
+
+**Launcher:**
+- Found the real explanation for "the terminal doesn't show anything, but the Substrate Browser icon does": the Substrate Browser desktop shortcut launched through a `cmd.exe /c ... & pause` wrapper it never needed (it's a windowed PyQt6 app with its own window), popping a bare, empty console on every use. From the outside that's indistinguishable from "a broken terminal" — easy to mistake for the real thing when the actual Eye of Horus terminal was failing silently. Shortcut now launches the browser directly, no console at all.
+- Replaced the "Open Cursiv" button (local web-server mode) with a "Getting Started" button — opens a new dialog explaining the three ways to reach the terminal, what the Substrate Browser actually is, and one-click downloads for llama3.1 and Winkler-Codex. Shows automatically once on first login. "Open Cursiv" is still available from the tray menu for anyone who wants the browser-tab mode.
+- Replaced the plain gold star with an Anubis glyph — and while adding it, found that every hieroglyph in the launcher (this one and the existing Eye of Horus button) had actually been rendering as a tofu box the whole time, not the intended glyph. Windows' default UI font has no Egyptian Hieroglyphs coverage and Qt doesn't automatically fall back to the system font that does; fixed by explicitly setting a font-family fallback list wherever a hieroglyph appears.
+
 ## v3.14-U16 — The terminal actually shows its output (2026-08-13)
 
 **Eye of Horus terminal:**

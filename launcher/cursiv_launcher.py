@@ -48,9 +48,9 @@ from pathlib import Path
 from typing import Optional
 
 from PyQt6.QtCore import QPoint, QSize, Qt, QTimer, pyqtSignal, QObject
-from PyQt6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QPixmap
+from PyQt6.QtGui import QAction, QColor, QFont, QFontDatabase, QIcon, QPainter, QPixmap
 from PyQt6.QtWidgets import (
-    QApplication, QDialog, QDialogButtonBox, QHBoxLayout, QLabel, QMainWindow,
+    QApplication, QCheckBox, QDialog, QDialogButtonBox, QHBoxLayout, QLabel, QMainWindow,
     QMenu, QMessageBox, QProgressBar, QPushButton, QScrollArea,
     QProgressDialog, QSystemTrayIcon, QTextEdit, QVBoxLayout, QWidget,
 )
@@ -81,7 +81,7 @@ _WATCHDOG_MS     = 3_000         # ms between app-health checks
 _POLL_DEADLINE_S = 30            # seconds to wait for app to bind its port
 
 # ── Update checker ─────────────────────────────────────────────────────────────
-_CURRENT_VERSION   = "3.14-U16"
+_CURRENT_VERSION   = "3.14-U17"
 _GITHUB_API        = "https://api.github.com/repos/winklersllc2026-bit/Cursiv/releases/latest"
 _GITHUB_RELEASES   = "https://github.com/winklersllc2026-bit/Cursiv/releases"
 
@@ -109,6 +109,58 @@ def _csb_desktop_shortcut_exists() -> bool:
 def _is_ollama_installed() -> bool:
     import shutil
     return bool(shutil.which("ollama")) or _OLLAMA_EXE_PATH.exists()
+
+
+# Windows' default UI font (Segoe UI) has no Egyptian Hieroglyphs glyphs, and
+# -- confirmed by directly rendering both to a pixmap and inspecting the
+# result -- Qt's automatic font-fallback does NOT pick up "Segoe UI
+# Historic" (the system font that does cover that block) on its own the way
+# it does for e.g. emoji. Every hieroglyph in this UI (Anubis, the Eye of
+# Horus) was rendering as a tofu box, not the actual glyph, until this was
+# registered explicitly. Call once, before building any widget that uses one.
+_HIEROGLYPH_FONT_LOADED = False
+
+
+def _ensure_hieroglyph_font() -> None:
+    global _HIEROGLYPH_FONT_LOADED
+    if _HIEROGLYPH_FONT_LOADED:
+        return
+    try:
+        QFontDatabase.addApplicationFont("C:/Windows/Fonts/seguihis.ttf")
+    except Exception:
+        pass
+    _HIEROGLYPH_FONT_LOADED = True
+
+
+def _hieroglyph_font(size: int, weight: QFont.Weight = QFont.Weight.Normal) -> QFont:
+    """A font usable for mixed hieroglyph+Latin text in one widget -- Qt
+    tries 'Segoe UI' first (covers the Latin text) and falls back to
+    'Segoe UI Historic' per-glyph for anything Segoe UI doesn't cover
+    (the hieroglyph), rather than needing two separate widgets."""
+    _ensure_hieroglyph_font()
+    font = QFont()
+    font.setFamilies(["Segoe UI", "Segoe UI Historic"])
+    font.setPointSize(size)
+    font.setWeight(weight)
+    return font
+
+
+# Path.home(), not __file__-relative -- see cursiv_v215/guardian/access_gate.py
+# for why: this needs to survive reinstalls/upgrades at a fixed install path,
+# same as every other piece of persistent state in this app.
+_GETTING_STARTED_FLAG = Path.home() / ".cursiv" / "runtime" / "getting_started_shown.flag"
+
+
+def _getting_started_seen() -> bool:
+    return _GETTING_STARTED_FLAG.exists()
+
+
+def _mark_getting_started_seen() -> None:
+    try:
+        _GETTING_STARTED_FLAG.parent.mkdir(parents=True, exist_ok=True)
+        _GETTING_STARTED_FLAG.touch()
+    except OSError:
+        pass
 
 
 # ── Palette ───────────────────────────────────────────────────────────────────
@@ -1026,6 +1078,132 @@ class TitleBar(QWidget):
         self._drag = False
 
 
+class GettingStartedDialog(QDialog):
+    """
+    Shown automatically the first time the launcher opens after login, and
+    reachable afterward any time via the main window's "Getting Started"
+    button. Answers the two things a new install doesn't make obvious on
+    its own: how to actually reach the AI (three ways, not one), and how to
+    get the local models that make it useful.
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._launcher = parent
+        self.setWindowTitle("Cursiv — Getting Started")
+        self.setFixedWidth(480)
+        self.setStyleSheet(f"background: {BG}; color: {SILVER};")
+        self._build()
+
+    def _section_label(self, text: str) -> QLabel:
+        lbl = QLabel(text)
+        lbl.setStyleSheet(
+            f"color: {GOLD}; font-size: 12px; font-weight: 700; letter-spacing: 1px;"
+        )
+        return lbl
+
+    def _body_label(self, text: str) -> QLabel:
+        lbl = QLabel(text)
+        lbl.setWordWrap(True)
+        lbl.setStyleSheet(f"color: {SILVER}; font-size: 12px; line-height: 1.4;")
+        return lbl
+
+    def _build(self):
+        vlay = QVBoxLayout(self)
+        vlay.setSpacing(14)
+        vlay.setContentsMargins(24, 22, 24, 20)
+
+        _ensure_hieroglyph_font()   # mixed hieroglyph + Latin text below
+        header = QLabel("\U00013062  Getting Started")
+        header.setStyleSheet(
+            f'color: {GOLD}; font-size: 18px; font-weight: 700;'
+            f' font-family: "Segoe UI", "Segoe UI Historic";'
+        )
+        vlay.addWidget(header)
+
+        intro = self._body_label(
+            "Cursiv talks to you through a terminal — the “Eye of Horus” "
+            "chat interface — not a chat window in this launcher. Here's how "
+            "to reach it, and what to download so it can actually think "
+            "locally."
+        )
+        vlay.addWidget(intro)
+
+        # ── Reaching the terminal ────────────────────────────────────────
+        vlay.addWidget(self._section_label("REACHING THE TERMINAL — THREE WAYS"))
+        vlay.addWidget(self._body_label(
+            "1. It opens automatically a moment after you log in.\n"
+            "2. Click \U0001F53B Open the Eye (Terminal) on the main window any "
+            "time you've closed it.\n"
+            "3. Type  cursiv  in any terminal window already open on your "
+            "machine (PowerShell, cmd, Windows Terminal — cd into the "
+            "install folder first if it's not on your PATH yet)."
+        ))
+        vlay.addWidget(self._body_label(
+            "The Substrate Browser desktop icon is a different, optional "
+            "tool — a viewer for Cursiv's local memory layer (curs.http://). "
+            "It isn't the chat interface, even though it also opens its own "
+            "window."
+        ))
+
+        # ── Models ────────────────────────────────────────────────────────
+        vlay.addWidget(self._section_label("LOCAL MODELS"))
+        vlay.addWidget(self._body_label(
+            "Cursiv runs fully offline on Ollama. Two downloads make it "
+            "useful — both one-time, both optional if you'd rather add a "
+            "cloud API key instead (set one from inside the terminal with "
+            "key / openai / anthropic)."
+        ))
+
+        btn_style = f"""
+            QPushButton {{
+                background: transparent; color: {GOLD};
+                font-size: 12px; font-weight: 600;
+                border: 1px solid {LGOLD}; border-radius: 6px;
+                padding: 8px 14px; text-align: left;
+            }}
+            QPushButton:hover   {{ background: rgba(212,175,55,0.08); border-color: {GOLD}; }}
+            QPushButton:pressed {{ background: rgba(212,175,55,0.15); }}
+        """
+
+        llama_btn = QPushButton("Download llama3.1  (~4.7 GB — Cursiv's default model)")
+        llama_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        llama_btn.setStyleSheet(btn_style)
+        llama_btn.clicked.connect(self._launcher._download_llama_model)
+        vlay.addWidget(llama_btn)
+
+        codex_btn = QPushButton("Download Winkler-Codex  (~18 GB — coding specialist pair)")
+        codex_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        codex_btn.setStyleSheet(btn_style)
+        codex_btn.clicked.connect(self._launcher._download_codex_models)
+        vlay.addWidget(codex_btn)
+
+        vlay.addWidget(self._body_label(
+            "Both run as visible terminal windows you can minimise and "
+            "leave running in the background."
+        ))
+
+        # ── Footer ────────────────────────────────────────────────────────
+        dont_show = QCheckBox("Don't show this automatically again")
+        dont_show.setStyleSheet(f"color: {SILV2}; font-size: 11px;")
+        dont_show.setChecked(True)
+        vlay.addWidget(dont_show)
+        self._dont_show = dont_show
+
+        close_btn = QPushButton("Got it")
+        close_btn.setFixedHeight(36)
+        close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        close_btn.setStyleSheet(
+            "background: #2255DD; color: #fff; border: none; border-radius: 8px;"
+            " font-size: 13px; font-weight: 600;"
+        )
+        close_btn.clicked.connect(self.accept)
+        vlay.addWidget(close_btn)
+
+    def dont_show_again(self) -> bool:
+        return self._dont_show.isChecked()
+
+
 # ── Main window ───────────────────────────────────────────────────────────────
 
 class CursivLauncher(QMainWindow):
@@ -1055,6 +1233,11 @@ class CursivLauncher(QMainWindow):
 
         # Auto-open Guardian + Tracker terminals after first paint
         QTimer.singleShot(200, self._launch_terminals)
+
+        # First run only: show Getting Started automatically once the
+        # terminal windows have had a moment to appear on their own.
+        if not _getting_started_seen():
+            QTimer.singleShot(1800, self._show_getting_started)
 
         # Watchdog: detect if the app process dies unexpectedly
         self._watchdog = QTimer(self)
@@ -1110,9 +1293,7 @@ class CursivLauncher(QMainWindow):
             self._app_alive = False
             self._app_proc  = None
             self._stop_act.setEnabled(False)
-            self._btn.setEnabled(True)
-            self._btn.setText("Open Cursiv")
-            self._set_status("Cursiv stopped unexpectedly — click to restart")
+            self._set_status("Cursiv stopped unexpectedly — reopen it from the tray menu")
 
     # ── UI ────────────────────────────────────────────────────────────────
 
@@ -1136,9 +1317,16 @@ class CursivLauncher(QMainWindow):
         col.setContentsMargins(40, 0, 40, 0)
         col.setSpacing(20)
 
-        glyph = QLabel("✦")
+        glyph = QLabel("\U00013062")   # Anubis (Gardiner C6, jackal-headed god)
         glyph.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        glyph.setStyleSheet(f"color: {GOLD}; font-size: 48px;")
+        # Segoe UI (the app's base font) has no Egyptian Hieroglyphs glyphs,
+        # and Qt doesn't auto-fall back to Segoe UI Historic (which does) --
+        # confirmed by rendering it and getting a tofu box. See
+        # _ensure_hieroglyph_font()/_hieroglyph_font() for the full story.
+        _ensure_hieroglyph_font()
+        glyph.setStyleSheet(
+            f'color: {GOLD}; font-size: 48px; font-family: "Segoe UI Historic";'
+        )
         col.addWidget(glyph)
 
         greet = QLabel(f"Welcome back, {self._username}.")
@@ -1146,10 +1334,10 @@ class CursivLauncher(QMainWindow):
         greet.setStyleSheet(f"color: {SILVER}; font-size: 15px; font-weight: 600;")
         col.addWidget(greet)
 
-        self._btn = QPushButton("Open Cursiv")
-        self._btn.setFixedHeight(52)
-        self._btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._btn.setStyleSheet(f"""
+        self._getting_started_btn = QPushButton("Getting Started")
+        self._getting_started_btn.setFixedHeight(52)
+        self._getting_started_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._getting_started_btn.setStyleSheet(f"""
             QPushButton {{
                 background: #2255DD; color: #ffffff;
                 font-size: 15px; font-weight: 600;
@@ -1159,16 +1347,21 @@ class CursivLauncher(QMainWindow):
             QPushButton:pressed {{ background: #1144CC; }}
             QPushButton:disabled {{ background: #1a1a2e; color: {SILV2}; }}
         """)
-        self._btn.clicked.connect(self._launch_app)
-        col.addWidget(self._btn)
+        self._getting_started_btn.clicked.connect(self._show_getting_started)
+        col.addWidget(self._getting_started_btn)
 
         self._eye_btn = QPushButton("𓂀  Open the Eye (Terminal)")
         self._eye_btn.setFixedHeight(44)
         self._eye_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        # Mixed hieroglyph + Latin text in one widget -- see
+        # _ensure_hieroglyph_font() for why this font-family fallback list
+        # (not just a plain color/size stylesheet) is required for the eye
+        # glyph to render as the actual symbol instead of a tofu box.
         self._eye_btn.setStyleSheet(f"""
             QPushButton {{
                 background: transparent; color: {GOLD};
                 font-size: 13px; font-weight: 600;
+                font-family: "Segoe UI", "Segoe UI Historic";
                 border: 1px solid {GOLD}; border-radius: 8px;
             }}
             QPushButton:hover   {{ background: rgba(201,162,39,0.12); }}
@@ -1418,6 +1611,14 @@ class CursivLauncher(QMainWindow):
         _open_terminal_window("Cursiv — Eye of Horus", cmd)
         self._set_status("Eye of Horus opened in a new terminal")
 
+    # ── Getting Started ──────────────────────────────────────────────────
+
+    def _show_getting_started(self):
+        dlg = GettingStartedDialog(self)
+        dlg.exec()
+        if dlg.dont_show_again():
+            _mark_getting_started_seen()
+
     # ── App launch / stop ─────────────────────────────────────────────────
 
     def _launch_app(self):
@@ -1436,8 +1637,6 @@ class CursivLauncher(QMainWindow):
                 self._set_status(f"Found existing server at {url}")
                 return
 
-        self._btn.setEnabled(False)
-        self._btn.setText("Starting…")
         self._set_status("Launching Cursiv…")
 
         python = _find_python()
@@ -1451,8 +1650,6 @@ class CursivLauncher(QMainWindow):
         def _check():
             # Process died before port opened
             if self._app_proc and self._app_proc.poll() is not None:
-                self._btn.setEnabled(True)
-                self._btn.setText("Open Cursiv")
                 self._set_status("Failed to start — check secrets.bat / API keys")
                 return
 
@@ -1461,8 +1658,6 @@ class CursivLauncher(QMainWindow):
                     self._app_alive = True
                     self._stop_act.setEnabled(True)
                     webbrowser.open(url)
-                    self._btn.setEnabled(True)
-                    self._btn.setText("Open Cursiv")
                     self._set_status(f"Running at {url}")
                     return
             except OSError:
@@ -1471,11 +1666,9 @@ class CursivLauncher(QMainWindow):
             elapsed[0] += 500
             if elapsed[0] >= _POLL_DEADLINE_S * 1000:
                 # Hit deadline — report timeout, do NOT open browser speculatively
-                self._btn.setEnabled(True)
-                self._btn.setText("Open Cursiv")
                 self._set_status(
                     f"Startup timeout ({_POLL_DEADLINE_S}s) — "
-                    "click again if app is still loading"
+                    "reopen from the tray menu if app is still loading"
                 )
                 return
 
@@ -1488,8 +1681,6 @@ class CursivLauncher(QMainWindow):
         self._app_proc  = None
         self._app_alive = False
         self._stop_act.setEnabled(False)
-        self._btn.setEnabled(True)
-        self._btn.setText("Open Cursiv")
         self._set_status("Cursiv stopped")
 
     def _set_status(self, msg: str):
@@ -1539,6 +1730,65 @@ class CursivLauncher(QMainWindow):
         self._set_status(f"Update available: v{tag}")
         dlg = UpdateDialog(tag, result["body"], result["exe_url"], self)
         dlg.exec()
+
+    # ── llama3.1 model download ───────────────────────────────────────────
+
+    def _download_llama_model(self, on_done: "Callable[[], None] | None" = None):
+        if not _is_ollama_installed():
+            reply = QMessageBox.question(
+                self, "Ollama Required",
+                "llama3.1 runs inside Ollama, which isn't installed yet.\n\n"
+                "Install Ollama first?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply == QMessageBox.StandardButton.Yes:
+                self._install_ollama()
+            return
+
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Download llama3.1")
+        msg.setIcon(QMessageBox.Icon.Warning)
+        msg.setText("<b>Download llama3.1?</b>")
+        msg.setInformativeText(
+            "This is Cursiv's default local model — a ~4.7 GB one-time download.\n\n"
+            "Requires Ollama to be running and ~6 GB of free disk space.\n\n"
+            "This runs in a terminal window. You can minimise it and continue using Cursiv."
+        )
+        msg.setStandardButtons(
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
+        )
+        msg.button(QMessageBox.StandardButton.Ok).setText("Download (~4.7 GB)")
+        msg.button(QMessageBox.StandardButton.Cancel).setText("Not Now")
+        msg.setStyleSheet(QSS)
+
+        if msg.exec() != QMessageBox.StandardButton.Ok:
+            return
+
+        self._set_status("Launching llama3.1 download — see terminal window…")
+
+        script = (
+            "Write-Host '' ;"
+            "Write-Host '  Cursiv — llama3.1' -ForegroundColor DarkYellow ;"
+            "Write-Host '' ;"
+            "Write-Host '  Pulling llama3.1...' -ForegroundColor Cyan ;"
+            "ollama pull llama3.1 ;"
+            "if ($LASTEXITCODE -eq 0) { Write-Host '  [OK] llama3.1 ready.' -ForegroundColor Green }"
+            "else { Write-Host '  [!] Pull failed -- run: ollama pull llama3.1' -ForegroundColor Yellow } ;"
+            "Write-Host '' ;"
+            "Write-Host '  Press Enter to close...' -NoNewline ;"
+            "Read-Host"
+        )
+        try:
+            subprocess.Popen(
+                ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
+                 "-Command", script],
+                creationflags=subprocess.CREATE_NEW_CONSOLE,
+                cwd=str(_ROOT),
+            )
+        except Exception as exc:
+            self._set_status(f"Could not launch download: {exc}")
+        if on_done is not None:
+            QTimer.singleShot(500, on_done)
 
     # ── Winkler-Codex model download ─────────────────────────────────────
 
