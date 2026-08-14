@@ -112,8 +112,6 @@ After the installer finishes, a **second window opens automatically** and downlo
 | Ollama (the AI runtime) | ~90 MB |
 | llama3.1 (the language model) | ~4.7 GB |
 
-**Optional:** The installer includes a checkbox for **Cursiv Substrate Browser** — a standalone desktop app for the local substrate layer. Adds a separate icon to your desktop. ~80 MB extra.
-
 **System requirements:** Windows 10 or 11 (64-bit) · ~6 GB free disk space · 8 GB RAM minimum
 
 <br>

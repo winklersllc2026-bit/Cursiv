@@ -45,6 +45,20 @@
 -->
 # Changelog
 
+## v3.14-U20 — The app actually opens now, multi-account logins, and the Substrate Browser is gone (2026-08-14)
+
+**Critical fix — the main window could fail to appear at all:**
+- Root-caused via faulthandler + timing tests, not guesswork: the chat panel eagerly imported its command router, which imports `cursiv_v215.ui.chat_app`, which imports `gradio` — a genuinely heavy import that takes ~10 seconds cold. Before the chat panel existed, nothing in the main GUI's startup touched gradio at all (the old "Open Cursiv" mode ran it as a separate subprocess); U18 put it directly in the window construction path instead, on the main thread, before the window could even show. That's the real explanation for "login works, then nothing happens, no window, no tray icon" — the process was alive the whole time, just with nothing on screen for 10+ seconds, easy to mistake for a dead launch and give up on.
+- Fixed: the command router now loads on a background thread. The window appears in well under a tenth of a second regardless of backend load time; Send and the mic button stay disabled with a "Loading Cursiv's core…" message until it's ready (confirmed ~10.8s in testing), then everything works normally.
+- Also broadened error handling in main.py — constructing the main window was completely unguarded before (only the import statement had a try/except, and only for ImportError specifically). Any other failure during construction would have been just as silent. Now shows a real error dialog with the full traceback if something does go wrong.
+
+**Multi-account logins:**
+- Added a "Create Account" option next to "Forgot Password?" on the login screen — lets a second (or third, etc.) person set up their own username and password on the same install, without touching or overwriting the primary account's credentials. Everyone shares the same underlying Cursiv data (strands, API keys, etc.) — this is multiple logins on one shared install, not isolated per-person data.
+- Implemented as a genuinely separate, additive credential store so the primary account's existing login carries zero risk from this change. Security-question password recovery stays scoped to the primary account for now — extending that to every added account is a larger, separate feature.
+
+**Removed: Cursiv Substrate Browser.**
+- It never actually connected to anything functional. Removed the desktop shortcut, the installer's optional CSB task and its ~80MB PyQt6-WebEngine download step, the sidebar install strip, the tray menu entry, and the standalone entry-point files. Also dropped WebEngine from the PyInstaller bundle entirely, which shrinks the installer and speeds up the build.
+
 ## v3.14-U19 — No more terminal windows at all, not just the Eye of Horus (2026-08-13)
 
 **Launcher:**

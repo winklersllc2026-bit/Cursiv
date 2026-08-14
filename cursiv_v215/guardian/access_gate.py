@@ -48,8 +48,11 @@ try:
 except ImportError:
     _LCW_SIGIL = ""
 
+import base64
 import hashlib
 import hmac
+import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 try:
@@ -67,9 +70,15 @@ _RUNTIME   = Path.home() / ".cursiv" / "runtime"
 # stayed True forever and the app skipped straight to Login, never showing
 # Create Account again. Path.home() is stable regardless of install location
 # or version.
-_HASH_FILE = _RUNTIME / "auth.hash"    # bcrypt hash (64 bytes)
-_META_FILE = _RUNTIME / "auth.meta"    # SHA-256 of username (hex string)
+_HASH_FILE = _RUNTIME / "auth.hash"    # bcrypt hash (64 bytes) -- primary account only
+_META_FILE = _RUNTIME / "auth.meta"    # SHA-256 of username (hex string) -- primary account only
 _FLAG_FILE = _RUNTIME / "auth.ini"     # setup marker
+
+# Additional accounts (beyond the first) live here instead -- the primary
+# account's storage above is left completely untouched so multi-account
+# support carries zero risk to the login that's already working. Format:
+# {"<sha256 username hex>": {"pw_hash": "<base64 bcrypt hash>", "created": "<iso timestamp>"}}
+_ACCOUNTS_FILE = _RUNTIME / "accounts.json"
 
 
 def _ensure() -> None:
@@ -83,13 +92,28 @@ def _check_bcrypt() -> None:
         )
 
 
+def _load_accounts() -> dict:
+    if not _ACCOUNTS_FILE.exists():
+        return {}
+    try:
+        return json.loads(_ACCOUNTS_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _save_accounts(accounts: dict) -> None:
+    _ensure()
+    _ACCOUNTS_FILE.write_text(json.dumps(accounts, indent=2), encoding="utf-8")
+
+
 # ── Public API ─────────────────────────────────────────────────────────────────
 
 def setup_credentials(username: str, password: str) -> None:
     """
-    First-run setup. Hashes the password with bcrypt (rounds=12, ~250ms) and
-    stores the hash. The original password is never written anywhere.
-    Call once; overwrites any existing credentials.
+    First-run setup for the primary account. Hashes the password with
+    bcrypt (rounds=12, ~250ms) and stores the hash. The original password
+    is never written anywhere. Call once; overwrites any existing primary
+    credentials. Additional accounts (see add_account) are unaffected.
     """
     _check_bcrypt()
     _ensure()
@@ -102,38 +126,74 @@ def setup_credentials(username: str, password: str) -> None:
     _FLAG_FILE.write_text(username_hash, encoding="utf-8")
 
 
+def add_account(username: str, password: str) -> bool:
+    """
+    Create an additional login on this same install -- multiple people
+    (e.g. family members) can each have their own username/password
+    without sharing the primary account's credentials. Returns False if
+    the username is already taken (by the primary account or another
+    added one); True on success. Shares the same underlying app data
+    (strands, API keys, etc.) as every other account on this install --
+    this is multiple logins, not isolated per-user data.
+    """
+    _check_bcrypt()
+    _ensure()
+
+    username_hash = hashlib.sha256(username.encode("utf-8")).hexdigest()
+    if username_exists(username):
+        return False
+
+    hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(rounds=12))
+    accounts = _load_accounts()
+    accounts[username_hash] = {
+        "pw_hash": base64.b64encode(hashed).decode("ascii"),
+        "created": datetime.now(timezone.utc).isoformat(),
+    }
+    _save_accounts(accounts)
+    return True
+
+
 def verify_credentials(username: str, password: str) -> bool:
     """
     Login verification. Hashes the provided password and compares against the
     stored hash using bcrypt's constant-time comparison. Returns True on success.
-    The original password is never stored or reconstructed anywhere.
+    The original password is never stored or reconstructed anywhere. Checks
+    the primary account first, then any additional accounts.
     """
     _check_bcrypt()
-
-    if not _META_FILE.exists() or not _HASH_FILE.exists():
-        return False
-
-    # Verify username first (constant-time)
-    stored_user_hash = _META_FILE.read_text(encoding="utf-8").strip()
     username_hash = hashlib.sha256(username.encode("utf-8")).hexdigest()
-    if not hmac.compare_digest(username_hash, stored_user_hash):
-        return False
 
-    # Verify password via bcrypt
-    stored_hash = _HASH_FILE.read_bytes()
-    try:
-        return bcrypt.checkpw(password.encode("utf-8"), stored_hash)
-    except Exception:
-        return False
+    if _META_FILE.exists() and _HASH_FILE.exists():
+        stored_user_hash = _META_FILE.read_text(encoding="utf-8").strip()
+        if hmac.compare_digest(username_hash, stored_user_hash):
+            stored_hash = _HASH_FILE.read_bytes()
+            try:
+                return bcrypt.checkpw(password.encode("utf-8"), stored_hash)
+            except Exception:
+                return False
+
+    accounts = _load_accounts()
+    entry = accounts.get(username_hash)
+    if entry:
+        try:
+            stored_hash = base64.b64decode(entry["pw_hash"])
+            return bcrypt.checkpw(password.encode("utf-8"), stored_hash)
+        except Exception:
+            return False
+
+    return False
 
 
 def is_setup_complete() -> bool:
-    """True if credentials have been configured."""
-    return _FLAG_FILE.exists()
+    """True if any credentials (primary or additional) have been configured."""
+    return _FLAG_FILE.exists() or bool(_load_accounts())
 
 
 def username_exists(username: str) -> bool:
-    """Return True if the provided username matches the stored username hash."""
+    """Return True if the username matches the primary account or any additional one."""
+    username_hash = hashlib.sha256(username.encode("utf-8")).hexdigest()
+    if username_hash in _load_accounts():
+        return True
     if not _META_FILE.exists():
         return False
     try:

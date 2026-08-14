@@ -11,41 +11,12 @@ Output: dist/Cursiv/Cursiv.exe  (one-dir bundle, windowed)
 import sys
 from pathlib import Path
 
-try:
-    import PyQt6 as _qt6
-    _qt6_dir = Path(_qt6.__file__).parent
-    _qt6_bin = _qt6_dir / "Qt6" / "bin"
-    _qt6_res = _qt6_dir / "Qt6" / "resources"
-    _qt6_tr  = _qt6_dir / "Qt6" / "translations"
-
-    _extra_binaries = []
-    _extra_datas    = []
-    _extra_hidden   = ["PyQt6.QtWebEngineCore", "PyQt6.QtWebEngineWidgets"]
-
-    # Qt WebEngine DLLs + subprocess helper — must land in bundle root
-    # so Windows DLL search finds them when the .pyd loads
-    for _fname in [
-        "Qt6WebEngine.dll", "Qt6WebEngineCore.dll",
-        "Qt6WebEngineWidgets.dll", "QtWebEngineProcess.exe",
-    ]:
-        _fp = _qt6_bin / _fname
-        if _fp.exists():
-            _extra_binaries.append((str(_fp), "."))
-
-    # ICU data / pak files WebEngine needs at runtime
-    if _qt6_res.exists():
-        _extra_datas.append((str(_qt6_res), "resources"))
-
-    # WebEngine translation catalogs only (keeps size down)
-    if _qt6_tr.exists():
-        for _tf in _qt6_tr.glob("qtwebengine*"):
-            _extra_datas.append((str(_tf), "translations"))
-
-except Exception as _e:
-    print(f"[build.spec] WebEngine collection skipped: {_e}")
-    _extra_binaries = []
-    _extra_datas    = []
-    _extra_hidden   = []
+# Qt WebEngine (Substrate Browser) was removed -- it never actually
+# connected to anything real, and dropping it shrinks the bundle and
+# build time noticeably (it was ~80MB of DLLs/ICU data/translations).
+_extra_binaries: list = []
+_extra_datas: list    = []
+_extra_hidden: list   = []
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
@@ -113,7 +84,6 @@ hiddenimports = [
     "cursiv_v215.weave",
     # launcher
     "cursiv_launcher",
-    "cursiv_browser",
     "login_dialog",
     "tray",
     "chat_panel",
@@ -125,8 +95,6 @@ hiddenimports = [
     "PyQt6.QtWidgets",
     "PyQt6.QtCore",
     "PyQt6.QtGui",
-    "PyQt6.QtWebEngineCore",
-    "PyQt6.QtWebEngineWidgets",
     "PyQt6.sip",
     "uvicorn",
     "uvicorn.logging",

@@ -126,9 +126,6 @@ def main():
         _run_terminal_mode()
         return
 
-    # ── --browser flag: open Substrate Browser directly, skip launcher ────
-    _browser_mode = "--browser" in sys.argv or "--substrate-browser" in sys.argv
-
     try:
         from PyQt6.QtWidgets import QApplication, QMessageBox
         from PyQt6.QtCore import Qt
@@ -143,26 +140,6 @@ def main():
     QApplication.setHighDpiScaleFactorRoundingPolicy(
         Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
     )
-
-    if _browser_mode:
-        QApplication.setAttribute(Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
-        app = QApplication(sys.argv)
-        app.setApplicationName("Cursiv Substrate Browser")
-        app.setOrganizationName("Joshua Winkler")
-        try:
-            from cursiv_browser import CursivBrowser
-            window = CursivBrowser()
-        except ImportError as _e:
-            from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.critical(
-                None, "Cursiv Substrate Browser",
-                f"Cursiv Substrate Browser could not start:\n\n{_e}\n\n"
-                "Use the Install button inside the Cursiv Launcher to set it up."
-            )
-            sys.exit(1)
-        window.setWindowTitle("Cursiv Substrate Browser")
-        window.show()
-        sys.exit(app.exec())
 
     app = QApplication(sys.argv)
     app.setApplicationName("Cursiv")

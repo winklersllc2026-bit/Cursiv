@@ -16,11 +16,11 @@
 ; Encoded local stamp: ΧκΖ∈ηβōΡν∀λ∂ψΩāΣγφΨδĀΨνā∇αΗĪΩŪχΥīΚκεδΜΟδζ∂Ι=
 ; CURSIV-CRUCIBLE-STAMP END
 ; ============================================================
-; Cursiv v3.14-U19 — Native chat panel replaces the terminal
-; Produces: installer\Output\Cursiv-Setup-3.14-U19.exe
+; Cursiv v3.14-U20 — Native chat panel replaces the terminal
+; Produces: installer\Output\Cursiv-Setup-3.14-U20.exe
 ;
-; Single PyInstaller bundle: Cursiv.exe (GUI launcher, tray, guardian,
-; feedback loops, substrate browser, and terminal/chat mode via -t).
+; Single PyInstaller bundle: Cursiv.exe (GUI launcher with embedded chat
+; panel, tray, guardian, feedback loops, and terminal/chat mode via -t).
 ; Patches applied: groovy/version.txt + pandas stub (fixes CLI crash).
 ; Bootstrap script installs Ollama + all pip packages post-install.
 ;
@@ -28,7 +28,7 @@
 ; ============================================================
 
 #define AppName      "Cursiv"
-#define AppVer       "3.14-U19"
+#define AppVer       "3.14-U20"
 #define AppPublisher "Joshua Winkler"
 #define AppURL       "https://github.com/winklersllc2026-bit/Cursiv"
 #define AppExe       "Cursiv.exe"
@@ -50,7 +50,7 @@ LicenseFile=..\LICENSE
 InfoAfterFile=..\CHANGELOG.md
 AppComments=Offline AI workspace with cascade routing (xAI → OpenAI → Claude → Ollama), live status indicators, and security-question password recovery. No internet required after install. Your data never leaves your machine.
 OutputDir=Output
-OutputBaseFilename=Cursiv-Setup-3.14-U19
+OutputBaseFilename=Cursiv-Setup-3.14-U20
 SetupIconFile=..\launcher\resources\icons\cursiv.ico
 WizardSmallImageFile=..\launcher\resources\icons\cursiv_256.png
 Compression=lzma2/ultra64
@@ -67,7 +67,6 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Tasks]
 Name: "desktopicon";  Description: "{cm:CreateDesktopIcon}";                                                       GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 Name: "autostart";    Description: "Start Cursiv when Windows starts";                                             GroupDescription: "Startup:"; Flags: unchecked
-Name: "csb";          Description: "Cursiv Substrate Browser — adds a desktop icon for the local curs.http:// browser"; GroupDescription: "Optional components:"
 
 [Files]
 ; ── Main application (PyInstaller bundle: single Cursiv.exe) ─────────────────
@@ -100,19 +99,6 @@ Name: "{group}\Uninstall {#AppName}";  Filename: "{uninstallexe}"
 ; Desktop shortcut — main launcher (optional)
 Name: "{autodesktop}\{#AppName}";                  Filename: "{app}\{#AppExe}"; Tasks: desktopicon
 
-; Desktop shortcut — Cursiv Substrate Browser (optional CSB task)
-; Launches Cursiv.exe --browser directly -- it's a windowed PyQt6 app with
-; its own window, it never needed a console. The old cmd.exe /c ... & pause
-; wrapper popped a bare, empty console window on every launch with nothing
-; in it but "Press any key to continue" once the browser closed -- easy to
-; mistake for a broken/pointless "terminal", because from the outside
-; that's exactly what it looked like.
-Name: "{autodesktop}\Cursiv Substrate Browser";    Filename: "{app}\{#AppExe}"; \
-  Parameters: "--browser"; \
-  IconFilename: "{app}\{#AppExe}"; \
-  Comment: "Open the Cursiv substrate layer browser (curs.http://)"; \
-  Tasks: csb
-
 [Registry]
 ; Autostart (optional task) — HKCU so no admin needed
 Root: HKCU; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; \
@@ -134,12 +120,6 @@ Filename: "powershell.exe"; \
   Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Normal -File ""{app}\scripts\cursiv_full_setup.ps1"" -CursivDir ""{app}"""; \
   Description: "Full setup — install Git, Python, Ollama, AI model, and all packages (12 steps)"; \
   Flags: nowait postinstall skipifsilent runascurrentuser
-
-; CSB: install PyQt6-WebEngine when the substrate browser task is selected
-Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Normal -Command ""pip install PyQt6-WebEngine>=6.7.0"""; \
-  Description: "Install Cursiv Substrate Browser engine (~80 MB)"; \
-  Flags: nowait postinstall skipifsilent runascurrentuser; Tasks: csb
 
 ; Launch after install (the setup script also launches, but this is the checkbox option)
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; \
