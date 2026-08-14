@@ -23,7 +23,7 @@ import threading
 from pathlib import Path
 from typing import Optional
 
-from PyQt6.QtCore import Qt, QObject, pyqtSignal
+from PyQt6.QtCore import Qt, QObject, QTimer, pyqtSignal
 from PyQt6.QtGui import QKeyEvent, QTextCursor, QGuiApplication
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTextBrowser, QPlainTextEdit,
@@ -70,6 +70,13 @@ def _load_saved_keys() -> dict:
         return {k: v for k, v in data.items() if isinstance(v, str)}
     except Exception:
         return {}
+
+
+def _is_ollama_installed() -> bool:
+    import os
+    import shutil
+    exe = Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Ollama" / "ollama.exe"
+    return bool(shutil.which("ollama")) or exe.exists()
 
 
 class _ChatSignals(QObject):
@@ -146,18 +153,28 @@ class ChatPanel(QWidget):
         self._voice_btn.setEnabled(False)
         self._append_system("Loading Cursiv's core…")
 
-        # The window itself must never wait on this -- it's already visible
-        # and interactive by the time this thread finishes, whether that
-        # takes 50ms or 5s. See the comment above the module-level `cc`
-        # placeholder for why this can't just be a plain top-of-file import.
-        threading.Thread(target=self._load_backend, daemon=True).start()
+        # Deferred to the next event-loop tick (still the *main* thread) --
+        # not a background thread. This was a background thread originally,
+        # which fixed the window never appearing at all, but a real packaged
+        # build then showed the window correctly and crashed/closed shortly
+        # after -- almost certainly PyInstaller's frozen import machinery
+        # (a custom importer + a global import lock) not being as
+        # thread-safe as CPython's normal filesystem import path, something
+        # dev-mode testing from source can't reproduce since it never goes
+        # through that loader at all. QTimer.singleShot(0, ...) still lets
+        # Qt paint the window before this runs (that's the actual fix for
+        # "window never appears"), it just does the ~10s import on the UI
+        # thread instead of a background one -- the UI is unresponsive for
+        # that stretch instead of silently crashing, which is a straight
+        # improvement even though it's not true async loading.
+        QTimer.singleShot(0, self._load_backend)
 
     def _load_backend(self) -> None:
         try:
-            import chat_commands as _cc_module  # noqa: F401 -- caches in sys.modules
-            self._signals.backend_ready.emit(True, "")
+            import chat_commands as _cc_module  # noqa: F401
+            self._on_backend_ready(True, "")
         except Exception as e:
-            self._signals.backend_ready.emit(False, str(e))
+            self._on_backend_ready(False, str(e))
 
     def _on_backend_ready(self, ok: bool, error: str) -> None:
         global cc, _CHAT_OK, _CHAT_IMPORT_ERROR, _cursiv_chat, _CHAT_ROOT, _RATE_SENTINEL
@@ -180,16 +197,27 @@ class ChatPanel(QWidget):
             self._send_btn.setEnabled(True)
             self._voice_btn.setEnabled(True)
             has_key = any(self._cfg.get(k) for k in ("api_key", "openai_key", "anthropic_key"))
-            self._append_system(
-                "Talk to Cursiv here — no terminal needed. Runs through Ollama "
-                "locally when no cloud key is set, or cascades through your "
-                "configured providers otherwise. Type 'help' for the full command list."
-                if has_key else
-                "Talk to Cursiv here — no terminal needed. No cloud API key is "
-                "configured yet, so this runs on your local Ollama model. Type "
-                "'key xai-...', 'openai sk-...', or 'anthropic sk-ant-...' to add one. "
-                "Type 'help' for the full command list."
-            )
+            if has_key:
+                self._append_system(
+                    "Talk to Cursiv here — no terminal needed. Runs through Ollama "
+                    "locally when no cloud key is set, or cascades through your "
+                    "configured providers otherwise. Type 'help' for the full command list."
+                )
+            elif _is_ollama_installed():
+                self._append_system(
+                    "Talk to Cursiv here — no terminal needed. No cloud API key is "
+                    "configured yet, so this runs on your local Ollama model. Type "
+                    "'key xai-...', 'openai sk-...', or 'anthropic sk-ant-...' to add one. "
+                    "Type 'help' for the full command list."
+                )
+            else:
+                self._append_system(
+                    "Talk to Cursiv here — no terminal needed. No cloud API key is "
+                    "configured and Ollama isn't installed yet, so there's no model "
+                    "to talk to. Right-click the tray icon → Install Ollama, or type "
+                    "'key xai-...', 'openai sk-...', or 'anthropic sk-ant-...' to use "
+                    "a cloud provider instead."
+                )
         else:
             _CHAT_IMPORT_ERROR = error
             self._append_system(

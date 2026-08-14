@@ -83,7 +83,7 @@ _WATCHDOG_MS     = 3_000         # ms between app-health checks
 _POLL_DEADLINE_S = 30            # seconds to wait for app to bind its port
 
 # ── Update checker ─────────────────────────────────────────────────────────────
-_CURRENT_VERSION   = "3.14-U20"
+_CURRENT_VERSION   = "3.14-U21"
 _GITHUB_API        = "https://api.github.com/repos/winklersllc2026-bit/Cursiv/releases/latest"
 _GITHUB_RELEASES   = "https://github.com/winklersllc2026-bit/Cursiv/releases"
 
@@ -1234,11 +1234,11 @@ class CursivLauncher(QMainWindow):
 
         self.setWindowTitle("Cursiv")
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window)
-        # Wide enough to host a real chat panel alongside the control
-        # sidebar -- the old 420px width was sized for a pure control panel
-        # with no chat view. Frameless windows don't get free edge-resize
-        # handling from Qt, so this is a fixed size rather than a minimum;
-        # true drag-to-resize is a follow-up, not part of this pass.
+        # Sized for the chat panel, which is now the entire window (the
+        # control sidebar is built but hidden -- see _build_ui). Frameless
+        # windows don't get free edge-resize handling from Qt, so this is
+        # a fixed size rather than a minimum; true drag-to-resize is a
+        # follow-up, not part of this pass.
         self.setFixedSize(980, 680)
         self.setStyleSheet(QSS)
 
@@ -1338,39 +1338,31 @@ class CursivLauncher(QMainWindow):
 
         vlay.addWidget(TitleBar(self, self._username))
 
-        body = QHBoxLayout()
-        body.setContentsMargins(0, 0, 0, 0)
-        body.setSpacing(0)
-
-        # ── Sidebar: the original control-panel content, now a scrollable
-        # rail alongside the chat view instead of the whole window.
-        sidebar_inner = QWidget()
-        side_lay = QVBoxLayout(sidebar_inner)
+        # ── Sidebar: no longer shown -- "Getting Started" and "Open in
+        # Terminal" moved into the tray menu instead. Still built (not
+        # skipped) and kept alive off-screen because _check_updates(),
+        # _download_codex_models(), _install_ollama(), and the fleet
+        # heartbeat all update self._upd_btn/_codex_dl_btn/_ollama_btn/
+        # _fleet_lbl by reference -- those methods are reachable from the
+        # tray menu regardless of whether this rail is visible, and would
+        # crash on a missing attribute if the widgets were never built.
+        self._sidebar = QWidget()
+        side_lay = QVBoxLayout(self._sidebar)
         side_lay.setContentsMargins(24, 20, 24, 20)
         side_lay.setSpacing(16)
         side_lay.addLayout(self._build_center())
         side_lay.addStretch(1)
+        self._sidebar.hide()
 
-        sidebar_scroll = QScrollArea()
-        sidebar_scroll.setWidget(sidebar_inner)
-        sidebar_scroll.setWidgetResizable(True)
-        sidebar_scroll.setFixedWidth(340)
-        sidebar_scroll.setStyleSheet(
-            f"QScrollArea {{ background: {BG}; border: none; border-right: 1px solid {BORDER}; }}"
-            f"QScrollArea > QWidget > QWidget {{ background: {BG}; }}"
-        )
-        body.addWidget(sidebar_scroll)
-
-        # ── Chat panel: the primary view, replacing the old terminal
+        # ── Chat panel: the only view now
         chat_wrap = QWidget()
         chat_wrap.setStyleSheet(f"background: {BG};")
         chat_lay = QVBoxLayout(chat_wrap)
         chat_lay.setContentsMargins(16, 16, 16, 16)
         self._chat_panel = ChatPanel()
         chat_lay.addWidget(self._chat_panel)
-        body.addWidget(chat_wrap, 1)
 
-        vlay.addLayout(body, 1)
+        vlay.addWidget(chat_wrap, 1)
         vlay.addWidget(self._build_footer())
 
     def _build_center(self) -> QVBoxLayout:
@@ -2078,6 +2070,15 @@ class CursivLauncher(QMainWindow):
         menu.addAction(self._stop_act)
 
         menu.addSeparator()
+        gs_act = QAction("Getting Started", self)
+        gs_act.triggered.connect(self._show_getting_started)
+        menu.addAction(gs_act)
+
+        term_act = QAction("Open in Terminal", self)
+        term_act.triggered.connect(self._launch_terminal_chat)
+        menu.addAction(term_act)
+
+        menu.addSeparator()
         sq_act = QAction("Security Questions", self)
         sq_act.triggered.connect(self._setup_sq)
         menu.addAction(sq_act)
@@ -2089,6 +2090,11 @@ class CursivLauncher(QMainWindow):
         codex_act = QAction("Winkler-Codex Download", self)
         codex_act.triggered.connect(self._download_codex_models)
         menu.addAction(codex_act)
+
+        if not _is_ollama_installed():
+            ollama_act = QAction("Install Ollama", self)
+            ollama_act.triggered.connect(self._install_ollama)
+            menu.addAction(ollama_act)
 
         if _RELAY_URL and _FLEET_TOKEN:
             fleet_act = QAction("⬢  Fleet Dashboard", self)

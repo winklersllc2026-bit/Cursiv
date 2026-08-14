@@ -45,6 +45,16 @@
 -->
 # Changelog
 
+## v3.14-U21 — Chat-panel-only window, and a real fix for the packaged-build startup freeze (2026-08-14)
+
+**Startup freeze in the packaged build, fixed for real this time:**
+- U20's background-thread fix for the "window never appears" bug worked perfectly in every dev-mode test, but the real installed .exe still opened and then closed/froze shortly after login. Root cause: PyInstaller's frozen import machinery (a custom importer plus a global import lock) almost certainly isn't as thread-safe as CPython's normal filesystem import path when a background thread triggers a large, heavy import chain — something dev-mode testing from source can never reproduce, since it never goes through that loader at all.
+- Fixed by moving the backend load off the background thread entirely. It now runs on a `QTimer`-deferred call on the main thread instead, one tick after the window paints — the window still appears immediately (that's still the real fix for "no window at all"), it's just unresponsive for the ~10 seconds the backend takes to load instead of loading silently in the background. A frozen-but-visible window for 10 seconds is a straightforward improvement over a crash.
+
+**Chat-panel-only window:**
+- Removed the left-side control sidebar (Getting Started, the terminal hint box, Security Questions, Check for Updates, Winkler-Codex Download) from the main window — it's just the chat panel now, full width.
+- "Getting Started" and "Open in Terminal" moved into the tray right-click menu so they're still reachable. Security Questions, Check for Updates, and Winkler-Codex Download were already there. Install Ollama (previously only shown in the sidebar, and only when Ollama wasn't detected) is now a conditional tray entry on the same terms, and the chat panel's opening message says so directly if neither Ollama nor a cloud API key is configured.
+
 ## v3.14-U20 — The app actually opens now, multi-account logins, and the Substrate Browser is gone (2026-08-14)
 
 **Critical fix — the main window could fail to appear at all:**
