@@ -78,6 +78,8 @@ class _ChatSignals(QObject):
     error = pyqtSignal(str)             # generation raised an exception
     image = pyqtSignal(str)             # a local image path to render inline
     voice_result = pyqtSignal(str, bool)   # transcribed text, auto_send
+    pending_write = pyqtSignal(str)     # raw WRITE_SENTINEL JSON payload, needs approval
+    write_complete = pyqtSignal(str)    # result text once an approved write finishes (or fails)
 
 
 class _ChatInput(QPlainTextEdit):
@@ -131,6 +133,9 @@ class ChatPanel(QWidget):
         self._signals.error.connect(self._on_error)
         self._signals.image.connect(self._on_image)
         self._signals.voice_result.connect(self._on_voice_result)
+        self._signals.pending_write.connect(self._on_pending_write)
+        self._signals.write_complete.connect(self._finish_pending_write)
+        self._pending_write_context: dict = {}
 
         self._cfg: dict = cc._default_cfg() if _CHAT_OK else {}
         if _CHAT_OK:
@@ -355,22 +360,38 @@ class ChatPanel(QWidget):
             # `history` here is the snapshot from *before* this turn, so it
             # goes straight to chat() -- which appends the current user
             # turn itself -- with nothing to trim off the end.
+            workspace = self._cfg.get("workspace", str(_CHAT_ROOT))
             gen = _cursiv_chat(
                 stripped, history,
                 api_key=self._cfg.get("api_key", ""), files=None,
                 file_access=self._cfg.get("file_access", False),
-                root_path=self._cfg.get("workspace", str(_CHAT_ROOT)),
+                root_path=workspace,
                 openai_key=self._cfg.get("openai_key", ""),
-                confirm_writes=False,
+                confirm_writes=(self._cfg.get("confirm_mode", "confirm") == "confirm"),
                 anthropic_key=self._cfg.get("anthropic_key", ""),
                 force_provider=force_provider,
             )
             self._cfg["last_user_msg"] = stripped
             full = ""
             for chunk in gen:
-                if chunk:
-                    full += chunk
-                    self._signals.chunk.emit(chunk)
+                if not chunk:
+                    continue
+                if cc.WRITE_SENTINEL in chunk:
+                    # Last chunk chat() will ever yield for this turn (it
+                    # returns right after) -- anything before the sentinel
+                    # in this same chunk is still real preview text to show.
+                    before, raw_json = chunk.split(cc.WRITE_SENTINEL, 1)
+                    if before:
+                        full += before
+                        self._signals.chunk.emit(before)
+                    self._pending_write_context = {
+                        "full": full, "stripped": stripped, "workspace": workspace,
+                    }
+                    self._signals.pending_write.emit(raw_json)
+                    return   # stays "streaming" (buttons disabled) until the
+                             # approval dialog resolves on the main thread
+                full += chunk
+                self._signals.chunk.emit(chunk)
             self._signals.done.emit()
             self._pending_history_append = [("user", stripped), ("assistant", full)]
         except Exception as e:
@@ -435,6 +456,62 @@ class ChatPanel(QWidget):
         # means it's still None -- a failed generation never produced a
         # complete exchange, so nothing gets added to history.
         self._pending_history_append = None
+        self._streaming = False
+        self._send_btn.setEnabled(True)
+        self._voice_btn.setEnabled(True)
+        self._status.setText("")
+
+    def _on_pending_write(self, raw_json: str) -> None:
+        """
+        file_access + "confirm" write mode: Cursiv wants to write a file and
+        chat() paused mid-turn waiting for approval -- same gate the
+        terminal CLI's _handle_pending_write() enforces, just as a dialog
+        instead of a y/n prompt. Still "streaming" (buttons disabled) while
+        this is open, matching the terminal blocking on the same decision.
+        """
+        import json
+        try:
+            pending = json.loads(raw_json)
+        except Exception:
+            self._finish_pending_write("[Could not parse pending write]")
+            return
+
+        path = pending.get("path", "?")
+        content = pending.get("content", "")
+        preview = content[:400] + ("..." if len(content) > 400 else "")
+        approved = QMessageBox.question(
+            self, "Cursiv — Write pending",
+            f"Approve write to:\n{path}\n\n{preview}",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        ) == QMessageBox.StandardButton.Yes
+
+        if not approved:
+            self._finish_pending_write("Write cancelled — file not modified.")
+            return
+
+        self._status.setText("Writing file...")
+        workspace = self._pending_write_context.get("workspace", str(_CHAT_ROOT))
+        threading.Thread(
+            target=self._run_write_approval, args=(path, content, workspace), daemon=True,
+        ).start()
+
+    def _run_write_approval(self, path: str, content: str, workspace: str) -> None:
+        try:
+            result = cc.approve_write(path, content, workspace)
+            self._signals.write_complete.emit(result.text)
+        except Exception as e:
+            self._signals.write_complete.emit(f"[Write failed: {e}]")
+
+    def _finish_pending_write(self, tail_text: str) -> None:
+        full = self._pending_write_context.get("full", "")
+        stripped = self._pending_write_context.get("stripped", "")
+        if tail_text:
+            self._append_reply_chunk(("\n\n" if full else "") + tail_text)
+            full += ("\n\n" if full else "") + tail_text
+        self._end_ai_reply()
+        self._history.append({"role": "user", "content": stripped})
+        self._history.append({"role": "assistant", "content": full})
+        self._pending_write_context = {}
         self._streaming = False
         self._send_btn.setEnabled(True)
         self._voice_btn.setEnabled(True)

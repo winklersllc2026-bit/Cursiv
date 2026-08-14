@@ -42,6 +42,8 @@ from cursiv_v215.ui.chat_app import (
     chat as _chat,
     ROOT as _CHAT_ROOT,
     RATE_SENTINEL,
+    WRITE_SENTINEL,
+    execute_tool as _execute_tool,
     _call_ollama,
     _call_xai_stream,
     _call_claude_direct,
@@ -296,7 +298,7 @@ def _default_cfg() -> dict:
     """Same shape as chat_cli.py's cfg dict, minus the terminal-only fields."""
     return {
         "file_access":      False,
-        "confirm_mode":     "auto",   # GUI has no write-confirm prompt loop (yet) -- default to auto
+        "confirm_mode":     "confirm",   # same safe default as the terminal CLI -- every write needs approval until "mode" toggles it
         "funforge_session": None,
         "workspace":        str(_CHAT_ROOT),
         "obsidian_enabled": False,
@@ -400,6 +402,10 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
     if cmd in ("files on", "files off"):
         cfg["file_access"] = cmd == "files on"
         return TextResult(f"File access → {'ON' if cfg['file_access'] else 'OFF'}")
+
+    if cmd == "mode":
+        cfg["confirm_mode"] = "confirm" if cfg.get("confirm_mode") == "auto" else "auto"
+        return TextResult(f"Write mode → {cfg['confirm_mode'].upper()}")
 
     if cmd in ("overseer on", "overseer off"):
         if cmd == "overseer on":
@@ -1226,3 +1232,12 @@ def postal_compose(sender_user: str, recipient_raw: str, hint: str, content: str
         f"signed: {'yes — Ed25519' if my_id else 'no — run postal setup first'}\n"
         f"readable: on this machine only"
     )
+
+
+# ── Pending file write -- caller (chat_panel.py) shows the confirmation
+# dialog (needs Qt, on the main thread); the actual write happens here via
+# the same execute_tool() the terminal CLI's approval flow calls. ─────────
+
+def approve_write(path: str, content: str, workspace: str) -> TextResult:
+    result = _execute_tool("write_file", {"path": path, "content": content}, Path(workspace))
+    return TextResult(f"✓ {result}")
