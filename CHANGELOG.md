@@ -45,6 +45,18 @@
 -->
 # Changelog
 
+## v3.14-U28 — Training Data manager: image upload, typed notes, and manual JSON all feed one store (2026-08-15)
+
+Three new ways to add to `.cursiv/training_data.jsonl` — the file `cursiv_v215/training/watcher.py`'s background watcher already fills automatically from good conversations, and what "the next LoRA training pass" reads from. Starting the LoRA pass itself is still a terminal-only step for now (noted as the next thing to streamline, once this lands).
+
+**Upload an image, get a training example.** A new "🗂 Training Data" button in the chat panel header opens a dialog where "Upload Image…" runs the same vision analysis `analyze_pasted_image` already used for pasted screenshots (Claude or GPT-4o, whichever key is set), then stores the description as a `{"prompt": ..., "response": ...}` example instead of just showing it in chat.
+
+**Typed notes convert too, right from the chat.** No new command to learn — a message like "translate my current notes into JSON format for training" is fuzzy-matched (any phrasing combining "json," "train/training," and a verb like translate/convert/turn/format triggers it, order-independent, per how many different ways there are to ask for this) and sent to whatever model is available — Ollama first, matching Cursiv's offline-first default, cloud keys only as a fallback — to restructure into `{prompt, response}`. A short trigger-only message pulls the notes from the previous turn instead of trying to translate the instruction sentence itself; a longer message is translated as-is. If the model doesn't return clean JSON, the raw notes are stored rather than lost.
+
+**The dialog itself is the "storage drop-down" — view, copy, paste in, delete.** Lists every stored example (source, preview, timestamp), shows the full JSON for whichever one is selected with a one-click copy, deletes on confirmation, and has its own paste box for adding a hand-written JSON example directly — all reading and writing the exact same file the automatic watcher uses, so nothing added here needs a separate import step later.
+
+Verified: fuzzy-phrase matching against six cases (three should-match phrasings, three shouldn't — including a bare "json" mention and an unrelated "train the dog" — all correct); add/list/delete cycle through the real backend functions; the dialog itself constructed and driven offscreen (add via paste box, select, copy to clipboard, delete, refresh) with no errors.
+
 ## v3.14-U27 — `grok <question>` / `claude <question>` / `chatgpt <question>` now work directly (2026-08-15)
 
 Testing U26's new direct-retry commands surfaced a real gap immediately: typing `grok whats up grok` didn't do anything provider-specific — it just went to Cursiv's default routing like any other message, since the bare `grok`/`claude`/`chatgpt` commands only ever meant "retry the previous message," with no way to ask a *new* question to a specific provider except the separate, undiscovered `hey grok <question>` prefix.

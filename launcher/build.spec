@@ -90,6 +90,7 @@ hiddenimports = [
     "chat_commands",
     "legacy_vault_dialog",
     "postal_compose_dialog",
+    "training_data_dialog",
     # PyQt6
     "PyQt6",
     "PyQt6.QtWidgets",

@@ -32,6 +32,7 @@ one deliberate omission, since there's no terminal process to quit.
 """
 from __future__ import annotations
 
+import json
 import re
 import sys
 from datetime import datetime, timedelta
@@ -496,6 +497,25 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
 
     if cmd == "help":
         return TextResult(_HELP_TEXT)
+
+    # ── Free-form notes → JSON training example ─────────────────────────
+    # Fuzzy-matched, not a fixed command -- "translate my notes into JSON
+    # for training", "convert this into json for training", etc. all hit
+    # it. A short trigger-only message ("translate my current notes into
+    # JSON format for training") means "the notes" are whatever the user
+    # just said before this -- pull the prior user turn instead of trying
+    # to translate the instruction sentence itself.
+    if _looks_like_text_to_json_request(text):
+        notes = text
+        if len(text) < 160:
+            for turn in reversed(history):
+                if turn.get("role") == "user":
+                    notes = turn.get("content", "")
+                    break
+        ok, msg, entry = text_to_training_entry(notes, cfg)
+        if ok and entry:
+            return TextResult(f"⬡ {msg}\n\n```json\n{json.dumps(entry, indent=2)}\n```")
+        return TextResult(f"⬡ {msg}")
 
     # ── Simple state toggles ────────────────────────────────────────────
     if cmd == "status":
@@ -1453,6 +1473,246 @@ def voice_turn(cfg: dict, duration_s: float = 5.0, raw_mode: bool = False,
         return TextResult((cleaned.strip() or raw_text))
     except Exception:
         return TextResult(raw_text)
+
+
+# ── Training data manager ────────────────────────────────────────────────
+# Images and free-form notes both feed the same file the background watcher
+# already writes to (cursiv_v215/training/watcher.py's TRAINING_JSONL,
+# read by "the next LoRA training pass") -- one store, one schema
+# ({"prompt", "response", "quality", "agent_id", "timestamp", "source"}),
+# regardless of whether an entry came from a conversation the watcher
+# scored automatically, an uploaded image, typed notes, or a manually
+# pasted JSON object.
+try:
+    from cursiv_v215.training.watcher import TRAINING_JSONL as _TRAINING_JSONL
+except Exception:
+    _TRAINING_JSONL = Path.home() / ".cursiv" / "training_data.jsonl"
+
+_TEXT2JSON_VERBS = ("translate", "convert", "turn", "format")
+
+
+def _looks_like_text_to_json_request(text: str) -> bool:
+    """Fuzzy match for phrases like 'translate my notes into JSON for
+    training' -- order-independent keyword co-occurrence rather than a
+    rigid phrase, since there's no one fixed way to ask for this."""
+    t = text.lower()
+    return "json" in t and "train" in t and any(v in t for v in _TEXT2JSON_VERBS)
+
+
+def list_training_entries() -> list[dict]:
+    """Read every entry in the training JSONL. Each dict gets a '_line'
+    key (its 0-based line number) so the caller can select/delete it."""
+    if not _TRAINING_JSONL.exists():
+        return []
+    entries = []
+    for i, line in enumerate(_TRAINING_JSONL.read_text(encoding="utf-8").splitlines()):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            d = json.loads(line)
+        except Exception:
+            continue
+        if isinstance(d, dict):
+            d["_line"] = i
+            entries.append(d)
+    return entries
+
+
+def add_training_entry_json(raw_json: str) -> tuple[bool, str]:
+    """Validate and append a manually-pasted JSON object."""
+    raw_json = raw_json.strip()
+    if not raw_json:
+        return False, "Paste a JSON object first."
+    try:
+        entry = json.loads(raw_json)
+    except Exception as e:
+        return False, f"Invalid JSON: {e}"
+    if not isinstance(entry, dict):
+        return False, 'JSON must be an object, e.g. {"prompt": "...", "response": "..."}'
+    entry.setdefault("timestamp", datetime.now().isoformat())
+    entry.setdefault("source", "manual")
+    entry.setdefault("quality", 1.0)
+    _TRAINING_JSONL.parent.mkdir(parents=True, exist_ok=True)
+    with _TRAINING_JSONL.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(entry) + "\n")
+    return True, "Added to training data."
+
+
+def delete_training_entry(line_index: int) -> tuple[bool, str]:
+    """Remove one entry by its line number in the JSONL file."""
+    if not _TRAINING_JSONL.exists():
+        return False, "No training data file yet."
+    lines = _TRAINING_JSONL.read_text(encoding="utf-8").splitlines()
+    if not (0 <= line_index < len(lines)):
+        return False, "Entry not found — the list may be out of date."
+    del lines[line_index]
+    _TRAINING_JSONL.write_text(
+        "\n".join(lines) + ("\n" if lines else ""), encoding="utf-8"
+    )
+    return True, "Deleted."
+
+
+def _run_llm_once(messages: list[dict], cfg: dict) -> str:
+    """Collect one full (non-streaming) response, offline-first: Ollama
+    before any cloud provider, matching Cursiv's always-works-air-gapped
+    default -- cloud keys are only ever a fallback, never a requirement."""
+    try:
+        text = "".join(c for c in _call_ollama(messages) if c and c != RATE_SENTINEL)
+        if text.strip():
+            return text
+    except Exception:
+        pass
+    xai_key = cfg.get("api_key", "")
+    if xai_key:
+        try:
+            text = "".join(c for c in _call_xai_stream(messages, xai_key) if c and c != RATE_SENTINEL)
+            if text.strip():
+                return text
+        except Exception:
+            pass
+    ant_key = cfg.get("anthropic_key", "")
+    if ant_key:
+        try:
+            text = "".join(c for c in _call_claude_direct(messages, ant_key) if c and c != RATE_SENTINEL)
+            if text.strip():
+                return text
+        except Exception:
+            pass
+    oai_key = cfg.get("openai_key", "")
+    if oai_key:
+        try:
+            text = "".join(c for c in _call_openai_direct(messages, oai_key) if c and c != RATE_SENTINEL)
+            if text.strip():
+                return text
+        except Exception:
+            pass
+    return ""
+
+
+def text_to_training_entry(notes: str, cfg: dict) -> tuple[bool, str, Optional[dict]]:
+    """Ask whatever model is available to turn free-form notes into a
+    structured {prompt, response} JSON training example."""
+    notes = notes.strip()
+    if not notes:
+        return False, "No notes to translate.", None
+
+    sys_prompt = (
+        "Convert the user's notes into a single JSON object with exactly two "
+        'keys: "prompt" (a plausible question or instruction these notes '
+        'would answer) and "response" (the notes, cleaned up, with all '
+        "information preserved — do not drop or invent facts). Return ONLY "
+        "the JSON object: no markdown fences, no extra commentary."
+    )
+    raw = _run_llm_once(
+        [{"role": "system", "content": sys_prompt}, {"role": "user", "content": notes}], cfg
+    )
+    if not raw.strip():
+        return False, ("No model available to translate notes — start Ollama, "
+                        "or set a cloud API key."), None
+
+    cleaned = raw.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.strip("`")
+        if cleaned.lower().startswith("json"):
+            cleaned = cleaned[4:]
+    try:
+        parsed = json.loads(cleaned)
+    except Exception:
+        parsed = None
+
+    if isinstance(parsed, dict) and parsed.get("response"):
+        entry = {
+            "prompt":    str(parsed.get("prompt", "Notes")),
+            "response":  str(parsed["response"]),
+            "quality":   1.0,
+            "agent_id":  "text_to_json",
+            "timestamp": datetime.now().isoformat(),
+            "source":    "text_to_json",
+        }
+    else:
+        # Model didn't return clean JSON -- store the raw notes rather
+        # than silently losing them.
+        entry = {
+            "prompt":    "Notes",
+            "response":  notes,
+            "quality":   1.0,
+            "agent_id":  "text_to_json",
+            "timestamp": datetime.now().isoformat(),
+            "source":    "text_to_json_fallback",
+        }
+
+    _TRAINING_JSONL.parent.mkdir(parents=True, exist_ok=True)
+    with _TRAINING_JSONL.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(entry) + "\n")
+    return True, "Notes translated and added to training data.", entry
+
+
+def image_to_training_entry(image_bytes: bytes, cfg: dict, ext: str = "png") -> tuple[bool, str, Optional[dict]]:
+    """Run vision analysis on an uploaded image and store the description
+    as a JSON training example. Mirrors analyze_pasted_image's vision call
+    but writes to the training store instead of strand memory."""
+    img_dir = Path(cfg.get("workspace", str(_CHAT_ROOT))) / ".cursiv" / "images"
+    img_dir.mkdir(parents=True, exist_ok=True)
+    img_path = img_dir / f"train_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}.{ext}"
+    img_path.write_bytes(image_bytes)
+
+    import base64 as _b64t
+    img_b64 = _b64t.b64encode(image_bytes).decode()
+    mime = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
+            "gif": "image/gif", "webp": "image/webp"}.get(ext.lower(), "image/png")
+    prompt_text = ("Describe this image in detail — objects, text, layout, and anything "
+                   "notable — as a single clear paragraph suitable for training data.")
+
+    vision_result, vision_provider = "", ""
+    ant_key, oai_key = cfg.get("anthropic_key", ""), cfg.get("openai_key", "")
+
+    if ant_key:
+        try:
+            import anthropic as _anth_t
+            resp = _anth_t.Anthropic(api_key=ant_key).messages.create(
+                model="claude-sonnet-4-6", max_tokens=600,
+                messages=[{"role": "user", "content": [
+                    {"type": "image", "source": {"type": "base64", "media_type": mime, "data": img_b64}},
+                    {"type": "text", "text": prompt_text},
+                ]}],
+            )
+            vision_result, vision_provider = resp.content[0].text, "claude"
+        except Exception:
+            pass
+
+    if not vision_result and oai_key:
+        try:
+            import openai as _oai_t
+            resp2 = _oai_t.OpenAI(api_key=oai_key).chat.completions.create(
+                model="gpt-4o", max_tokens=600,
+                messages=[{"role": "user", "content": [
+                    {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{img_b64}"}},
+                    {"type": "text", "text": prompt_text},
+                ]}],
+            )
+            vision_result, vision_provider = resp2.choices[0].message.content, "gpt-4o"
+        except Exception:
+            pass
+
+    if not vision_result:
+        return False, ("No vision model available — set an Anthropic or OpenAI key "
+                        "(type 'anthropic sk-ant-...' or 'openai sk-...') to enable "
+                        "image-to-JSON."), None
+
+    entry = {
+        "prompt":     prompt_text,
+        "response":   vision_result,
+        "quality":    1.0,
+        "agent_id":   "image_upload",
+        "timestamp":  datetime.now().isoformat(),
+        "source":     "image_upload",
+        "image_path": str(img_path),
+    }
+    _TRAINING_JSONL.parent.mkdir(parents=True, exist_ok=True)
+    with _TRAINING_JSONL.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(entry) + "\n")
+    return True, f"Image analyzed via {vision_provider} and added to training data.", entry
 
 
 # ── Paste image from clipboard → vision analysis → strand. Caller passes

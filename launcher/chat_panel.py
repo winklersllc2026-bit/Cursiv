@@ -242,12 +242,26 @@ class ChatPanel(QWidget):
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(10)
 
+        header_row = QHBoxLayout()
         header = QLabel("⬡  Cursiv")
         header.setStyleSheet(
             f'color: {GOLD}; font-size: 15px; font-weight: 700;'
             f' font-family: "Segoe UI", "Segoe UI Historic";'
         )
-        lay.addWidget(header)
+        header_row.addWidget(header)
+        header_row.addStretch(1)
+
+        training_btn = QPushButton("🗂 Training Data")
+        training_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        training_btn.setFixedHeight(28)
+        training_btn.setStyleSheet(self._icon_btn_style() + "QPushButton { font-size: 11px; padding: 4px 10px; }")
+        training_btn.setToolTip(
+            "View, add, or delete examples in the training data store -- "
+            "upload an image or paste JSON directly."
+        )
+        training_btn.clicked.connect(lambda: self._open_training_data())
+        header_row.addWidget(training_btn)
+        lay.addLayout(header_row)
 
         self._transcript = QTextBrowser()
         self._transcript.setOpenExternalLinks(True)
@@ -804,6 +818,14 @@ class ChatPanel(QWidget):
     def _open_legacy_vault(self) -> None:
         from legacy_vault_dialog import LegacyVaultDialog
         dlg = LegacyVaultDialog(self._cfg, self)
+        dlg.exec()
+
+    def _open_training_data(self) -> None:
+        if not _CHAT_OK:
+            self._append_system("Chat core isn't loaded yet -- try again in a moment.")
+            return
+        from training_data_dialog import TrainingDataDialog
+        dlg = TrainingDataDialog(self._cfg, self)
         dlg.exec()
 
     def _open_blast_auth(self, is_register: bool) -> None:
