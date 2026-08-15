@@ -34,6 +34,57 @@ else:
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
+# ── Crash logging ─────────────────────────────────────────────────────────
+# The packaged build runs with console=False (no terminal window), which
+# means Python's *default* crash handler tries to write to sys.stderr --
+# and sys.stderr is None in a windowed PyInstaller build. That failure is
+# itself silent. Worse, PyQt6's default behavior when an exception escapes
+# a slot (a button click, a QTimer.singleShot callback -- e.g. the ones
+# that fire 200ms/1.8s/3s after the main window is constructed, right in
+# the "opens and closes after a few seconds" window) with no custom
+# sys.excepthook installed is to hard-abort via qFatal -- immediate, no
+# trace. main.py already had a try/except around constructing and showing
+# the main window, but that block returns long before these deferred
+# callbacks ever run inside the Qt event loop, so it can't catch them.
+# This replaces the default handler with one that always writes to a file
+# (never relies on stdout/stderr existing) and shows a real dialog instead
+# of the process just vanishing.
+_CRASH_LOG = Path.home() / ".cursiv" / "crash.log"
+
+
+def _log_crash(exc_type, exc_value, exc_tb) -> None:
+    import datetime
+    import traceback
+    try:
+        _CRASH_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with _CRASH_LOG.open("a", encoding="utf-8") as f:
+            f.write(f"\n{'=' * 70}\n{datetime.datetime.now().isoformat()}\n")
+            traceback.print_exception(exc_type, exc_value, exc_tb, file=f)
+    except Exception:
+        pass
+    try:
+        from PyQt6.QtWidgets import QApplication, QMessageBox
+        if QApplication.instance() is not None:
+            QMessageBox.critical(
+                None, "Cursiv — Unexpected Error",
+                "Cursiv hit an unexpected error and needs to close.\n\n"
+                f"Details were saved to:\n{_CRASH_LOG}\n\n"
+                f"{exc_type.__name__}: {exc_value}",
+            )
+    except Exception:
+        pass
+
+
+sys.excepthook = _log_crash
+
+try:
+    import faulthandler
+    _CRASH_LOG.parent.mkdir(parents=True, exist_ok=True)
+    _crash_fh = open(_CRASH_LOG, "a", encoding="utf-8")
+    faulthandler.enable(file=_crash_fh)
+except Exception:
+    pass
+
 
 _CONSOLE_PARENTS = {
     "cmd.exe", "powershell.exe", "pwsh.exe",

@@ -1304,15 +1304,23 @@ class CursivLauncher(QMainWindow):
         # look like Guardian/Watcher were running when they weren't --
         # that failure mode is exactly why this stays called out here even
         # though there's no window left to be misleading about it.
-        python = _find_python()
-        data_root = str(_DATA_ROOT)
-        self._guardian_proc = _launch_hidden(
-            [python, "services/guardian_service.py", "debug"], cwd=data_root,
-        )
-        self._watcher_proc = _launch_hidden(
-            [python, "-m", "cursiv_v215.training.watcher"], cwd=data_root,
-        )
-        self._set_status("Guardian + Training Watcher running")
+        # This runs via QTimer.singleShot, well after main.py's own
+        # try/except around window construction has already returned --
+        # an uncaught exception here would otherwise hit PyQt6's default
+        # "abort the whole app" behavior for a failure that should just
+        # mean "no background services this run," not a dead launcher.
+        try:
+            python = _find_python()
+            data_root = str(_DATA_ROOT)
+            self._guardian_proc = _launch_hidden(
+                [python, "services/guardian_service.py", "debug"], cwd=data_root,
+            )
+            self._watcher_proc = _launch_hidden(
+                [python, "-m", "cursiv_v215.training.watcher"], cwd=data_root,
+            )
+            self._set_status("Guardian + Training Watcher running")
+        except Exception as e:
+            self._set_status(f"Guardian/Watcher failed to start: {e}")
 
     # ── App health watchdog ───────────────────────────────────────────────
 
@@ -1624,10 +1632,16 @@ class CursivLauncher(QMainWindow):
     # ── Getting Started ──────────────────────────────────────────────────
 
     def _show_getting_started(self):
-        dlg = GettingStartedDialog(self)
-        dlg.exec()
-        if dlg.dont_show_again():
-            _mark_getting_started_seen()
+        # Fired via QTimer.singleShot(1800, ...) on first run only -- same
+        # "runs after main.py's try/except has already returned" risk as
+        # _launch_terminals above.
+        try:
+            dlg = GettingStartedDialog(self)
+            dlg.exec()
+            if dlg.dont_show_again():
+                _mark_getting_started_seen()
+        except Exception as e:
+            self._set_status(f"Getting Started dialog failed to open: {e}")
 
     # ── App launch / stop ─────────────────────────────────────────────────
 
