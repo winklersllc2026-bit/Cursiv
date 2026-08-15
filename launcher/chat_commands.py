@@ -650,37 +650,68 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
         if not question:
             return TextResult("Usage: council <question>  ·  /full <question> for complete deliberation")
         if _ASYNC_COUNCIL_OK:
+            # Bridges run_council()'s blocking/asyncio interior to a live
+            # generator via a background thread + queue -- the exact
+            # pattern cursiv_v215.ui.chat_app.py's Gradio surface already
+            # uses (_call_provider_council), so the GUI streams each
+            # provider's response as it actually arrives (write_fn fires
+            # for the session banner, each provider's own streamed text,
+            # quality scores, and the synthesis, in that real order)
+            # instead of going silent for the whole deliberation and only
+            # ever showing a synthesis at the end. write_fn=None (the
+            # default) falls back to raw sys.stdout.write() inside
+            # run_council() -- fine for the terminal CLI, but sys.stdout
+            # is None in the packaged GUI build (console=False), which is
+            # why this needs an explicit write_fn at all, not just a nicer
+            # UI: without one, this crashed outright the moment
+            # run_council tried to print anything.
+            _result_holder: dict = {}
+
             def _run():
-                # write_fn=None (the default) falls back to raw
-                # sys.stdout.write() inside run_council() -- fine for the
-                # terminal CLI, but sys.stdout is None in the packaged GUI
-                # build (console=False), which crashed with "'NoneType'
-                # object has no attribute 'write'" the moment run_council
-                # tried to print anything. Capturing into a list instead of
-                # discarding it matters when result comes back None (no
-                # active API keys, aiohttp missing, etc.) -- run_council's
-                # only way to explain *why* is through write_fn, and a pure
-                # no-op would trade "crashes" for "silently says nothing,"
-                # which just replaces one confusing failure with another.
-                _captured: list[str] = []
-                result = _async_council_run(
-                    question, cfg, force_full=True if force_full else None,
-                    write_fn=lambda t: _captured.append(t),
-                )
+                import queue as _queue_mod
+                q: "_queue_mod.Queue[str | None]" = _queue_mod.Queue()
+
+                def _worker():
+                    try:
+                        r = _async_council_run(
+                            question, cfg, force_full=True if force_full else None,
+                            write_fn=q.put,
+                        )
+                        _result_holder["result"] = r
+                    except Exception as exc:
+                        q.put(f"\n[Council error: {exc}]\n")
+                    finally:
+                        q.put(None)   # sentinel -- always fires
+
+                import threading as _threading_mod
+                _threading_mod.Thread(target=_worker, daemon=True).start()
+
+                while True:
+                    chunk = q.get()
+                    if chunk is None:
+                        break
+                    # CLI-only ANSI color codes would otherwise show up as
+                    # literal garbage (e.g. "\x1b[31m") in the transcript.
+                    yield _ANSI_RE.sub("", chunk)
+
+                result = _result_holder.get("result")
                 if result is not None:
-                    yield result.synthesis
                     cfg["_last_council_synthesis"] = result.synthesis
                     cfg["_last_council_query"] = question
-                elif _captured:
-                    # CLI-only ANSI color codes in the captured text would
-                    # otherwise show up as literal garbage (e.g. "\x1b[31m")
-                    # in the chat transcript.
-                    yield _ANSI_RE.sub("", "".join(_captured)).strip()
+
             def _finish(full: str):
-                _session_append(question, full, "async_council")
-                if _STRAND_OK and full and len(full) > 100:
-                    _strand_save(question, full, tags=["council", "async"], score=0.80,
+                # Strand/session log gets the clean synthesis specifically
+                # (when available), not the full multi-provider transcript
+                # the chat panel just streamed -- same as before this was
+                # switched to live streaming, just no longer assuming the
+                # generator's only output was ever the synthesis alone.
+                result = _result_holder.get("result")
+                saved = result.synthesis if result is not None else full
+                _session_append(question, saved, "async_council")
+                if _STRAND_OK and saved and len(saved) > 100:
+                    _strand_save(question, saved, tags=["council", "async"], score=0.80,
                                  territory_tag="worldmodel", source="async_council", model="council_synthesis")
+
             return StreamResult(f"⬡ Council deliberating — {question[:60]}", _run(), _finish)
         if not (cfg.get("api_key") or cfg.get("openai_key") or cfg.get("anthropic_key")):
             return TextResult("Council requires at least one API key.")
