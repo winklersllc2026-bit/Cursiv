@@ -1565,6 +1565,17 @@ def _call_ollama_code_council(
         primary_chunks.append(token)
         yield token
 
+    if not primary_chunks:
+        # _call_ollama_model completed without yielding anything and without
+        # raising -- e.g. Ollama accepted the request but the model produced
+        # an empty response. Previously this looked identical to a UI bug
+        # (the "Writing solution..." header shown, then nothing, forever)
+        # with no way to tell what actually happened.
+        yield (f"\n[{primary_model} produced no output. It may still be loading "
+               f"into memory on first use -- try again in a moment, or confirm "
+               f"it's pulled with `ollama list`.]")
+        return
+
     if not secondary_model:
         return
 
@@ -2053,10 +2064,16 @@ def _call_openai_with_tools(
 import re as _re
 
 _CODE_RE = _re.compile(
-    r'\b(write|fix|debug|implement|refactor|build|create|update|edit|'
-    r'function|class|method|script|module|endpoint|database|query|'
+    r'\b(write|fix|debug|implement|refactor|build|create|update|edit|test)\b',
+    _re.I,
+)
+# Unambiguous technical terms -- unlike the generic verbs above (which show up
+# constantly in non-code requests, e.g. "create a farming schedule"), a single
+# hit here is already strong evidence of a real coding question.
+_CODE_STRONG_RE = _re.compile(
+    r'\b(function|class|method|script|module|endpoint|database|query|'
     r'python|javascript|typescript|html|css|sql|bash|json|'
-    r'error|traceback|exception|bug|test|import|def |return )\b',
+    r'error|traceback|exception|bug|import|def |return )\b',
     _re.I,
 )
 _CREATIVE_RE = _re.compile(
@@ -2073,13 +2090,17 @@ def _classify_message(text: str) -> str:
         return "general"
     if any(m in t for m in ("def ", "class ", "```", "import ", "Error:", "Traceback", "  File \"")):
         return "code"
+    if len(_CODE_STRONG_RE.findall(t)) >= 1:
+        return "code"
     code_hits     = len(_CODE_RE.findall(t))
     creative_hits = len(_CREATIVE_RE.findall(t))
-    if code_hits >= 2:
-        return "code"
     if creative_hits >= 2 and creative_hits > code_hits:
         return "creative"
-    if code_hits >= 1:
+    # Generic verbs (write/build/create/test/...) need 2+ hits before this
+    # counts as code -- a single "create" or "build" is common in completely
+    # non-code requests ("create a farming schedule", "build my confidence")
+    # and shouldn't alone route someone into the Code Council pipeline.
+    if code_hits >= 2:
         return "code"
     return "general"
 

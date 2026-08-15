@@ -45,6 +45,16 @@
 -->
 # Changelog
 
+## v3.14-U30 — Plain messages no longer misroute into the Code Council (2026-08-15)
+
+Live-testing surfaced a real bug immediately: typing "i want to create a farming schedule layout" got routed into the Code Council pipeline (`[qwen2.5-coder:14b] Writing solution...`) instead of a normal answer, and then produced nothing further.
+
+Root cause: `_classify_message()`'s code-detection regex treated a *single* hit of any generic verb — write, fix, debug, implement, refactor, build, create, update, edit, test — as enough to classify the whole message as "code," silently swapping in the dual-model Code Council for what should have been a normal conversational reply. "Create a farming schedule," "build my confidence," "test this recipe idea" — anything containing one of those common words alone tripped it.
+
+Split the regex into two tiers: unambiguous technical terms (python, sql, traceback, `def `, `import`, error/exception/bug, etc.) still classify as code on a single hit, since those aren't generic English. The generic verbs now need **two** hits before counting as code, matching the existing bar for the "creative" classification. Verified against 12 cases spanning all three categories — the exact reported phrase now classifies as general, real coding questions ("fix this python function," "debug this sql query error") still classify as code, and creative requests are unaffected.
+
+Also hardened `_call_ollama_code_council` itself: if the primary coding model streams back nothing at all (no tokens, no error), it now says so explicitly instead of silently going quiet forever after the "Writing solution..." header — this was the second half of what made the misrouted case look broken rather than just misrouted.
+
 ## v3.14-U29 — LoRA training kickoff, a Stop button, and scroll stays put while generating (2026-08-15)
 
 **LoRA training now has a real "Start" button instead of being a terminal-only, self-researched process.** There was no actual trainer anywhere in the codebase before this — `system_prompt.md`'s "checkpoint-120" reference was flavor text, not a real artifact. Added `cursiv_v215/training/lora_trainer.py`: fine-tunes Qwen2.5-1.5B-Instruct (small enough to train on CPU with no GPU required, matching the offline/rural-use focus) with LoRA (r=8, alpha=16) on everything currently in `.cursiv/training_data.jsonl`, producing a portable PEFT adapter under `.cursiv/lora_checkpoints/<timestamp>/` — not merged into a full model or converted to GGUF/Ollama yet, kept to a first working version.
