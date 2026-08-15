@@ -54,6 +54,7 @@ from cursiv_v215.ui.chat_app import (
     WRITE_SENTINEL,
     execute_tool as _execute_tool,
     _call_ollama,
+    _call_ollama_code_council,
     _call_xai_stream,
     _call_claude_direct,
     _call_openai_direct,
@@ -609,14 +610,31 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
 
     # ── Codex / Hermes / Reference Brain ────────────────────────────────
     if cmd == "codex" or cmd.startswith("codex "):
-        if not _CODEX_OK or not _codex_avail():
-            return TextResult("Codex Agent not available — set CURSIV_CODEX_PATH or place Winkler_Codex_AI as a sibling to Cursiv-v3.")
         prompt = text[6:].strip()
         if not prompt:
             return TextResult("Usage: codex <what to build>")
-        result = _codex_gen(prompt)
-        _session_append(prompt, result, "codex_agent")
-        return TextResult(result)
+        if _CODEX_OK and _codex_avail():
+            # Deeper tier: the separate Winkler_Codex_AI project (Phi-4 +
+            # LoRA), only present on machines that have it checked out as
+            # a sibling directory -- not part of any real Cursiv install.
+            result = _codex_gen(prompt)
+            _session_append(prompt, result, "codex_agent")
+            return TextResult(result)
+        # Bundled tier: the two Ollama models the launcher's "Winkler-Codex
+        # Download" button actually provides (qwen2.5-coder:14b primary,
+        # deepseek-coder-v2:16b critic, same dual-model council chat_app.py
+        # already uses automatically for code-classified messages). The
+        # `codex` command itself was never wired to this at all -- only to
+        # the sibling-project bridge above -- so it said "not available"
+        # for every real install regardless of whether these models were
+        # ever downloaded.
+        def _finish(full: str):
+            _session_append(prompt, full, "codex_ollama")
+        gen = _call_ollama_code_council([
+            {"role": "system", "content": "You are a careful, precise coding assistant."},
+            {"role": "user", "content": prompt},
+        ])
+        return StreamResult(f"⬡ Codex — {prompt[:60]}", gen, _finish)
 
     if cmd == "hermes" or cmd.startswith("hermes "):
         if not _HERMES_OK or not _hermes_avail():
@@ -1112,6 +1130,18 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
                     cfg.get("workspace", str(_CHAT_ROOT)), "", False, cfg["anthropic_key"],
                     force_provider="claude")
         return StreamResult("⟳ Claude re-run", gen)
+
+    if cmd in ("chatgpt", "gpt", "openai", "use chatgpt", "use gpt", "use openai",
+               "try chatgpt", "try gpt", "try openai"):
+        last = cfg.get("last_user_msg", "")
+        if not last:
+            return TextResult("No previous message to retry with ChatGPT.")
+        if not cfg.get("openai_key"):
+            return TextResult("No OpenAI key set. Type: openai sk-xxxxx")
+        gen = _chat(last, history[:-1] if history else [], "", None, False,
+                    cfg.get("workspace", str(_CHAT_ROOT)), cfg["openai_key"], False, "",
+                    force_provider="openai")
+        return StreamResult("⟳ ChatGPT re-run", gen)
 
     # ── Postal — sealed encrypted letters (read/manage side; composing a
     # new letter needs a multi-line dialog, handled by chat_panel.py) ──────

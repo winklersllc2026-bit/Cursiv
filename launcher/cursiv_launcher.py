@@ -83,7 +83,7 @@ _WATCHDOG_MS     = 3_000         # ms between app-health checks
 _POLL_DEADLINE_S = 30            # seconds to wait for app to bind its port
 
 # ── Update checker ─────────────────────────────────────────────────────────────
-_CURRENT_VERSION   = "3.14-U25"
+_CURRENT_VERSION   = "3.14-U26"
 _GITHUB_API        = "https://api.github.com/repos/winklersllc2026-bit/Cursiv/releases/latest"
 _GITHUB_RELEASES   = "https://github.com/winklersllc2026-bit/Cursiv/releases"
 
@@ -1137,10 +1137,9 @@ class GettingStartedDialog(QDialog):
         vlay.addWidget(header)
 
         intro = self._body_label(
-            "Talk to Cursiv right here — the “Eye of Horus” chat panel on "
-            "the right side of this window. No terminal to open, nothing "
-            "extra to launch. Here's what to know, and what to download so "
-            "it can actually think locally."
+            "Talk to Cursiv right here — the chat panel fills this window. "
+            "No terminal to open, nothing extra to launch. Here's what to "
+            "know, and what to download so it can actually think locally."
         )
         vlay.addWidget(intro)
 
@@ -1465,8 +1464,8 @@ class CursivLauncher(QMainWindow):
         open_term_btn.setFixedHeight(28)
         open_term_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         open_term_btn.setToolTip(
-            "Open the full command-line Eye of Horus in its own terminal "
-            "window -- same underlying chat, plus every CLI-only command"
+            "Open the full command-line terminal in its own window -- "
+            "same underlying chat, plus every CLI-only command"
         )
         open_term_btn.setStyleSheet(f"""
             QPushButton {{
@@ -1641,8 +1640,8 @@ class CursivLauncher(QMainWindow):
         else:
             python = _find_python()
             cmd = f'"{python}" launcher/main.py --terminal'
-        _open_terminal_window("Cursiv — Eye of Horus", cmd)
-        self._set_status("Eye of Horus opened in a new terminal")
+        _open_terminal_window("Cursiv — Terminal", cmd)
+        self._set_status("Terminal opened")
 
     # ── Getting Started ──────────────────────────────────────────────────
 

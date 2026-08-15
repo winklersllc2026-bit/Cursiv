@@ -45,6 +45,18 @@
 -->
 # Changelog
 
+## v3.14-U26 — Council streams live, codex actually works, ChatGPT retry added (2026-08-15)
+
+**Council deliberation streams live now, instead of a silent wait then one blob.** `council`/`/full`/`/deliberate` showed nothing while every provider ran, then dumped a single synthesized response at the end — not the "bounce between providers, real collaboration" feel the terminal has always had. `run_council()` already streams everything as it happens (session banner, each provider's own response as it arrives, quality scores, then the synthesis) — the GUI just wasn't consuming it that way. Bridged it through a background thread + queue, the same pattern the Gradio web surface already uses for this exact council, so all three surfaces now share one real implementation instead of the GUI being a third, weaker one.
+
+**`codex <prompt>` said "not available" on every real install.** It was wired exclusively to a separate `Winkler_Codex_AI` sibling project that isn't part of Cursiv at all — nothing a normal install has. Meanwhile the actual downloadable "Winkler-Codex" feature (qwen2.5-coder:14b + deepseek-coder-v2:16b, the launcher's "Winkler-Codex Download" button) already had a real, working dual-model implementation — it just wasn't wired to the `codex` command anywhere, only used automatically for code-classified plain messages. `codex` now uses that Ollama-based council directly, streaming both models live; the sibling-project bridge stays as a deeper tier on machines that happen to have it.
+
+**Added a ChatGPT/OpenAI direct-retry command.** `grok` and `claude` could already re-run your last message through that specific provider; there was no equivalent for OpenAI at all, in either the GUI or the terminal. Added `chatgpt`/`gpt`/`openai` (plus `use`/`try` variants), mirroring the existing pattern exactly.
+
+**Provider retries that failed silently now say why.** A rejected API key, a real rate limit, or a swallowed network error could all result in an empty response with zero explanation — the intro line would print, then nothing, indistinguishable from the UI itself being broken. Now shows a real message explaining what happened instead of just going quiet.
+
+**Removed the remaining "Eye of Horus" text from the desktop app.** The chat panel's own header still read "Eye of Horus" even after the sidebar removal made it the entire window — same mythology-toning-down pass as the website, just the one spot in the app that got missed. Also updated the Getting Started dialog and terminal-window tooltip text, which still referenced it too.
+
 ## v3.14-U25 — Family letters actually unlock in the chat panel now (2026-08-14)
 
 **Babel Letters never worked in the GUI at all.** `babel i am [Name] born [Date]` is supposed to trigger a family-letter activation — the terminal CLI has always had a real flow for it: detect the family member, set up or verify a personal PIN, a boundary-confirmation gate, then the letter. That flow was never ported to the chat panel — it just fell through to the generic `babel` handler, which literally tried to *translate* "i am Keiarra Winkler born 09/12/1995 can you show me my letter" to English and got exactly the confused non-answer you'd expect. Ported the full flow faithfully: first-time PIN setup, PIN verification on return visits, the same boundary warning and yes/no gate, then the letter — plus the session's persona switches for the rest of the conversation, same as the terminal. A wrong name/DOB guess still falls through to plain translation with zero indication anything special exists, same privacy-preserving behavior as the CLI always had — verified directly that a non-matching guess never even triggers a dialog.

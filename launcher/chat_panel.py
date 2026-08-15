@@ -1,5 +1,5 @@
 """
-Cursiv — in-app chat panel (Eye of Horus, native edition).
+Cursiv — in-app chat panel.
 
 Replaces the old terminal-spawned CLI with a real chat view living inside
 the main Cursiv window. Plain messages go through the exact same core
@@ -232,7 +232,7 @@ class ChatPanel(QWidget):
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(10)
 
-        header = QLabel("𓂀  Eye of Horus")
+        header = QLabel("⬡  Cursiv")
         header.setStyleSheet(
             f'color: {GOLD}; font-size: 15px; font-weight: 700;'
             f' font-family: "Segoe UI", "Segoe UI Historic";'
@@ -506,14 +506,31 @@ class ChatPanel(QWidget):
         # StreamResult
         self._signals.chunk.emit(result.intro + "\n\n")
         full = ""
+        rate_limited = False
         try:
             for chunk in result.generator:
-                if chunk and chunk != _RATE_SENTINEL:
+                if chunk == _RATE_SENTINEL:
+                    rate_limited = True
+                    continue
+                if chunk:
                     full += chunk
                     self._signals.chunk.emit(chunk)
         except Exception as e:
             self._signals.error.emit(str(e))
             return
+        if not full:
+            # The generator produced nothing displayable -- e.g. an
+            # invalid/rejected API key, a real rate limit, or a network
+            # failure that the provider call swallowed into an empty
+            # response instead of raising. Previously this looked
+            # identical to the intro line just... never getting an
+            # answer, with no way to tell a real failure from something
+            # being broken in the UI itself.
+            self._signals.chunk.emit(
+                "[Rate limited or no response — wait a moment and try again, "
+                "or check that the API key is valid.]" if rate_limited else
+                "[No response received from the provider.]"
+            )
         if result.on_complete:
             try:
                 result.on_complete(full)
