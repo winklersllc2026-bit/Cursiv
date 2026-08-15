@@ -1379,12 +1379,21 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
 
 
 def hey_prefix(raw: str) -> tuple[str, str]:
-    """Detect a 'hey <provider> ...' routing prefix. Returns (force_provider, stripped_text)."""
+    """Detect a provider-routing prefix -- the explicit "hey <provider> ..."
+    form, or the shorter "<provider> <question>" form (e.g. "grok what's the
+    weather" routes that new question straight to Grok, saved to history
+    normally, exactly like "hey grok ..."). This is distinct from the bare
+    "grok"/"claude"/"chatgpt" command with no question, which retries the
+    *previous* message instead (see handle_command) -- that only matches
+    when there's nothing trailing, so it can't collide with this.
+    Returns (force_provider, stripped_text)."""
     lower = raw.lower()
     for prefix, fp in (
         ("hey council ", "council"), ("hey grok ", "grok"), ("hey claude ", "claude"),
         ("hey chat ", "openai"), ("hey openai ", "openai"), ("hey gpt ", "openai"),
         ("hey ollama ", "ollama"),
+        ("grok ", "grok"), ("claude ", "claude"),
+        ("chatgpt ", "openai"), ("gpt ", "openai"), ("openai ", "openai"),
     ):
         if lower.startswith(prefix):
             return fp, raw[len(prefix):].strip()

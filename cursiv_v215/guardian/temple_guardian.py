@@ -55,6 +55,7 @@ try:
 except ImportError:
     _LCW_SIGIL = ""
 
+import hashlib
 import json
 import math
 import random
@@ -288,6 +289,42 @@ def unlock_owner_session(session_id: str) -> None:
 
 def is_owner_session(session_id: str) -> bool:
     return session_id in _OWNER_SESSIONS
+
+
+# ── Owner unlock code ────────────────────────────────────────────────────────
+# Stored locally only (never committed to git — this repo is public, so the
+# old sovereign-phrase mechanism, whose three fragments were literal string
+# constants checked into cursiv_v215/guardian/obfuscation.py and
+# cursiv_v215/weave/sovereign.py, was readable by anyone who could `git clone`
+# the repo. A secret that ships in a public repo isn't a secret. This one
+# is chosen by Joshua at runtime and never leaves this machine.
+_OWNER_CODE_FILE = Path.home() / ".cursiv" / "runtime" / "owner.hash"
+
+
+def owner_code_is_set() -> bool:
+    return _OWNER_CODE_FILE.exists()
+
+
+def set_owner_code(code: str) -> None:
+    """Store a sha256 hash of Joshua's chosen owner-unlock code locally."""
+    code = code.strip()
+    if not code:
+        raise ValueError("Owner code cannot be empty.")
+    _OWNER_CODE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256(code.encode("utf-8")).hexdigest()
+    _OWNER_CODE_FILE.write_text(digest, encoding="utf-8")
+
+
+def verify_owner_code(text: str) -> bool:
+    """Check a message against the locally-stored owner code, if one is set."""
+    text = text.strip()
+    if not text or not _OWNER_CODE_FILE.exists():
+        return False
+    try:
+        stored = _OWNER_CODE_FILE.read_text(encoding="utf-8").strip()
+    except Exception:
+        return False
+    return hashlib.sha256(text.encode("utf-8")).hexdigest() == stored
 
 
 # ── Skull visuals ─────────────────────────────────────────────────────────────

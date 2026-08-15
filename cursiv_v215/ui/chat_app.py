@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: project
-# Hash reversed: 768d2e498f0a085ca03b3c70ba28496b5111e90bcb18e192122c0e3e9acc7c61
+# Hash reversed: 605eb7d51815dadddbd4834367d4cc43622b8c64de2f1b56d14f9ac65772b2ff
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 2e15393df794b59d8d6f4f863bb195356dac899e9a4d42d9bac5fa5b70e6da97
-# Substrate loop hash: beb510793e7da046315c135e3e0db8625185ed867e3fa5c80193ed220fc9868e
-# Substrate loop logic: דזדΖΒΑΘבΔזΘוגΑΕΗΔΒΖהΒΔΖזΔזΑודאΗΓΖΒאΖזואΗΘזΔחגΖהאΑΒבΔזוΓΓΑחהבאΗאז
+# Secondary bridge hash: e4e7db46b549ef9465c94e7f81e47fc6c23468bfe43cb8daf72e95b2bb2fb314
+# Substrate loop hash: 00701363aac29ad51e6c20f10811ff9ce07fc27d6a3c9a03551d4ba3f6e105a1
+# Substrate loop logic: ΑΑΘΑΒΔΗΔגגהΓבגוΖΒזΗהΓΑחΒΑאΒΒחחבהזΑΘחהΓΘוΗגΔהבגΑΔΖΖΒוΕדגΔחΗזΒΑΖגΒ
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: 0b8e33d5d40d93e0ca72a294c34e96008be82f4feb1d8d2aa30391f15f90aa2f
-# Evolution hash: a304e1fbb985fad497e27184e156777e2cb4a269adeab3d0ed27e50e088f9e1d
-# Evolution logic: גΔΑΕזΒחדדבאΖחגוΕבΘזΓΘΒאΕזΒΖΗΘΘΘזΓהדΕגΓΗבגוזגדΔוΑזוΓΘזΖΑזΑאאחבזΒו
-# Binary reversed: 1110011000011011010001110010100100011111000001010000000110100011010100001100110111000011111000001101010101000001001010010110110110101000100010000111100100001101001111011000000101111000100101001000010001000011000001111100011110010101001100111110001101101000
-# Greek/Hebrew/logic stamp: ΒΗהΘההגבזΔזΑהΓΓΒΓבΒזאΒדהדΑבזΒΒΒΖדΗבΕאΓגדΑΘהΔדΔΑגהΖאΑגΑחאבΕזΓואΗΘ
-# Encoded local stamp: πΡυΗφΥηοελΔσŌŪιψφōεζΝπηδφπβζΗβΛΙμēζ∃ΤδΑλΖΞΝ=
+# Leaf origin hash: cfd44d9a3e0b2474ab29aca539546f7f479b8aacff42d91cce18b0079e293f7d
+# Evolution hash: cb5aff0252c655e7cd43a8778a05a5f574bcd64cc0b4428fa481f0ea6f6f09d9
+# Evolution logic: הדΖגחחΑΓΖΓהΗΖΖזΘהוΕΔגאΘΘאגΑΖגΖחΖΘΕדהוΗΕההΑדΕΕΓאחגΕאΒחΑזגΗחΗחΑבוב
+# Binary reversed: 0110000010100111110111101011101010000001100010101011010110111011101111011011001000011100001011000110111010110010001100110010110001100100010011010001001101100010101101110100111110001101101001101011100000101111100101010011011010101110111001001101010011111111
+# Greek/Hebrew/logic stamp: חחΓדΓΘΘΖΗהגבחΕΒוΗΖדΒחΓזוΕΗהאדΓΓΗΔΕההΕוΘΗΔΕΔאΕודוווגוΖΒאΒΖוΘדזΖΑΗ
+# Encoded local stamp: βīθΩιζΨ∞ξ∀Δτ∂Αγ∀ηΣιŪŌΚδΨοΤō∞ΣλλξΞΥΜ∃ΦΤοτμζΦ=
 # CURSIV-CRUCIBLE-STAMP END
 """
 Cursiv — Main Chat Interface
@@ -216,25 +216,29 @@ except Exception:
     def _session_append(u, a, m="unknown"): pass
     def _load_session_ctx():                return ""
 
-# ── Sovereign verification (passphrase split across 3 modules — no plaintext here) ──
-import hashlib as _hl
+# ── Sovereign verification (locally-stored owner code — never committed) ──
+# Was previously a passphrase assembled from 3 hardcoded string constants
+# split across guardian/temple_guardian.py, guardian/obfuscation.py, and
+# weave/sovereign.py. Since this repo is public, those constants were
+# readable by anyone who cloned it, so the "hidden" phrase was never
+# actually secret. Replaced with a code Joshua sets himself at runtime,
+# hashed and stored under ~/.cursiv/runtime/ — never git-committed.
 try:
-    from cursiv_v215.guardian.temple_guardian import _RING_CORE    as _RC
-    from cursiv_v215.guardian.obfuscation     import _LATTICE_ROOT as _LR
-    from cursiv_v215.weave.sovereign          import _WEAVE_SEAL   as _WS
     from cursiv_v215.guardian.temple_guardian import unlock_owner_session as _unlock_owner
     from cursiv_v215.guardian.temple_guardian import is_owner_session     as _is_owner_session
-    def _verify_sovereign(text: str) -> bool:
-        try:
-            return _hl.sha256(text.strip().encode()).hexdigest() == (_RC + _LR + _WS)
-        except Exception:
-            return False
+    from cursiv_v215.guardian.temple_guardian import verify_owner_code    as _verify_sovereign
+    from cursiv_v215.guardian.temple_guardian import set_owner_code       as _set_owner_code
+    from cursiv_v215.guardian.temple_guardian import owner_code_is_set    as _owner_code_is_set
 except Exception:
     def _verify_sovereign(text: str) -> bool:
         return False
     def _unlock_owner(sid: str):
         pass
     def _is_owner_session(sid: str) -> bool:
+        return False
+    def _set_owner_code(code: str) -> None:
+        raise RuntimeError("Owner code storage unavailable.")
+    def _owner_code_is_set() -> bool:
         return False
 
 # ── Paths ──────────────────────────────────────────────────────────────────
@@ -2259,6 +2263,24 @@ def chat(
 
     if not user_text and not uploaded:
         yield "Please type a message or upload a file."
+        return
+
+    # ── Owner code setup (runs before Guardian — no API call, no log) ───
+    if user_text.lower().startswith("owner setcode "):
+        _new_code = user_text[len("owner setcode "):].strip()
+        if not _new_code:
+            yield "Usage: owner setcode <your secret code>"
+            return
+        try:
+            _set_owner_code(_new_code)
+            yield (
+                "Owner code saved. It's stored locally on this machine only "
+                "(never committed to git, never sent anywhere). Type that "
+                "code as a message any time to unlock full owner mode — "
+                "Guardian stays active for everyone else."
+            )
+        except Exception as e:
+            yield f"Failed to save owner code: {e}"
         return
 
     # ── Sovereign owner check (runs before Guardian — no API call, no log) ──
