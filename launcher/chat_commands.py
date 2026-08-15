@@ -43,6 +43,10 @@ _ROOT = _HERE.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
+# Matches the CLI's ANSI color codes so captured terminal-style output can
+# be shown safely in the chat transcript instead of as literal escape junk.
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
 from cursiv_v215.ui.chat_app import (
     chat as _chat,
     ROOT as _CHAT_ROOT,
@@ -633,11 +637,31 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
             return TextResult("Usage: council <question>  ·  /full <question> for complete deliberation")
         if _ASYNC_COUNCIL_OK:
             def _run():
-                result = _async_council_run(question, cfg, force_full=True if force_full else None)
+                # write_fn=None (the default) falls back to raw
+                # sys.stdout.write() inside run_council() -- fine for the
+                # terminal CLI, but sys.stdout is None in the packaged GUI
+                # build (console=False), which crashed with "'NoneType'
+                # object has no attribute 'write'" the moment run_council
+                # tried to print anything. Capturing into a list instead of
+                # discarding it matters when result comes back None (no
+                # active API keys, aiohttp missing, etc.) -- run_council's
+                # only way to explain *why* is through write_fn, and a pure
+                # no-op would trade "crashes" for "silently says nothing,"
+                # which just replaces one confusing failure with another.
+                _captured: list[str] = []
+                result = _async_council_run(
+                    question, cfg, force_full=True if force_full else None,
+                    write_fn=lambda t: _captured.append(t),
+                )
                 if result is not None:
                     yield result.synthesis
                     cfg["_last_council_synthesis"] = result.synthesis
                     cfg["_last_council_query"] = question
+                elif _captured:
+                    # CLI-only ANSI color codes in the captured text would
+                    # otherwise show up as literal garbage (e.g. "\x1b[31m")
+                    # in the chat transcript.
+                    yield _ANSI_RE.sub("", "".join(_captured)).strip()
             def _finish(full: str):
                 _session_append(question, full, "async_council")
                 if _STRAND_OK and full and len(full) > 100:

@@ -83,7 +83,7 @@ _WATCHDOG_MS     = 3_000         # ms between app-health checks
 _POLL_DEADLINE_S = 30            # seconds to wait for app to bind its port
 
 # ── Update checker ─────────────────────────────────────────────────────────────
-_CURRENT_VERSION   = "3.14-U23"
+_CURRENT_VERSION   = "3.14-U24"
 _GITHUB_API        = "https://api.github.com/repos/winklersllc2026-bit/Cursiv/releases/latest"
 _GITHUB_RELEASES   = "https://github.com/winklersllc2026-bit/Cursiv/releases"
 
@@ -1229,8 +1229,8 @@ class CursivLauncher(QMainWindow):
         self._username   = username
         self._app_proc:  Optional[subprocess.Popen] = None
         self._app_alive  = False           # True while app process is running
-        self._guardian_proc: Optional[subprocess.Popen] = None
-        self._watcher_proc:  Optional[subprocess.Popen] = None
+        self._guardian_stop: Optional[threading.Event] = None
+        self._watcher_stop:  Optional[threading.Event] = None
 
         self.setWindowTitle("Cursiv")
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Window)
@@ -1280,44 +1280,59 @@ class CursivLauncher(QMainWindow):
 
     def _cleanup(self):
         _terminate_safely(self._app_proc)
-        # Guardian + Training Watcher run hidden now (no console window the
-        # user could close themselves) -- without this they'd become
-        # invisible orphaned processes piling up across app restarts.
-        _terminate_safely(self._guardian_proc)
-        _terminate_safely(self._watcher_proc)
+        # Guardian + Training Watcher are in-process daemon threads now,
+        # not subprocesses -- nothing to terminate as a process, but they
+        # each poll a stop Event, so signal it so they exit their loop
+        # promptly instead of just relying on being daemon threads (which
+        # would still die with the process, just without a clean stop).
+        if self._guardian_stop is not None:
+            self._guardian_stop.set()
+        if self._watcher_stop is not None:
+            self._watcher_stop.set()
         _release_instance_lock()
 
     # ── Auto-launch background services ────────────────────────────────────
 
     def _launch_terminals(self):
-        # Guardian and the Training Watcher are real background services --
-        # they used to run as two extra visible terminal windows that
-        # popped up on every launch (on top of the old Eye of Horus
-        # terminal, which is now the embedded chat panel instead). Neither
-        # needs a console; they run hidden now, the same way the local web
-        # app process already does via _launch_hidden().
+        # Guardian and the Training Watcher run as in-process daemon
+        # threads, not separate subprocesses. They used to be spawned via
+        # `python services/guardian_service.py debug` / `python -m
+        # cursiv_v215.training.watcher` -- that depends on a real, separate
+        # Python interpreter being discoverable on PATH (_find_python()'s
+        # frozen-mode fallback did shutil.which("python")), which a normal
+        # Cursiv install never has: the entire point of a PyInstaller
+        # bundle is that no separate interpreter is required. On a plain
+        # install shutil.which() found nothing, fell back to the literal
+        # string "python", and subprocess.Popen(["python", ...]) failed
+        # with "file not found" -- that was the real cause behind
+        # "GUARDIAN/WATCHER FAILED TO LOAD."
         #
-        # cwd is _DATA_ROOT, not _ROOT: under the frozen build, services/
-        # and cursiv_v215/ live under _internal/, not beside Cursiv.exe.
-        # Using _ROOT here used to silently fail (file/module not found)
-        # while the window still opened with the right title, making it
-        # look like Guardian/Watcher were running when they weren't --
-        # that failure mode is exactly why this stays called out here even
-        # though there's no window left to be misleading about it.
+        # Both services already do their real work in daemon threads
+        # internally (that's what the "debug" subprocess mode was doing
+        # too, just one extra process removed from here) -- calling them
+        # directly needs no interpreter lookup, no subprocess, and no
+        # cwd/_internal path juggling at all.
+        #
         # This runs via QTimer.singleShot, well after main.py's own
         # try/except around window construction has already returned --
         # an uncaught exception here would otherwise hit PyQt6's default
         # "abort the whole app" behavior for a failure that should just
         # mean "no background services this run," not a dead launcher.
         try:
-            python = _find_python()
-            data_root = str(_DATA_ROOT)
-            self._guardian_proc = _launch_hidden(
-                [python, "services/guardian_service.py", "debug"], cwd=data_root,
-            )
-            self._watcher_proc = _launch_hidden(
-                [python, "-m", "cursiv_v215.training.watcher"], cwd=data_root,
-            )
+            from services.guardian_service import _run_guardian, _run_tracker
+            self._guardian_stop = threading.Event()
+            threading.Thread(
+                target=_run_guardian, args=(self._guardian_stop,),
+                daemon=True, name="Guardian",
+            ).start()
+            threading.Thread(
+                target=_run_tracker, args=(self._guardian_stop,),
+                daemon=True, name="Tracker",
+            ).start()
+
+            from cursiv_v215.training.watcher import start_background_watcher
+            self._watcher_stop = start_background_watcher()
+
             self._set_status("Guardian + Training Watcher running")
         except Exception as e:
             self._set_status(f"Guardian/Watcher failed to start: {e}")

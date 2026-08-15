@@ -403,7 +403,15 @@ def save_strand(
         _mx.invalidate()   # matrix rebuilt on next search with new strand included
         return strand_id
     except Exception as exc:
-        print(f"  [strand save failed: {type(exc).__name__}: {exc}]")
+        # print() calls sys.stdout.write() internally -- fine for the
+        # terminal CLI, but sys.stdout is None in the packaged GUI build
+        # (console=False), so a failed save would otherwise crash a second
+        # time right here, inside its own error handler, instead of just
+        # returning "" like the caller expects.
+        try:
+            print(f"  [strand save failed: {type(exc).__name__}: {exc}]")
+        except Exception:
+            pass
         return ""
 
 
