@@ -27,7 +27,7 @@ from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QDialog, QLabel, QPushButton,
     QPlainTextEdit, QListWidget, QListWidgetItem, QMessageBox, QFileDialog,
-    QSizePolicy,
+    QSizePolicy, QInputDialog,
 )
 
 import chat_commands as cc
@@ -128,6 +128,16 @@ class TrainingDataDialog(QDialog):
         self._train_btn.setStyleSheet(self._btn_style())
         self._train_btn.clicked.connect(self._start_lora_training)
         lay.addWidget(self._train_btn)
+
+        self._merge_btn = QPushButton("Merge Latest Adapter into Ollama…")
+        self._merge_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._merge_btn.setStyleSheet(self._btn_style())
+        self._merge_btn.setToolTip(
+            "Converts the most recently trained adapter to GGUF and layers it "
+            "onto Ollama's qwen2.5:1.5b as a new chattable model."
+        )
+        self._merge_btn.clicked.connect(self._merge_into_ollama)
+        lay.addWidget(self._merge_btn)
 
         self._status = QLabel("")
         self._status.setWordWrap(True)
@@ -374,6 +384,79 @@ class TrainingDataDialog(QDialog):
             "Write-Host '' ;"
             f"$env:PYTHONPATH = '{data_root}' ;"
             f"& '{python_exe}' -m cursiv_v215.training.lora_trainer ;"
+            "Write-Host '' ;"
+            "Write-Host '  Press Enter to close...' -NoNewline ;"
+            "Read-Host"
+        )
+
+    # ── Merge into Ollama ────────────────────────────────────────────────
+    # Converts the adapter directly to GGUF (no full-model merge needed)
+    # and layers it onto Ollama's own qwen2.5:1.5b via a Modelfile ADAPTER
+    # directive -- verified compatible (same Instruct checkpoint, confirmed
+    # via Ollama's manifest shipping the matching ChatML template). Runs in
+    # a terminal for the same reason training does: a real download (the
+    # ~1GB base model, first time only) and a step that can take a minute.
+
+    def _merge_into_ollama(self) -> None:
+        from cursiv_v215.training import ollama_merge as om
+        req = om.check_merge_requirements()
+
+        if req["adapter_count"] == 0:
+            QMessageBox.information(
+                self, "No Trained Adapter",
+                "Train a LoRA adapter first with \"Start LoRA Training…\" above."
+            )
+            return
+        if not req["ollama_ok"]:
+            QMessageBox.warning(
+                self, "Ollama Required",
+                "Ollama isn't installed. Install it first (tray menu → Install "
+                "Ollama), then try again."
+            )
+            return
+        if not req["disk_ok"]:
+            QMessageBox.warning(
+                self, "Not Enough Disk Space",
+                f"Free disk: {req['disk_free_gb']} GB -- need at least "
+                f"{om.MIN_FREE_DISK_GB:.0f} GB. Free up some space and try again."
+            )
+            return
+
+        name, ok = QInputDialog.getText(
+            self, "Merge into Ollama", "Name for the new Ollama model:",
+            text="cursiv-tuned",
+        )
+        if not ok or not name.strip():
+            return
+        name = name.strip()
+
+        latest = Path(req["latest_adapter"]).name
+        reply = QMessageBox.question(
+            self, "Merge into Ollama",
+            f"Merge the most recent adapter ({latest}) into a new Ollama model "
+            f"named '{name}'?\n\n"
+            f"Base model: {req['base_tag']}  (~1 GB, pulled automatically if not "
+            f"already present)\n"
+            f"Free disk: {req['disk_free_gb']} GB\n\n"
+            "Runs in a terminal window you can watch. Once done, chat with it "
+            f"via 'ollama run {name}'.\n\nStart now?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        self._launch_terminal_script(
+            self._merge_script(req["python_exe"], name), "Cursiv — Merging into Ollama"
+        )
+
+    def _merge_script(self, python_exe: str, model_name: str) -> str:
+        data_root = str(cc._CHAT_ROOT)
+        safe_name = model_name.replace("'", "''")
+        return (
+            "Write-Host '' ;"
+            "Write-Host '  Cursiv — Merging LoRA Adapter into Ollama' -ForegroundColor DarkYellow ;"
+            "Write-Host '' ;"
+            f"$env:PYTHONPATH = '{data_root}' ;"
+            f"& '{python_exe}' -m cursiv_v215.training.ollama_merge --name '{safe_name}' ;"
             "Write-Host '' ;"
             "Write-Host '  Press Enter to close...' -NoNewline ;"
             "Read-Host"

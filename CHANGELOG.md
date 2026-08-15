@@ -45,6 +45,14 @@
 -->
 # Changelog
 
+## v3.14-U31 — Merge a trained LoRA adapter into a real Ollama model (2026-08-15)
+
+The Training Data dialog's "Start LoRA Training…" (U29) produced a portable PEFT adapter but stopped there. Added "Merge Latest Adapter into Ollama…" right next to it: converts the adapter directly to GGUF and layers it onto Ollama's `qwen2.5:1.5b` as a new, chattable model — no full-model merge needed.
+
+`convert_lora_to_gguf.py` (llama.cpp's own conversion tool — not a pip package, cached locally via a shallow, sparse git clone of just the conversion scripts, source only, no C++ build) operates on the small PEFT adapter directory alone and produces a GGUF adapter file tens of MB in size, not a multi-GB merged model. It's layered onto a base model at load time through a Modelfile's `ADAPTER` directive, so there's no duplicate copy of the 1.5B base weights anywhere. Confirmed `qwen2.5:1.5b`'s Ollama manifest ships the ChatML template — the signature of the Instruct variant, the exact checkpoint the trainer fine-tunes against — so the adapter is weight-compatible with it.
+
+Verified completely end-to-end, not just the conversion step: pulled `qwen2.5:1.5b` for real, converted a real trained adapter to GGUF, ran `ollama create`, and got a real response from `ollama run` against the resulting model.
+
 ## v3.14-U30 — Plain messages no longer misroute into the Code Council (2026-08-15)
 
 Live-testing surfaced a real bug immediately: typing "i want to create a farming schedule layout" got routed into the Code Council pipeline (`[qwen2.5-coder:14b] Writing solution...`) instead of a normal answer, and then produced nothing further.
