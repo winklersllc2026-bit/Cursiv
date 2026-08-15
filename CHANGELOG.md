@@ -45,6 +45,18 @@
 -->
 # Changelog
 
+## v3.14-U29 — LoRA training kickoff, a Stop button, and scroll stays put while generating (2026-08-15)
+
+**LoRA training now has a real "Start" button instead of being a terminal-only, self-researched process.** There was no actual trainer anywhere in the codebase before this — `system_prompt.md`'s "checkpoint-120" reference was flavor text, not a real artifact. Added `cursiv_v215/training/lora_trainer.py`: fine-tunes Qwen2.5-1.5B-Instruct (small enough to train on CPU with no GPU required, matching the offline/rural-use focus) with LoRA (r=8, alpha=16) on everything currently in `.cursiv/training_data.jsonl`, producing a portable PEFT adapter under `.cursiv/lora_checkpoints/<timestamp>/` — not merged into a full model or converted to GGUF/Ollama yet, kept to a first working version.
+
+The Training Data dialog's new "Start LoRA Training…" button checks real requirements first — free disk space, total RAM, whether a system Python and the ML packages (torch/transformers/peft/accelerate/datasets, ~2GB, not bundled in the installer) are present, GPU availability, and example count — and shows the actual numbers before anything downloads or runs. Missing packages get installed via pip in a visible terminal window (CPU-build torch by default); training itself also runs in a visible terminal, same pattern as the Winkler-Codex model download, so a long CPU run doesn't block the GUI and can be minimized and left running.
+
+Verified end-to-end against the real base model: downloaded Qwen2.5-1.5B-Instruct, attached the LoRA adapter (9.2M trainable params), trained a step on a tiny synthetic dataset, and confirmed `adapter_model.safetensors` + `adapter_config.json` were written to the output directory.
+
+**Added a Stop button.** Generation could only be waited out — no way to cut off a response that was running long. `_iter_cancellable()` wraps the streaming generator so a Stop click sets a flag the consuming loop checks between chunks, then explicitly calls `.close()` on the generator (raises `GeneratorExit` inside it immediately, so a well-structured provider call's connection unwinds and closes right away instead of waiting on garbage collection). Whatever text had streamed in before Stop was hit is kept and saved to history, with a `[Stopped]` marker, rather than thrown away.
+
+**Fixed the transcript jumping to the bottom on every streamed chunk, even while scrolled up reading earlier text.** Streaming chunks were inserted through the widget's own cursor (`moveCursor`), which Qt auto-follows by scrolling to keep visible — so there was no way to scroll up and read anything while a response was still generating. Chunks now insert through a cursor tied to the document instead, and the viewport only auto-follows to the bottom if the user was already there before the chunk landed; scrolled up, their position now holds steady as new text arrives below.
+
 ## v3.14-U28 — Training Data manager: image upload, typed notes, and manual JSON all feed one store (2026-08-15)
 
 Three new ways to add to `.cursiv/training_data.jsonl` — the file `cursiv_v215/training/watcher.py`'s background watcher already fills automatically from good conversations, and what "the next LoRA training pass" reads from. Starting the LoRA pass itself is still a terminal-only step for now (noted as the next thing to streamline, once this lands).

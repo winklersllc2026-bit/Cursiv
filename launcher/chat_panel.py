@@ -82,6 +82,24 @@ def _load_saved_keys() -> dict:
         return {}
 
 
+def _iter_cancellable(gen, cancel_event: threading.Event):
+    """Wraps a generator so the consuming loop can notice a Stop click
+    between chunks. gen.close() (not just letting it fall out of scope)
+    raises GeneratorExit inside the generator at its current yield point
+    right away, so a well-structured provider call's `with` block around
+    its HTTP connection unwinds and closes it promptly instead of on
+    whenever GC gets to it."""
+    while True:
+        if cancel_event.is_set():
+            gen.close()
+            return
+        try:
+            chunk = next(gen)
+        except StopIteration:
+            return
+        yield chunk
+
+
 def _is_ollama_installed() -> bool:
     import os
     import shutil
@@ -93,6 +111,7 @@ class _ChatSignals(QObject):
     chunk = pyqtSignal(str)             # one streamed text fragment
     done  = pyqtSignal()                # generation finished cleanly
     error = pyqtSignal(str)             # generation raised an exception
+    cancelled = pyqtSignal()            # user hit Stop mid-generation
     image = pyqtSignal(str)             # a local image path to render inline
     voice_result = pyqtSignal(str, bool)   # transcribed text, auto_send
     pending_write = pyqtSignal(str)     # raw WRITE_SENTINEL JSON payload, needs approval
@@ -146,10 +165,12 @@ class ChatPanel(QWidget):
         self._backend_ready = False
         self._reply_text = ""
         self._pending_history_append: Optional[list[tuple[str, str]]] = None
+        self._cancel_event: Optional[threading.Event] = None
         self._signals = _ChatSignals()
         self._signals.chunk.connect(self._on_chunk)
         self._signals.done.connect(self._on_done)
         self._signals.error.connect(self._on_error)
+        self._signals.cancelled.connect(self._on_cancelled)
         self._signals.image.connect(self._on_image)
         self._signals.voice_result.connect(self._on_voice_result)
         self._signals.pending_write.connect(self._on_pending_write)
@@ -310,6 +331,24 @@ class ChatPanel(QWidget):
         self._send_btn.clicked.connect(self._send)
         row.addWidget(self._send_btn)
 
+        self._stop_btn = QPushButton("Stop")
+        self._stop_btn.setFixedSize(56, 64)
+        self._stop_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._stop_btn.setToolTip("Stop the current response and return to standby")
+        self._stop_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: transparent; color: #ff6666;
+                font-size: 12px; font-weight: 600;
+                border: 1px solid #663333; border-radius: 8px;
+            }}
+            QPushButton:hover    {{ background: rgba(255,102,102,0.10); border-color: #ff6666; }}
+            QPushButton:pressed  {{ background: rgba(255,102,102,0.18); }}
+            QPushButton:disabled {{ color: {SILV2}; border-color: {BORDER}; }}
+        """)
+        self._stop_btn.setEnabled(False)
+        self._stop_btn.clicked.connect(self._stop_generation)
+        row.addWidget(self._stop_btn)
+
         lay.addLayout(row)
 
         self._status = QLabel("")
@@ -381,13 +420,23 @@ class ChatPanel(QWidget):
             f'<span style="color:#F0E9D8; white-space:pre-wrap;">'
         )
 
+    def _at_bottom(self) -> bool:
+        sb = self._transcript.verticalScrollBar()
+        return sb.value() >= sb.maximum() - 4
+
     def _append_reply_chunk(self, chunk: str) -> None:
         # Streamed chunks come from the model, not markup -- insert as plain
-        # text so partial HTML never lands mid-tag, then keep the cursor at
-        # the end so later chunks land in the right place.
-        self._transcript.moveCursor(QTextCursor.MoveOperation.End)
-        self._transcript.insertPlainText(chunk)
-        self._transcript.moveCursor(QTextCursor.MoveOperation.End)
+        # text so partial HTML never lands mid-tag. Insert through a cursor
+        # tied to the document, not the widget's own moveCursor/textCursor,
+        # so a user who scrolled up mid-generation to reread earlier text
+        # doesn't get yanked back to the bottom on every chunk -- only
+        # auto-follow if they were already at the bottom.
+        at_bottom = self._at_bottom()
+        cursor = QTextCursor(self._transcript.document())
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        cursor.insertText(chunk)
+        if at_bottom:
+            self._transcript.verticalScrollBar().setValue(self._transcript.verticalScrollBar().maximum())
 
     def _end_ai_reply(self) -> None:
         # Just closes the tags _begin_ai_reply opened, in the same block
@@ -456,11 +505,19 @@ class ChatPanel(QWidget):
 
     def _begin_turn(self) -> None:
         self._streaming = True
+        self._cancel_event = threading.Event()
         self._send_btn.setEnabled(False)
         self._voice_btn.setEnabled(False)
+        self._stop_btn.setEnabled(True)
         self._status.setText("Cursiv is thinking…")
         self._reply_text = ""
         self._begin_ai_reply()
+
+    def _stop_generation(self) -> None:
+        if self._cancel_event is not None:
+            self._cancel_event.set()
+        self._stop_btn.setEnabled(False)
+        self._status.setText("Stopping…")
 
     def _run_turn(self, text: str, history: list[dict]) -> None:
         try:
@@ -491,8 +548,9 @@ class ChatPanel(QWidget):
                 force_provider=force_provider,
             )
             self._cfg["last_user_msg"] = stripped
+            cancel_event = self._cancel_event
             full = ""
-            for chunk in gen:
+            for chunk in _iter_cancellable(gen, cancel_event):
                 if not chunk:
                     continue
                 if cc.WRITE_SENTINEL in chunk:
@@ -511,6 +569,12 @@ class ChatPanel(QWidget):
                              # approval dialog resolves on the main thread
                 full += chunk
                 self._signals.chunk.emit(chunk)
+            if cancel_event.is_set():
+                self._pending_history_append = (
+                    [("user", stripped), ("assistant", full)] if full else None
+                )
+                self._signals.cancelled.emit()
+                return
             self._signals.done.emit()
             self._pending_history_append = [("user", stripped), ("assistant", full)]
         except Exception as e:
@@ -529,10 +593,11 @@ class ChatPanel(QWidget):
 
         # StreamResult
         self._signals.chunk.emit(result.intro + "\n\n")
+        cancel_event = self._cancel_event
         full = ""
         rate_limited = False
         try:
-            for chunk in result.generator:
+            for chunk in _iter_cancellable(result.generator, cancel_event):
                 if chunk == _RATE_SENTINEL:
                     rate_limited = True
                     continue
@@ -541,6 +606,10 @@ class ChatPanel(QWidget):
                     self._signals.chunk.emit(chunk)
         except Exception as e:
             self._signals.error.emit(str(e))
+            return
+        if cancel_event.is_set():
+            self._pending_history_append = None
+            self._signals.cancelled.emit()
             return
         if not full:
             # The generator produced nothing displayable -- e.g. an
@@ -572,12 +641,19 @@ class ChatPanel(QWidget):
             # the skull card as actual HTML, then reopen a fresh paragraph
             # so anything streamed after it (the decoy response) still has
             # somewhere valid to land -- _end_ai_reply() closes it as usual.
-            self._append_html_block("</span></p>")
-            self._append_html_block(chunk)
-            self._append_html_block(
+            # Same scroll-preservation as _append_reply_chunk: only follow
+            # to the bottom if the user was already there.
+            at_bottom = self._at_bottom()
+            cursor = QTextCursor(self._transcript.document())
+            cursor.movePosition(QTextCursor.MoveOperation.End)
+            cursor.insertHtml("</span></p>")
+            cursor.insertHtml(chunk)
+            cursor.insertHtml(
                 f'<p style="margin:4px 0 4px 0;">'
                 f'<span style="color:#F0E9D8; white-space:pre-wrap;">'
             )
+            if at_bottom:
+                self._transcript.verticalScrollBar().setValue(self._transcript.verticalScrollBar().maximum())
             return
         self._append_reply_chunk(chunk)
 
@@ -592,6 +668,22 @@ class ChatPanel(QWidget):
         self._streaming = False
         self._send_btn.setEnabled(True)
         self._voice_btn.setEnabled(True)
+        self._stop_btn.setEnabled(False)
+        self._status.setText("")
+        self._input.setFocus()
+
+    def _on_cancelled(self) -> None:
+        self._append_html_block(
+            f'<span style="color:{SILV2}; font-style:italic;"> [Stopped]</span></p>'
+        )
+        for role, content in (getattr(self, "_pending_history_append", None) or []):
+            self._history.append({"role": role, "content": content})
+        self._pending_history_append = None
+        self._cancel_event = None
+        self._streaming = False
+        self._send_btn.setEnabled(True)
+        self._voice_btn.setEnabled(True)
+        self._stop_btn.setEnabled(False)
         self._status.setText("")
         self._input.setFocus()
 
@@ -604,9 +696,11 @@ class ChatPanel(QWidget):
         # means it's still None -- a failed generation never produced a
         # complete exchange, so nothing gets added to history.
         self._pending_history_append = None
+        self._cancel_event = None
         self._streaming = False
         self._send_btn.setEnabled(True)
         self._voice_btn.setEnabled(True)
+        self._stop_btn.setEnabled(False)
         self._status.setText("")
 
     def _on_pending_write(self, raw_json: str) -> None:
@@ -660,9 +754,11 @@ class ChatPanel(QWidget):
         self._history.append({"role": "user", "content": stripped})
         self._history.append({"role": "assistant", "content": full})
         self._pending_write_context = {}
+        self._cancel_event = None
         self._streaming = False
         self._send_btn.setEnabled(True)
         self._voice_btn.setEnabled(True)
+        self._stop_btn.setEnabled(False)
         self._status.setText("")
 
     # ── Commands that need a real dialog ─────────────────────────────────

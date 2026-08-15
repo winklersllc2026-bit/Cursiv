@@ -118,6 +118,17 @@ class TrainingDataDialog(QDialog):
         add_btn.clicked.connect(self._add_pasted)
         lay.addWidget(add_btn)
 
+        lay.addWidget(self._section_label("TRAIN"))
+        lay.addWidget(self._note_label(
+            "Fine-tunes a small local model (Qwen2.5-1.5B) on everything stored above. "
+            "Needs real disk space and RAM to run -- checked before anything starts."
+        ))
+        self._train_btn = QPushButton("Start LoRA Training…")
+        self._train_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._train_btn.setStyleSheet(self._btn_style())
+        self._train_btn.clicked.connect(self._start_lora_training)
+        lay.addWidget(self._train_btn)
+
         self._status = QLabel("")
         self._status.setWordWrap(True)
         self._status.setStyleSheet(f"color: {SILV2}; font-size: 11px;")
@@ -241,3 +252,129 @@ class TrainingDataDialog(QDialog):
         self._status.setText(msg)
         if ok:
             self._refresh()
+
+    # ── LoRA training ────────────────────────────────────────────────────
+    # torch/transformers/peft/accelerate/datasets are NOT bundled in the
+    # installer (multi-GB) -- training runs through a real system Python in
+    # a visible terminal, same pattern as the Winkler-Codex model download
+    # in cursiv_launcher.py. check_requirements() is pure stdlib + psutil,
+    # so it's safe to call even before those packages are installed.
+
+    def _start_lora_training(self) -> None:
+        from cursiv_v215.training import lora_trainer as lt
+        req = lt.check_requirements()
+
+        if not req["python_ok"]:
+            QMessageBox.warning(
+                self, "Python Required",
+                "LoRA training runs through a real Python interpreter with "
+                "machine-learning packages installed -- none was found on this "
+                "system.\n\nInstall Python from python.org (or re-run Cursiv's "
+                "full setup script, which installs it), then try again."
+            )
+            return
+
+        lines = [
+            f"Base model: {req['base_model']}  (~3 GB download, one-time)",
+            "",
+            f"Free disk space:   {req['disk_free_gb']} GB   "
+            + ("OK" if req["disk_ok"] else f"need at least {lt.MIN_FREE_DISK_GB:.0f} GB"),
+        ]
+        if req["ram_total_gb"]:
+            lines.append(
+                f"Total RAM:         {req['ram_total_gb']} GB   "
+                + ("OK" if req["ram_ok"] else f"need at least {lt.MIN_FREE_RAM_GB:.0f} GB")
+            )
+        lines.append(
+            "GPU:               "
+            + (req["gpu_name"] if req["gpu_available"] else "none detected -- trains on CPU (slower, but works)")
+        )
+        lines.append(
+            f"Training examples: {req['example_count']}"
+            + ("" if req["examples_ok"] else f"  (fewer than the recommended {lt.MIN_EXAMPLES} -- results may be weak)")
+        )
+        if not req["gpu_available"] and req["example_count"]:
+            lines.append(
+                f"Estimated time:    ~{req['est_cpu_hours']} hour(s) on CPU, "
+                f"{req['default_epochs']} epoch (a GPU would be much faster)"
+            )
+        summary = "\n".join(lines)
+
+        if not req["disk_ok"]:
+            QMessageBox.warning(self, "Not Enough Disk Space",
+                                 summary + "\n\nFree up some space and try again.")
+            return
+        if req["example_count"] == 0:
+            QMessageBox.information(
+                self, "No Training Data",
+                "Add some training examples first -- upload an image, paste JSON, "
+                "or type notes and ask to translate them into JSON for training."
+            )
+            return
+
+        if req["missing_packages"]:
+            reply = QMessageBox.question(
+                self, "Install Training Packages",
+                summary + f"\n\nMissing packages: {', '.join(req['missing_packages'])}\n\n"
+                "Install them now? This downloads roughly 1-2 GB (PyTorch's CPU "
+                "build, plus the rest) in a terminal window you can watch.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+            self._launch_terminal_script(
+                self._install_script(req["python_exe"]),
+                "Cursiv — Installing Training Packages",
+            )
+            return
+
+        reply = QMessageBox.question(
+            self, "Start LoRA Training",
+            summary + "\n\nThis trains a small local model on everything currently "
+            "in your training data store. It runs in a terminal window you can "
+            "minimize and leave running -- CPU training can take a while depending "
+            "on how much data you have.\n\nStart now?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        self._launch_terminal_script(self._train_script(req["python_exe"]), "Cursiv — LoRA Training")
+
+    def _launch_terminal_script(self, script: str, label: str) -> None:
+        import subprocess
+        try:
+            subprocess.Popen(
+                ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
+                creationflags=subprocess.CREATE_NEW_CONSOLE,
+                cwd=str(cc._CHAT_ROOT),
+            )
+            self._status.setText(f"{label} launched in a new terminal window.")
+        except Exception as e:
+            self._status.setText(f"Could not launch terminal: {e}")
+
+    def _install_script(self, python_exe: str) -> str:
+        return (
+            "Write-Host '' ;"
+            "Write-Host '  Cursiv — Installing LoRA Training Packages' -ForegroundColor DarkYellow ;"
+            "Write-Host '' ;"
+            f"& '{python_exe}' -m pip install --upgrade torch --index-url https://download.pytorch.org/whl/cpu ;"
+            f"& '{python_exe}' -m pip install --upgrade transformers peft accelerate datasets ;"
+            "Write-Host '' ;"
+            "Write-Host '  Packages installed. Click Start LoRA Training again to begin.' -ForegroundColor Green ;"
+            "Write-Host '' ;"
+            "Write-Host '  Press Enter to close...' -NoNewline ;"
+            "Read-Host"
+        )
+
+    def _train_script(self, python_exe: str) -> str:
+        data_root = str(cc._CHAT_ROOT)
+        return (
+            "Write-Host '' ;"
+            "Write-Host '  Cursiv — LoRA Training' -ForegroundColor DarkYellow ;"
+            "Write-Host '' ;"
+            f"$env:PYTHONPATH = '{data_root}' ;"
+            f"& '{python_exe}' -m cursiv_v215.training.lora_trainer ;"
+            "Write-Host '' ;"
+            "Write-Host '  Press Enter to close...' -NoNewline ;"
+            "Read-Host"
+        )
