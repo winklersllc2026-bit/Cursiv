@@ -311,17 +311,37 @@ class ChatPanel(QWidget):
             text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         )
 
+    def _force_new_block(self) -> None:
+        # A fresh <p>...</p> fragment inserted via insertHtml() doesn't
+        # reliably start a new QTextBlock when appended after existing
+        # content -- Qt's rich text engine can merge it into the previous
+        # block with a   line-separator standing in for the paragraph
+        # break, which renders as glued onto the end of the last line
+        # instead of a proper new block with its own margin. Every method
+        # below that starts a new visual turn (system message, "You", a
+        # fresh AI reply) calls this first; Qt's actual document-structure
+        # API (insertBlock) doesn't have that ambiguity the way inserted
+        # HTML fragments do.
+        if self._transcript.document().isEmpty():
+            return
+        cursor = self._transcript.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        cursor.insertBlock()
+        self._transcript.setTextCursor(cursor)
+
     def _append_html_block(self, html: str) -> None:
         self._transcript.moveCursor(QTextCursor.MoveOperation.End)
         self._transcript.insertHtml(html)
         self._transcript.moveCursor(QTextCursor.MoveOperation.End)
 
     def _append_system(self, text: str) -> None:
+        self._force_new_block()
         self._append_html_block(
             f'<p style="color:{SILV2}; font-size:12px; margin:4px 0 12px 0;">{self._escape(text)}</p>'
         )
 
     def _append_user(self, text: str) -> None:
+        self._force_new_block()
         self._append_html_block(
             f'<p style="margin:10px 0 4px 0;">'
             f'<span style="color:{LGOLD}; font-weight:600;">You</span><br>'
@@ -330,6 +350,7 @@ class ChatPanel(QWidget):
 
     def _begin_ai_reply(self) -> None:
         # Opens a paragraph the streamed chunks get appended into; closed in _on_done.
+        self._force_new_block()
         self._append_html_block(
             f'<p style="margin:4px 0 4px 0;">'
             f'<span style="color:{GOLD}; font-weight:700;">✦ Cursiv</span><br>'
@@ -345,6 +366,10 @@ class ChatPanel(QWidget):
         self._transcript.moveCursor(QTextCursor.MoveOperation.End)
 
     def _end_ai_reply(self) -> None:
+        # Just closes the tags _begin_ai_reply opened, in the same block
+        # as the streamed content -- the *next* turn's own method
+        # (_append_system/_append_user/_begin_ai_reply) is what calls
+        # _force_new_block(), so nothing extra is needed here.
         self._append_html_block("</span></p>")
 
     def _append_image(self, path: str) -> None:
@@ -611,6 +636,18 @@ class ChatPanel(QWidget):
             self._open_blast_auth(is_register=cmd.startswith("blast register"))
             return True
 
+        if cmd.startswith("babel i am ") or cmd.startswith("babel: i am "):
+            # Family letter activation ("babel I am [Name] born [Date][, PIN]")
+            # existed in the terminal CLI but was never ported to the GUI --
+            # it fell through to plain "translate this to English" instead,
+            # which is what a name+DOB *mismatch* is supposed to do (the CLI
+            # deliberately doesn't reveal whether a guess was close), so only
+            # intercept here once detect_family_member finds a real match.
+            # A non-match returns False and falls through to chat_commands'
+            # normal babel handler, unchanged -- same as a genuine guess.
+            if self._try_family_activation(text):
+                return True
+
         if cmd in ("voice", "listen") or cmd.startswith("voice ") or cmd.startswith("listen "):
             # Typed as a command (matching the terminal CLI exactly) --
             # auto-send the transcription, same as the CLI falling straight
@@ -623,6 +660,98 @@ class ChatPanel(QWidget):
             return True
 
         return False
+
+    def _try_family_activation(self, text: str) -> bool:
+        """Ports the terminal CLI's family-letter activation flow: PIN
+        setup/verify, a boundary-confirmation gate, then the letter and a
+        session-long persona switch. Returns False (unhandled, caller falls
+        through to plain babel translation) whenever the parsed name+DOB
+        doesn't match a real family member -- a wrong guess must look
+        identical to a normal, unrecognized "i am ..." sentence, same as
+        the CLI's deliberate vagueness.
+        """
+        if not cc._LEGACY_OK:
+            return False
+        parsed = cc._fam_parse_iam(text)
+        if parsed is None:
+            return False
+        name, dob_text, inline_pin = parsed
+        profile = cc._fam_detect(name, dob_text)
+        if profile is None:
+            return False
+
+        key, display = profile["key"], profile["display"]
+
+        if not cc._fam_pin_is_set(key):
+            pin1, ok = QInputDialog.getText(
+                self, "Cursiv", f"Identity recognized. Welcome, {display}.\n\n"
+                f"First-time setup — choose a personal code (2-8 characters from: {cc._FAM_PIN_CHARS}):",
+                QLineEdit.EchoMode.Password,
+            )
+            if not ok or not pin1:
+                return True
+            if not cc._fam_pin_valid(pin1):
+                QMessageBox.warning(self, "Cursiv", f"Code must be 2-8 characters from: {cc._FAM_PIN_CHARS}")
+                return True
+            pin2, ok = QInputDialog.getText(
+                self, "Cursiv", "Confirm your code:", QLineEdit.EchoMode.Password,
+            )
+            if not ok or pin1 != pin2:
+                QMessageBox.warning(self, "Cursiv", "Codes did not match. Try again.")
+                return True
+            cc._fam_set_pin(key, pin1)
+            QMessageBox.information(
+                self, "Cursiv",
+                f"Code set. Next time include it: babel i am {name} born {dob_text}, {pin1}",
+            )
+            pin = pin1
+        else:
+            pin = inline_pin
+            if pin is None:
+                pin, ok = QInputDialog.getText(
+                    self, "Cursiv", "Code:", QLineEdit.EchoMode.Password,
+                )
+                if not ok:
+                    return True
+            if not cc._fam_verify_pin(key, pin or ""):
+                # Deliberately as non-committal as the "no match" case --
+                # a wrong code shouldn't confirm the name+DOB was correct.
+                self._append_system("Processing…")
+                return True
+
+        proceed = QMessageBox.question(
+            self, "Cursiv — Boundary Notice",
+            "Please respect that there are boundaries in place for a reason.\n\n"
+            "By proceeding, you are deactivating safeguards built into this "
+            "system. It may reveal more than you are ready to understand.\n\n"
+            "If you are not ready for this, choose No — this will be here "
+            "when you are.\n\nAre you ready to proceed?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if proceed != QMessageBox.StandardButton.Yes:
+            self._append_system("Understood. Come back when you're ready.")
+            return True
+
+        letter = cc._fam_get_letter(key)
+        self._history[:] = [
+            {"role": "system", "content": cc._fam_build_prompt(profile)},
+            {"role": "assistant", "content": letter},
+        ]
+
+        self._append_user(f"babel i am {name} born {dob_text}")
+        self._begin_ai_reply()
+        self._append_reply_chunk(f"✦  Access granted. Welcome, {display}.\n\n")
+        self._append_reply_chunk(letter)
+        self._append_reply_chunk("\n\nYour personal feed is now active. Ask anything. Take your time. This is yours.")
+        mail = cc._legacy_letters_for(key) if cc._LEGACY_OK else []
+        if mail:
+            self._append_reply_chunk(
+                f"\n\nYou've got mail — {len(mail)} letter{'s' if len(mail) != 1 else ''} "
+                f"waiting for you. Type \"legacy\" to open the vault."
+            )
+        self._end_ai_reply()
+        return True
 
     def _open_postal_compose(self, recipient_hint: str) -> None:
         from postal_compose_dialog import PostalComposeDialog

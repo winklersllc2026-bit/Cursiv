@@ -234,6 +234,13 @@ try:
     from cursiv_v215.family.family_profiles import (
         pin_is_set as _fam_pin_is_set,
         verify_pin as _fam_verify_pin,
+        set_pin as _fam_set_pin,
+        is_valid_pin as _fam_pin_valid,
+        get_letter as _fam_get_letter,
+        build_system_prompt as _fam_build_prompt,
+        get_jw_header as _fam_header,
+        parse_iam_command as _fam_parse_iam,
+        PIN_CHARS as _FAM_PIN_CHARS,
     )
     _LEGACY_OK = True
 except Exception:
@@ -241,6 +248,13 @@ except Exception:
     def _fam_detect(n, d): return None
     def _fam_pin_is_set(k): return False
     def _fam_verify_pin(k, p): return False
+    def _fam_set_pin(k, p): pass
+    def _fam_pin_valid(p): return False
+    def _fam_get_letter(k): return ""
+    def _fam_build_prompt(p): return ""
+    def _fam_header(): return ""
+    def _fam_parse_iam(t): return None
+    _FAM_PIN_CHARS = "! @ # $ % ^ & * ~ - + = ? /"
     def _legacy_letters_for(k): return []
     def _legacy_letters_by(k): return []
     def _legacy_get_content(i): return None

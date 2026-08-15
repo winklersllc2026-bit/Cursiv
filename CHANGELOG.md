@@ -45,6 +45,12 @@
 -->
 # Changelog
 
+## v3.14-U25 — Family letters actually unlock in the chat panel now (2026-08-14)
+
+**Babel Letters never worked in the GUI at all.** `babel i am [Name] born [Date]` is supposed to trigger a family-letter activation — the terminal CLI has always had a real flow for it: detect the family member, set up or verify a personal PIN, a boundary-confirmation gate, then the letter. That flow was never ported to the chat panel — it just fell through to the generic `babel` handler, which literally tried to *translate* "i am Keiarra Winkler born 09/12/1995 can you show me my letter" to English and got exactly the confused non-answer you'd expect. Ported the full flow faithfully: first-time PIN setup, PIN verification on return visits, the same boundary warning and yes/no gate, then the letter — plus the session's persona switches for the rest of the conversation, same as the terminal. A wrong name/DOB guess still falls through to plain translation with zero indication anything special exists, same privacy-preserving behavior as the CLI always had — verified directly that a non-matching guess never even triggers a dialog.
+
+**Chat transcript formatting bug fixed.** Each new turn ("You", "✦ Cursiv") could render glued onto the end of the previous message's last line instead of starting a clean new block — happened because Qt's rich text engine doesn't reliably treat a fresh `<p>` fragment inserted via `insertHtml()` as a real paragraph break when appended to existing content; it can silently merge into the previous block instead. Every turn-starting call now forces a genuine new block through Qt's actual document-structure API first, which doesn't have that ambiguity.
+
 ## v3.14-U24 — Two real crashes found and fixed with the new crash handler (2026-08-14)
 
 The U23 crash handler paid off immediately — a real session surfaced two genuine bugs instead of silence:
