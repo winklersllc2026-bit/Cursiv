@@ -36,6 +36,7 @@ import base64
 import json
 import os
 import queue as _queue_mod
+import subprocess
 import threading
 import urllib.error
 import urllib.request
@@ -1873,6 +1874,7 @@ def cascade_stream(
     messages: list[dict],
     keys: dict,
     max_tokens: int = RESPONSE_MAX_TOKENS,
+    local_fn: Callable[[list[dict]], Generator[str, None, None]] | None = None,
 ) -> tuple[Generator[str, None, None], list[str]]:
     """
     Stream a one-shot reply (Babel, grow, ...) through every configured provider
@@ -1901,7 +1903,9 @@ def cascade_stream(
     # in when it doesn't (not installed / no model yet), and only if not turned off.
     if cloud_enabled():
         attempts.append(("Cursiv Cloud", lambda: _call_cursiv_cloud(messages, max_tokens)))
-    attempts.append(("Ollama", lambda: _call_ollama(messages, max_tokens=max_tokens)))
+    # local_fn: e.g. the coding models for codex, instead of the general chat model
+    attempts.append(("Ollama", (lambda: local_fn(messages)) if local_fn
+                     else (lambda: _call_ollama(messages, max_tokens=max_tokens))))
 
     used: list[str] = []
 
@@ -1987,14 +1991,16 @@ def _call_ollama_model(
         "system": system_str,
         "prompt": prompt,
         "stream": not collect,
-        "options": {"num_predict": max_tokens, "num_ctx": 8192},
+        # 16k context: coding prompts carry playbooks + worked examples; at 8k Ollama
+        # silently dropped the start of the prompt (the instructions).
+        "options": {"num_predict": max_tokens, "num_ctx": 16384},
     }).encode()
     try:
         req = urllib.request.Request(
             OLLAMA_URL, data=payload,
             headers={"Content-Type": "application/json"},
         )
-        with urllib.request.urlopen(req, timeout=180) as resp:
+        with urllib.request.urlopen(req, timeout=600) as resp:
             if collect:
                 data = _json.loads(resp.read().decode())
                 yield data.get("response", "")
@@ -2006,8 +2012,32 @@ def _call_ollama_model(
                         yield _filter_identity(token)
                     if chunk.get("done"):
                         break
+    except urllib.error.HTTPError as e:
+        try:
+            detail = json.loads(e.read().decode()).get("error", "")
+        except Exception:
+            detail = ""
+        yield f"\n[{model} error: HTTP {e.code}{' -- ' + detail if detail else ''}]"
     except Exception as e:
         yield f"\n[{model} error: {e}]"
+
+
+_BIG_GPU: bool | None = None
+
+
+def _big_gpu() -> bool:
+    """>= 12 GB of GPU memory: room to run a second coding model as a reviewer.
+    On smaller GPUs swapping 14B/16B models in and out took minutes per answer."""
+    global _BIG_GPU
+    if _BIG_GPU is None:
+        try:
+            out = subprocess.run(["nvidia-smi", "--query-gpu=memory.total", "--format=csv,noheader,nounits"],
+                                 capture_output=True, text=True, timeout=5,
+                                 creationflags=0x08000000 if os.name == "nt" else 0).stdout
+            _BIG_GPU = max(int(x) for x in out.split()) >= 12000
+        except Exception:
+            _BIG_GPU = False
+    return _BIG_GPU
 
 
 def _call_ollama_code_council(
@@ -2048,7 +2078,9 @@ def _call_ollama_code_council(
     )
 
     primary_model   = qwen_tag if has_qwen else deepseek_tag
-    secondary_model = deepseek_tag if has_deepseek and has_qwen else None
+    # Reviewer only where both models fit in GPU memory; elsewhere codex's
+    # run-and-fix loop (coding/runner.py) checks the code by actually running it.
+    secondary_model = deepseek_tag if has_deepseek and has_qwen and _big_gpu() else None
 
     # ── Phase 1: Primary coder writes solution ───────────────────────────
     if secondary_model:
@@ -2913,6 +2945,32 @@ You are in full autonomous coding mode. Follow this protocol exactly:
         if _strand_ctx:
             messages[0]["content"] += "\n\n## Personal Memory\n" + _strand_ctx + "\n"
 
+    # ── Coding questions and pasted terminal output get Cursiv's coding brain
+    # (cursiv_v215/coding): a focused coding prompt + playbooks + error diagnosis +
+    # their environment + learned lessons + project files. The full persona prompt
+    # made coding models echo councils/owner notes and skip the real setup steps.
+    global _CODING_TURN
+    _CODING_TURN = False
+    try:
+        from cursiv_v215.coding import brain as _cb
+        _emergency = bool(locals().get("_ph") and _ph.emergency)
+        if not _emergency and (_classify_message(user_text) == "code" or _cb.looks_like_terminal(user_text)):
+            from cursiv_v215.memory import semantic as _sem
+            _person_now = _sem.current_person()
+            if file_access:      # tool-using coding mode keeps its protocol; add the ground truth
+                messages[0]["content"] += "\n\n" + _cb.context_block(user_text, history, _person_now)
+            else:
+                _sys = _cb.system_prompt(user_text, history, _person_now)
+                if _web_ctx:
+                    _sys += "\n\n## Live Web Search Results\n" + _web_ctx
+                _mem = _build_strand_context(user_text) if len(user_text.strip()) >= 10 else ""
+                if _mem:
+                    _sys += "\n\n## What you know about them\n" + _mem
+                messages[0]["content"] = _sys
+            _CODING_TURN = True
+    except Exception:
+        pass
+
     # Codex Agent is invoked explicitly via the `codex <prompt>` command only.
     # Auto-intercept is disabled — Ollama handles coding Q&A directly with the
     # full system prompt injected, which produces better answers than Codex for
@@ -3174,18 +3232,26 @@ def _fallback_chain(text_msgs: list[dict], user_text: str, tried: list[str]) -> 
 def _learn_later(message, reply: str) -> None:
     """Save lasting facts from this exchange (memory/semantic.py), off the UI thread."""
     text = message.get("text", "") if isinstance(message, dict) else str(message or "")
-    if not reply.strip() or reply.lstrip().startswith(("[", "*[")) or len(text.strip()) < 20:
+    # drop routing notes like "*[Gemini unavailable — Code Council]*" before judging the reply
+    reply = _re.sub(r"^\s*(\*\[[^\]\n]*\]\*\s*)+", "", reply or "")
+    if not reply.strip() or reply.lstrip().startswith("[") or len(text.strip()) < 15:
         return
+    coding = _CODING_TURN
     def work():
         try:
             from cursiv_v215.memory import semantic as _sem
-            _sem.learn_from_exchange(text, reply, _quick_llm)
+            if len(text.strip()) >= 20:
+                _sem.learn_from_exchange(text, reply, _quick_llm)
+            if coding:        # coding lessons: their setup, errors hit, fixes that worked
+                from cursiv_v215.coding import brain as _cb
+                _cb.learn_from_exchange(text, reply, _quick_llm, _sem.current_person())
         except Exception:
             pass
     threading.Thread(target=work, daemon=True).start()
 
 
 _PHASE_AFTER = ""   # end-of-reply note from core/phases.py for the current message
+_CODING_TURN = False  # this message went through the coding brain (cursiv_v215/coding)
 
 _SENTENCE_END = (".", "!", "?", "\n", ":", ";")
 

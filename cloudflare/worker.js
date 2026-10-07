@@ -523,6 +523,22 @@ async function askVision(env, messages, image, mime) {
   return null;
 }
 
+// Desktop: store (or clear, with an empty digest) the person's memory summary for the phone.
+async function spaceMemory(env, request) {
+  const space = await spaceFromRequest(env, request);
+  const body = await readJson(request);
+  const digest = str(body.digest).trim().slice(0, 4000);
+  if (!digest) {
+    await env.DB.prepare("DELETE FROM space_memory WHERE space_id = ?").bind(space).run();
+    return { ok: true, cleared: true };
+  }
+  await env.DB.prepare(
+    "INSERT INTO space_memory (space_id, person, digest, updated) VALUES (?1, ?2, ?3, ?4) " +
+    "ON CONFLICT(space_id) DO UPDATE SET person = ?2, digest = ?3, updated = ?4",
+  ).bind(space, str(body.person).slice(0, 40), digest, nowIso()).run();
+  return { ok: true };
+}
+
 // Both: send a message (optionally with a photo); the AI answers; both are stored.
 async function spaceAsk(env, request) {
   const space = await spaceFromRequest(env, request);
@@ -547,7 +563,14 @@ async function spaceAsk(env, request) {
     "SELECT role, text FROM space_messages WHERE space_id = ? AND id != ? ORDER BY created DESC LIMIT 12").bind(space, userMsg.id).all();
   const history = recent.reverse().map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.text }));
   const prompt = text || "What does this page say? Point out anything notable about this translation's wording.";
-  const reply = await askVision(env, [{ role: "system", content: BIBLE_SYSTEM }, ...history, { role: "user", content: prompt }], image || null, mime);
+  const mem = await env.DB.prepare("SELECT person, digest FROM space_memory WHERE space_id = ?").bind(space).first();
+  const system = BIBLE_SYSTEM + (mem?.digest
+    ? `
+
+What you remember about ${mem.person ? mem.person.replace(/^./, (c) => c.toUpperCase()) : "this person"} ` +
+      `(from their Cursiv on their computer; use it naturally, don't recite it):
+${mem.digest}` : "");
+  const reply = await askVision(env, [{ role: "system", content: system }, ...history, { role: "user", content: prompt }], image || null, mime);
   if (!reply) throw new HttpError(503, "Cursiv couldn't reach its AI right now — your message is saved; try asking again in a minute." + (lastVisionError ? ` (${lastVisionError.slice(0, 400)})` : ""));
 
   const aiMsg = { id: uuid(), created: nowIso(), role: "assistant", source: "ai", text: reply };
@@ -762,6 +785,7 @@ async function route(env, request, url) {
   if (p === "/api/space/join" && m === "POST") return spaceJoin(env, request);
   if (p === "/api/space/messages" && m === "GET") return spaceMessages(env, request, url);
   if (p === "/api/space/ask" && m === "POST") return spaceAsk(env, request);
+  if (p === "/api/space/memory" && m === "POST") return spaceMemory(env, request);
   if ((match = p.match(/^\/api\/space\/image\/([^/]+)$/)) && m === "GET") return spaceImage(env, request, decodeURIComponent(match[1]));
   if (p === "/api/register" && m === "POST") return [201, await register(env, request)];
   if (p === "/api/login" && m === "POST") return login(env, request);

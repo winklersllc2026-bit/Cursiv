@@ -45,6 +45,24 @@
 -->
 # Changelog
 
+## v3.14-U48 — Coding overhaul + the phone app knows you (2026-10-07)
+**Coding**
+- New coding brain for `codex` and for code questions/pasted terminal errors in normal chat: a focused coding prompt instead of Cursiv's whole persona prompt (no more council/owner text in code answers).
+- Answers now list everything that must actually be done: which terminal, one-time setup, steps to repeat in every new terminal (like activating the venv), how to run it, how to tell it worked, and what to do if it fails.
+- Built-in playbooks (venvs, WSL, PowerShell, Linux basics, pybullet, Node, Git, GPU) and a known-error diagnoser: paste terminal output and it explains each error and the exact fix.
+- 12 worked example answers it matches and imitates (robot arm, new Python project, Flask app, APIs, CSV + charts, desktop app, GitHub, React, SQLite, tracebacks, scraping, fixing terminal errors).
+- Learns as you go: remembers your terminal, venv names and setup from what you paste, and keeps coding lessons (`codex lessons`, `codex learn <lesson>`, `codex forget <words>`).
+- `codex keep` saves a good answer as a new example it will imitate.
+- Run-and-fix: Python it writes is test-run in a sandbox when safe, and fixed automatically if it crashes (`codex run` to rerun).
+- `codex project <folder>` reads the relevant files from your project into answers.
+- On GPUs under 12 GB the second (reviewer) coding model is skipped — it made answers take minutes; the run-and-fix check replaces it. Coding models get a 16k context so instructions aren't cut off.
+
+**Phone**
+- Phone conversations now teach your computer's Cursiv: lasting facts from phone chats are learned into the linked person's own memory, just like desktop chats (every 5 minutes while Cursiv is open).
+- The phone app uses your memories: a short summary of what Cursiv remembers about you is shared with your phone space, so phone answers know you.
+- New checkbox in the 📱 Phone window: "Let the phone app use my memories". Turning it off deletes the summary from the site.
+- Phone learning retries later if no AI is available, instead of skipping messages.
+
 ## v3.14-U47 — Follow-ups keep context; Ollama hiccups handled (2026-10-07)
 
 From a real session: `codex …` said "no local model" on a PC with 22 GB of models, the reply to "done" was a canned greeting, and the follow-up didn't know about the codex request.

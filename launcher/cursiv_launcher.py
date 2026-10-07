@@ -83,7 +83,7 @@ _WATCHDOG_MS     = 3_000         # ms between app-health checks
 _POLL_DEADLINE_S = 30            # seconds to wait for app to bind its port
 
 # ── Update checker ─────────────────────────────────────────────────────────────
-_CURRENT_VERSION   = "3.14-U47"
+_CURRENT_VERSION   = "3.14-U48"
 _GITHUB_API        = "https://api.github.com/repos/winklersllc2026-bit/Cursiv/releases/latest"
 _GITHUB_RELEASES   = "https://github.com/winklersllc2026-bit/Cursiv/releases"
 
@@ -1404,6 +1404,11 @@ class CursivLauncher(QMainWindow):
         QApplication.instance().aboutToQuit.connect(self._cleanup)
         # Look for a newer release shortly after startup; silent unless one exists.
         QTimer.singleShot(10_000, lambda: self._check_updates(automatic=True))
+        # Phone app <-> this person's memory: learn from phone chats, share a summary back.
+        self._phone_sync_timer = QTimer(self)
+        self._phone_sync_timer.timeout.connect(self._phone_sync)
+        self._phone_sync_timer.start(5 * 60_000)
+        QTimer.singleShot(30_000, self._phone_sync)
 
         # Start Guardian + Training Watcher (hidden background services,
         # see _launch_terminals) after first paint. The Eye of Horus
@@ -2005,6 +2010,15 @@ class CursivLauncher(QMainWindow):
     def _request_quit(self):
         if self._confirm_leave():
             QApplication.quit()
+
+    def _phone_sync(self):
+        def work():
+            try:
+                import phone_sync
+                phone_sync.sync_once()
+            except Exception:
+                pass
+        threading.Thread(target=work, daemon=True).start()
 
     def _open_phone(self):
         try:

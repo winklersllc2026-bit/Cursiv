@@ -21,7 +21,7 @@ from pathlib import Path
 from PyQt6.QtCore import QBuffer, QByteArray, QIODevice, QObject, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QImage
 from PyQt6.QtWidgets import (
-    QDialog, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTextBrowser, QVBoxLayout,
+    QCheckBox, QDialog, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTextBrowser, QVBoxLayout,
 )
 
 API = "https://cursiv.winklers-llc.com"
@@ -39,8 +39,19 @@ def load_token() -> str:
 
 
 def save_token(token: str) -> None:
+    """Link this computer: keep other settings, remember whose memory the phone feeds."""
+    try:
+        state = json.loads(SPACE_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        state = {}
+    try:
+        from cursiv_v215.memory import semantic
+        state["person"] = semantic.current_person()
+    except Exception:
+        pass
+    state.update({"token": token, "learned_until": "", "digest_hash": ""})
     SPACE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    SPACE_FILE.write_text(json.dumps({"token": token}), encoding="utf-8")
+    SPACE_FILE.write_text(json.dumps(state, indent=2), encoding="utf-8")
 
 
 def api(path: str, payload: dict | None = None, token: str = "", timeout: float = 90) -> dict:
@@ -141,6 +152,15 @@ class PhoneDialog(QDialog):
         self._send_btn.clicked.connect(self._send)
         send_row.addWidget(self._send_btn)
         lay.addLayout(send_row)
+        self._share = QCheckBox("Let the phone app use my memories (a short summary is kept on cursiv.winklers-llc.com)")
+        self._share.setStyleSheet(f"color: {SILV2}; font-size: 12px;")
+        try:
+            import phone_sync
+            self._share.setChecked(phone_sync.share_enabled())
+            self._share.toggled.connect(phone_sync.set_share)
+        except Exception:
+            self._share.setEnabled(False)
+        lay.addWidget(self._share)
         tools = QHBoxLayout()
         self._code_btn = QPushButton("Link another device")
         self._code_btn.setObjectName("ghost")
@@ -166,7 +186,7 @@ class PhoneDialog(QDialog):
         linked = bool(self._token)
         for w in (self._code, self._link_btn):
             w.setVisible(not linked)
-        for w in (self._view, self._attach, self._input, self._send_btn, self._code_btn, self._unlink_btn, self._photo_label):
+        for w in (self._view, self._attach, self._input, self._send_btn, self._code_btn, self._unlink_btn, self._photo_label, self._share):
             w.setVisible(linked)
         if linked:
             self._status.setText("Linked with the phone app. New messages from the phone appear here automatically.")
@@ -285,6 +305,11 @@ class PhoneDialog(QDialog):
                 save_token(info)
                 self._token = info
                 self._refresh_mode()
+                try:   # learn from the phone conversation so far + share the memory summary
+                    import phone_sync
+                    threading.Thread(target=phone_sync.sync_once, daemon=True).start()
+                except Exception:
+                    pass
             else:
                 self._status.setText(f"Couldn't link: {info}")
         elif action == "code":

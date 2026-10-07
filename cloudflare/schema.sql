@@ -128,3 +128,12 @@ CREATE TABLE IF NOT EXISTS space_messages (
   image_mime  TEXT
 );
 CREATE INDEX IF NOT EXISTS space_messages_by_space ON space_messages (space_id, created);
+
+-- Per-person memory for the phone app: a short summary of the person's memories,
+-- uploaded by their linked computer (only while "share memories with the phone" is on).
+CREATE TABLE IF NOT EXISTS space_memory (
+  space_id  TEXT PRIMARY KEY,
+  person    TEXT,
+  digest    TEXT NOT NULL,
+  updated   TEXT NOT NULL
+);

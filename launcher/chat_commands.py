@@ -32,6 +32,7 @@ one deliberate omission, since there's no terminal process to quit.
 """
 from __future__ import annotations
 
+import threading
 import json
 import re
 import sys
@@ -404,6 +405,109 @@ def _cascade_gen(cfg: dict, messages: list[dict], max_tokens: int = 900):
     return gen, " → ".join(order + ["Ollama"])
 
 
+
+# ── Codex: Cursiv's coding brain (cursiv_v215/coding) ──────────────────────
+_LAST_CODEX: dict = {}     # question/answer of the last codex reply, for `codex keep` / `codex run`
+
+
+def _codex_command(prompt: str, cfg: dict, history: list[dict]):
+    from cursiv_v215.coding import brain, runner
+    from cursiv_v215.memory import semantic
+    person = semantic.current_person()
+    low = prompt.lower()
+
+    if not prompt or low in ("help", "?"):
+        return TextResult(_CODEX_HELP)
+    if low == "keep":
+        return TextResult(brain.keep_example(_LAST_CODEX.get("q", ""), _LAST_CODEX.get("a", ""), person))
+    if low == "lessons":
+        ls = brain.list_lessons(person)
+        if not ls:
+            return TextResult("No coding lessons yet. I learn them as we work (your setup, errors you hit, "
+                              "fixes that worked), or add one: codex learn <lesson>")
+        return TextResult("Coding lessons I use:\n" + "\n".join(f"- {l['text']}" for l in ls[-40:]) +
+                          "\n\nRemove one: codex forget <words>")
+    if low.startswith("learn "):
+        ok = brain.add_lesson(prompt[6:], person)
+        return TextResult("Got it — I'll use that in coding answers." if ok else "I already know that (or it's too short).")
+    if low.startswith("forget "):
+        gone = brain.forget_lessons(prompt[7:], person)
+        return TextResult(("Forgotten:\n" + "\n".join(f"- {g}" for g in gone)) if gone else "No lesson matched that.")
+    if low == "project" or low.startswith("project "):
+        arg = prompt[7:].strip()
+        if not arg:
+            cur = brain.project(person)
+            return TextResult(f"Current project: {cur}" if cur else "No project set. Use: codex project <folder path>")
+        return TextResult(brain.set_project(arg, person))
+    if low == "run":
+        code = runner.extract_python(_LAST_CODEX.get("a", ""))
+        if not code:
+            return TextResult("The last codex answer has no Python code to run.")
+        ok, why = runner.check(code)
+        if not ok:
+            return TextResult(f"I won't run it here: {why}.")
+        success, out = runner.run(code)
+        return TextResult(("✅ It runs.\n" if success else "❌ It failed.\n") + f"```\n{out[-2000:] or '(no output)'}\n```")
+
+    msgs = brain.build_messages(prompt, history, person)
+
+    try:
+        from cursiv_v215.ui.chat_app import _local_model_ready, _ollama_pulled_models
+        has_coder = _local_model_ready() and any("coder" in m for m in _ollama_pulled_models())
+    except Exception:
+        has_coder = False
+    local_fn = (lambda m: _call_ollama_code_council(m, max_tokens=4000)) if has_coder else None
+
+    def make_gen(messages):
+        gen, _used = _cascade_stream(messages, cfg, max_tokens=4000, local_fn=local_fn)
+        return gen
+
+    def regenerate(code: str, error: str):
+        fix_msgs = msgs + [
+            {"role": "assistant", "content": f"```python\n{code}\n```"},
+            {"role": "user", "content": "I ran that code and it failed:\n```\n" + error[-2500:] + "\n```\n"
+                                        "Explain the cause in one or two sentences, then give the complete corrected "
+                                        "file in one ```python block."},
+        ]
+        return make_gen(fix_msgs)
+
+    def stream():
+        parts = []
+        for chunk in make_gen(msgs):
+            parts.append(chunk)
+            yield chunk
+        for chunk in runner.run_and_fix("".join(parts), regenerate):
+            parts.append(chunk)
+            yield chunk
+        yield "\n\n*Good answer? Type `codex keep` and I'll answer like this from now on.*"
+
+    def _finish(full: str):
+        _LAST_CODEX.update(q=prompt, a=full)
+        _session_append(prompt, full, "codex")
+
+        def learn():
+            try:
+                from cursiv_v215.ui.chat_app import _quick_llm
+                brain.learn_from_exchange(prompt, full, _quick_llm, person)
+            except Exception:
+                pass
+        threading.Thread(target=learn, daemon=True).start()
+
+    return StreamResult(f"⬡ Codex — {prompt[:60]}", stream(), _finish)
+
+
+_CODEX_HELP = """\
+CODEX — Cursiv's coding helper
+  codex <what you need>      full answer: every setup step, complete code, how to run it,
+                             what to do if it fails. Paste terminal errors and it diagnoses them.
+                             Python it writes is test-run and fixed automatically when safe.
+  codex run                  test-run the code from the last codex answer
+  codex keep                 save the last answer as a worked example to imitate
+  codex project <folder>     use files from your project folder in answers (codex project off)
+  codex lessons              what Cursiv has learned about your setup
+  codex learn <lesson>       teach it something (e.g. "my venv is ~/robot")
+  codex forget <words>       remove a lesson"""
+
 _HELP_TEXT = """\
 KEYS & ACCESS
   key <xai-key>            set xAI Grok API key       (starts with xai-)
@@ -418,8 +522,8 @@ KEYS & ACCESS
   mode                      toggle write mode  (auto <-> confirm)
 
 CODEX AGENT (offline code specialist)
-  codex <prompt>            call Codex directly -- also fires automatically
-                            for any code-classified message
+  codex <prompt>            coding help with every step listed (codex help for more)
+                            code questions in normal chat use the same coding brain
 
 WEB SEARCH
   search <query>            search the web right now + AI synthesis
@@ -649,40 +753,7 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
 
     # ── Codex / Hermes / Reference Brain ────────────────────────────────
     if cmd == "codex" or cmd.startswith("codex "):
-        prompt = text[6:].strip()
-        if not prompt:
-            return TextResult("Usage: codex <what to build>")
-        if _CODEX_OK and _codex_avail():
-            # Deeper tier: the separate Winkler_Codex_AI project (Phi-4 +
-            # LoRA), only present on machines that have it checked out as
-            # a sibling directory -- not part of any real Cursiv install.
-            result = _codex_gen(prompt)
-            _session_append(prompt, result, "codex_agent")
-            return TextResult(result)
-        # Bundled tier: the two Ollama models the launcher's "Winkler-Codex
-        # Download" button actually provides (qwen2.5-coder:14b primary,
-        # deepseek-coder-v2:16b critic, same dual-model council chat_app.py
-        # already uses automatically for code-classified messages). The
-        # `codex` command itself was never wired to this at all -- only to
-        # the sibling-project bridge above -- so it said "not available"
-        # for every real install regardless of whether these models were
-        # ever downloaded.
-        def _finish(full: str):
-            _session_append(prompt, full, "codex_ollama")
-        msgs = [{"role": "system", "content": "You are a careful, precise coding assistant. Give complete, "
-                                               "working code with brief explanations."}]
-        msgs += [m for m in history[-6:] if isinstance(m.get("content"), str)]     # follow-ups keep context
-        msgs.append({"role": "user", "content": prompt})
-        try:
-            from cursiv_v215.ui.chat_app import _local_model_ready
-            local = _local_model_ready()
-        except Exception:
-            local = False
-        if local:
-            gen, via = _call_ollama_code_council(msgs), "local coding models"
-        else:   # local AI not ready -> your keys, free keys, Cursiv Cloud
-            gen, via = _cascade_gen(cfg, msgs, max_tokens=4000)
-        return StreamResult(f"⬡ Codex — {prompt[:60]}  (via {via})", gen, _finish)
+        return _codex_command(text[6:].strip(), cfg, history)
 
     if cmd == "hermes" or cmd.startswith("hermes "):
         if not _HERMES_OK or not _hermes_avail():
