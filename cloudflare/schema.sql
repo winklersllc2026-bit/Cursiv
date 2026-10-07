@@ -71,3 +71,16 @@ CREATE TABLE IF NOT EXISTS demo_daily (
   day   TEXT PRIMARY KEY,
   count INTEGER NOT NULL DEFAULT 0
 );
+
+-- Cursiv Cloud (desktop app's free backup AI): messages per visitor IP per UTC day,
+-- and the site-wide total per day.
+CREATE TABLE IF NOT EXISTS cloud_usage (
+  day   TEXT NOT NULL,
+  ip    TEXT NOT NULL,
+  count INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (day, ip)
+);
+CREATE TABLE IF NOT EXISTS cloud_daily (
+  day   TEXT PRIMARY KEY,
+  count INTEGER NOT NULL DEFAULT 0
+);

@@ -84,6 +84,7 @@ from cursiv_v215.ui.chat_app import (
     _call_claude_direct,
     _call_openai_direct,
     cascade_stream,
+    free_key_command,
 )
 
 
@@ -3935,6 +3936,11 @@ def main() -> None:
                 cfg["xai_live"] = _probe_xai(new_key)
                 print(f"{GREEN}connected ✓{RESET}" if cfg["xai_live"] else f"{RED}unreachable ✗{RESET}")
             _print_header(cfg)
+            continue
+
+        # Free AI keys (gemini/groq), 'free keys', and Cursiv Cloud on/off
+        elif (_free_reply := free_key_command(raw)) is not None:
+            print(f"  {LGOLD}{_free_reply}{RESET}")
             continue
 
         elif cmd.startswith("openai "):

@@ -62,6 +62,7 @@ from cursiv_v215.ui.chat_app import (
     _call_provider_council,
     _web_search,
     cascade_stream as _cascade_stream,
+    free_key_command as _free_key_command,
 )
 
 try:
@@ -408,6 +409,10 @@ KEYS & ACCESS
   key <xai-key>            set xAI Grok API key       (starts with xai-)
   openai <key>              set OpenAI API key          (starts with sk-)
   anthropic <key>          set Anthropic API key       (starts with sk-ant-)
+  gemini <key>              set a FREE Google Gemini key (starts with AIza)
+  groq <key>                set a FREE Groq key          (starts with gsk_)
+  free keys                 where to get free AI keys
+  cloud on / off / status   Cursiv Cloud backup when no local model is ready
   files on / off            enable / disable file-system access
   workspace <path>          sandbox root for file tools
   mode                      toggle write mode  (auto <-> confirm)
@@ -582,6 +587,11 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
             return TextResult(f"Not a valid directory: {new_ws}")
         cfg["workspace"] = str(ws_path)
         return TextResult(f"Workspace → {ws_path}")
+
+    # ── Free AI keys (Gemini / Groq) and Cursiv Cloud ─────────────────────
+    _free_reply = _free_key_command(text)
+    if _free_reply is not None:
+        return TextResult(_free_reply)
 
     # ── API keys ─────────────────────────────────────────────────────────
     if cmd.startswith("key "):

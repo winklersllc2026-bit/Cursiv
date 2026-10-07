@@ -45,6 +45,18 @@
 -->
 # Changelog
 
+## v3.14-U34 — Cursiv Cloud, free AI keys, an agent council that runs on anything, fast startup (2026-10-07)
+
+**Cursiv Cloud.** A free backup AI served by the owner's Cloudflare Worker (`POST /api/cursiv/chat` on cursiv.winklers-llc.com): Gemini when the Worker has a key, otherwise Cloudflare Workers AI. Provider keys stay on the server; the app sends only the conversation. Local stays first — Cursiv Cloud answers only when no local model is ready (Ollama not installed, or no model yet), says so plainly the first time, and `cloud off` turns it off entirely. Limited to 150 messages per person and 1,500 site-wide per day.
+
+**Free AI keys.** `gemini <key>` and `groq <key>` add the user's own free Google Gemini / Groq keys (tested before they're saved; `gemini off` / `groq off` remove them). `free keys` shows step-by-step sign-up links. They join every cascade — main chat, babel, voice, grow — after the paid keys. Order: paid keys → Gemini → Groq → local Ollama, or Cursiv Cloud when no local model is ready.
+
+**The council is Cursiv's.** `council <question>` no longer polls whichever paid providers have keys. Each seat is one of Cursiv's advising agents (Depth, Anchor, Spark, Horizon, …) with its role, question and knowledge, and the AI providers are only the engines those seats run on — paid keys, free keys, local Ollama, and Cursiv Cloud as a last resort. Seats are spread across the engines; a seat whose engine fails moves to the next working one. Cursiv's synthesizing agents (Shield, Lens, Builder, Balance) write the final answer, on local Ollama when it's available. Works with no paid keys at all. Signal mode: 4 seats; full mode: 7 seats plus a refinement round.
+
+**Startup: about 300 s → under 1 s.** `hermes_agent.py` imported the whole sibling `hermes-agent` project the moment Cursiv started (294 s of the 300 s on the owner's machine); it now loads on first use. gradio (the browser UI) also loads only when the browser UI is built.
+
+Also: Groq requests now send a real User-Agent — Groq's Cloudflare front blocked Python's default one (HTTP 403, code 1010).
+
 ## v3.14-U33 — In-app updates that actually install (2026-10-06)
 
 The launcher's update button found new releases but never really installed them: its status updates were sent from a background thread through `QTimer.singleShot`, which never fires there, so the dialog sat on "Downloading installer…"; it ran the full installer wizard while Cursiv was still running (files locked), which on a normal install also re-ran the 12-step first-time setup; and nothing restarted Cursiv afterward. Version comparison also treated any different tag as "newer".

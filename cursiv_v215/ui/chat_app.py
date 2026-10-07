@@ -43,12 +43,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, Generator
 
-try:
-    import gradio as gr
-    _HAS_GRADIO = True
-except Exception:
-    gr = None  # type: ignore[assignment]
-    _HAS_GRADIO = False
+# gradio (the browser UI) is imported inside build_chat_app(), not here: it
+# takes ~5 s to import and the desktop window and terminal never use it.
+gr = None  # type: ignore[assignment]
 
 # ── Token rate limiter + scan display ──────────────────────────────────────
 try:
@@ -1534,8 +1531,236 @@ def _pull_ollama_model(model: str) -> Generator[str, None, None]:
         yield f"[Download failed: {e}]\n"
 
 
+# ── Free providers: the user's own Gemini / Groq keys, and Cursiv Cloud ─────
+# Gemini and Groq both have free tiers (FREE_KEY_HELP). Their keys live in the
+# same .cursiv/config.json as the other keys ("gemini_key", "groq_key").
+# Cursiv Cloud is the owner's Cloudflare Worker (cloudflare/worker.js); the
+# provider keys stay on the server, and the app only sends the conversation.
+
+GEMINI_URL   = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+GEMINI_MODELS = ("gemini-3.8-flash", "gemini-3.5-flash")
+GROQ_URL     = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL   = "qwen/qwen3.8-27b"
+CURSIV_CLOUD_URL = os.environ.get("CURSIV_CLOUD_URL", "https://cursiv.winklers-llc.com/api/cursiv/chat")
+
+FREE_KEY_HELP = """\
+FREE AI KEYS -- no credit card, about 2 minutes each. Add one or both.
+
+GOOGLE GEMINI  (the most generous free tier)
+  1. Open https://aistudio.google.com/apikey
+  2. Sign in with any Google account and accept the terms
+  3. Click "Create API key" (pick any project, or let it make one)
+  4. Copy the key -- it starts with AIza
+  5. In Cursiv, type:   gemini AIza...your key...
+
+GROQ  (very fast)
+  1. Open https://console.groq.com/keys
+  2. Sign up with Google, GitHub or email
+  3. Click "Create API Key", give it any name, then Submit
+  4. Copy the key right away -- it starts with gsk_ and is shown only once
+  5. In Cursiv, type:   groq gsk_...your key...
+
+Cursiv tests each key when you add it, and uses them whenever your other
+providers aren't available -- including in the council. Keys are saved only on
+this computer. To remove one:  gemini off  /  groq off
+"""
+
+_KEYS_FILE_APP = ROOT / ".cursiv" / "config.json"
+_CLOUD_FILE    = Path.home() / ".cursiv" / "cursiv_cloud.json"
+
+
+def _saved_key(field: str) -> str:
+    try:
+        return json.loads(_KEYS_FILE_APP.read_text(encoding="utf-8")).get(field, "") or ""
+    except Exception:
+        return ""
+
+
+def _text_messages(messages: list[dict]) -> list[dict]:
+    """Plain-text copy of a message list (image parts dropped)."""
+    out = []
+    for m in messages:
+        c = m.get("content")
+        if not isinstance(c, str):
+            c = next((p.get("text", "") for p in (c or []) if isinstance(p, dict) and p.get("type") == "text"), "")
+        out.append({"role": m.get("role", "user"), "content": c})
+    return out
+
+
+def _post_json(url: str, payload: dict, headers: dict, timeout: float) -> dict:
+    # A real User-Agent: Groq's API sits behind Cloudflare, which blocks Python's
+    # default "Python-urllib" agent outright (HTTP 403, error code 1010).
+    req = urllib.request.Request(url, data=json.dumps(payload).encode(),
+                                 headers={"Content-Type": "application/json",
+                                          "User-Agent": "Cursiv-Desktop/3.14", **headers})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _call_gemini_direct(messages: list[dict], key: str, max_tokens: int = 1200) -> Generator[str, None, None]:
+    msgs = _text_messages(messages)
+    system = "\n\n".join(m["content"] for m in msgs if m["role"] == "system")
+    contents = [{"role": "model" if m["role"] == "assistant" else "user", "parts": [{"text": m["content"]}]}
+                for m in msgs if m["role"] in ("user", "assistant") and m["content"]]
+    payload = {"contents": contents, "generationConfig": {"maxOutputTokens": max_tokens}}
+    if system:
+        payload["systemInstruction"] = {"parts": [{"text": system}]}
+    last_err = ""
+    for model in GEMINI_MODELS:
+        try:
+            data = _post_json(GEMINI_URL.format(model=model), payload, {"x-goog-api-key": key}, 60)
+            text = "".join(p.get("text", "") for p in (data.get("candidates") or [{}])[0].get("content", {}).get("parts", []))
+            if text.strip():
+                yield _filter_identity(text)
+                return
+            last_err = "empty reply"
+        except urllib.error.HTTPError as e:
+            last_err = f"{e.code}: {e.read().decode(errors='ignore')[:160]}"
+            if e.code in (400, 401, 403):
+                break           # bad key or request -- another model won't help
+        except Exception as e:
+            last_err = str(e)
+    yield f"\n[Gemini error {last_err}]"
+
+
+def _call_groq_direct(messages: list[dict], key: str, max_tokens: int = 1200) -> Generator[str, None, None]:
+    try:
+        data = _post_json(GROQ_URL, {"model": GROQ_MODEL, "messages": _text_messages(messages),
+                                     "max_tokens": max_tokens},
+                          {"Authorization": f"Bearer {key}"}, 60)
+        text = data["choices"][0]["message"].get("content") or ""
+        if text.strip():
+            yield _filter_identity(text)
+        else:
+            yield "\n[Groq error: empty reply]"
+    except urllib.error.HTTPError as e:
+        yield f"\n[Groq error {e.code}: {e.read().decode(errors='ignore')[:160]}]"
+    except Exception as e:
+        yield f"\n[Groq error: {e}]"
+
+
+def _cloud_settings() -> dict:
+    try:
+        data = json.loads(_CLOUD_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        data = {}
+    changed = False
+    if "enabled" not in data:
+        data["enabled"] = True
+        changed = True
+    if not data.get("install_id"):
+        import uuid as _uuid
+        data["install_id"] = str(_uuid.uuid4())
+        changed = True
+    if changed:
+        _save_cloud_settings(data)
+    return data
+
+
+def _save_cloud_settings(data: dict) -> None:
+    try:
+        _CLOUD_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _CLOUD_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def cloud_enabled() -> bool:
+    return bool(_cloud_settings().get("enabled", True))
+
+
+def set_cloud_enabled(on: bool) -> None:
+    data = _cloud_settings()
+    data["enabled"] = bool(on)
+    _save_cloud_settings(data)
+
+
+def _call_cursiv_cloud(messages: list[dict], max_tokens: int = 1200) -> Generator[str, None, None]:
+    settings = _cloud_settings()
+    try:
+        data = _post_json(CURSIV_CLOUD_URL, {"messages": _text_messages(messages), "max_tokens": max_tokens},
+                          {"X-Cursiv-Install": settings["install_id"], "User-Agent": "Cursiv-Desktop"}, 90)
+        text = data.get("reply", "")
+        if not text.strip():
+            yield "\n[Cursiv Cloud error: empty reply]"
+            return
+        if not settings.get("notice_shown"):
+            settings["notice_shown"] = True
+            _save_cloud_settings(settings)
+            yield ("*[No local model was ready, so this answer came from Cursiv Cloud (free, sent to "
+                   "cursiv.winklers-llc.com). Type 'cloud off' to keep everything on this computer.]*\n\n")
+        yield _filter_identity(text)
+    except urllib.error.HTTPError as e:
+        try:
+            detail = json.loads(e.read().decode("utf-8")).get("detail", "")
+        except Exception:
+            detail = ""
+        yield f"\n[Cursiv Cloud error {e.code}: {detail or 'unavailable'}]"
+    except Exception as e:
+        yield f"\n[Cursiv Cloud error: {e}]"
+
+
+def free_key_command(text: str) -> str | None:
+    """Shared by the chat window and the terminal: 'gemini <key>', 'groq <key>',
+    'cloud on|off|status', 'free keys'. Returns the reply, or None if not one of these."""
+    t = text.strip()
+    cmd = t.lower()
+    if cmd in ("free keys", "free key", "keys free"):
+        return FREE_KEY_HELP
+    for name, field, prefix, fn in (("gemini", "gemini_key", "AIza", _call_gemini_direct),
+                                    ("groq", "groq_key", "gsk_", _call_groq_direct)):
+        if cmd == name:
+            return f"Usage: {name} <key>   ({'set' if _saved_key(field) else 'no key set'})\n\n" + FREE_KEY_HELP
+        if cmd.startswith(name + " "):
+            key = t[len(name) + 1:].strip()
+            if key.lower() in ("off", "remove", "clear"):
+                _store_key(field, "")
+                return f"{name.title()} key removed."
+            if not key.startswith(prefix):
+                return f"That doesn't look like a {name.title()} key (they start with {prefix}).\n\n" + FREE_KEY_HELP
+            reply = "".join(fn([{"role": "user", "content": "Reply with just: OK"}], key, 8))
+            if reply.lstrip().startswith(f"[{name.title()} error"):
+                return (f"{name.title()} key NOT saved -- the test call failed: {reply.strip()}\n"
+                        f"Check that you copied the whole key, then try again.")
+            _store_key(field, key)
+            return f"{name.title()} key saved and working. Cursiv will use it when your other providers aren't available."
+    if cmd in ("cloud", "cloud status"):
+        on = cloud_enabled()
+        return (f"Cursiv Cloud is {'ON' if on else 'OFF'}. "
+                + ("It answers only when no local model is ready (Ollama not installed or no model yet), "
+                   "through cursiv.winklers-llc.com. Type 'cloud off' to keep everything on this computer."
+                   if on else "Everything stays on this computer. Type 'cloud on' to allow it as a backup."))
+    if cmd in ("cloud on", "cloud off"):
+        set_cloud_enabled(cmd == "cloud on")
+        return ("Cursiv Cloud ON -- used only when no local model is ready."
+                if cmd == "cloud on" else "Cursiv Cloud OFF -- nothing is sent to the cloud unless you add your own keys.")
+    return None
+
+
+def _store_key(field: str, value: str) -> None:
+    try:
+        try:
+            data = json.loads(_KEYS_FILE_APP.read_text(encoding="utf-8"))
+        except Exception:
+            data = {}
+        if value:
+            data[field] = value
+        else:
+            data.pop(field, None)
+        _KEYS_FILE_APP.parent.mkdir(parents=True, exist_ok=True)
+        _KEYS_FILE_APP.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _local_model_ready() -> bool:
+    """Ollama is installed, running (started if needed) and has a chat model."""
+    return _ensure_ollama() and _resolve_ollama_model() is not None
+
+
 # Error/placeholder chunks the cloud callers yield instead of raising.
-_PROVIDER_ERROR_PREFIXES = ("[xAI auth error", "[Claude error", "[OpenAI error", "[Ollama unavailable", "[Ollama not found")
+_PROVIDER_ERROR_PREFIXES = ("[xAI auth error", "[Claude error", "[OpenAI error", "[Gemini error", "[Groq error",
+                            "[Cursiv Cloud error", "[Ollama unavailable", "[Ollama not found")
 
 
 def cascade_stream(
@@ -1545,7 +1770,8 @@ def cascade_stream(
 ) -> tuple[Generator[str, None, None], list[str]]:
     """
     Stream a one-shot reply (Babel, grow, ...) through every configured provider
-    in order -- Claude, xAI, OpenAI, then local Ollama -- moving to the next one
+    in order -- Claude, xAI, OpenAI, Gemini, Groq, then local Ollama (or Cursiv
+    Cloud when no local model is ready) -- moving to the next one
     whenever a provider fails (bad/expired key, out of credits, offline, empty
     reply). Ollama is always the last stop, so this works with no keys at all.
 
@@ -1559,6 +1785,16 @@ def cascade_stream(
         attempts.append(("xAI", lambda: _call_xai_stream(messages, keys["api_key"], False, max_tokens)))
     if keys.get("openai_key"):
         attempts.append(("OpenAI", lambda: _call_openai_direct(messages, keys["openai_key"])))
+    gemini_key = keys.get("gemini_key") or _saved_key("gemini_key")
+    groq_key = keys.get("groq_key") or _saved_key("groq_key")
+    if gemini_key:
+        attempts.append(("Gemini", lambda: _call_gemini_direct(messages, gemini_key, max_tokens)))
+    if groq_key:
+        attempts.append(("Groq", lambda: _call_groq_direct(messages, groq_key, max_tokens)))
+    # Local first: Ollama answers whenever it has a model. Cursiv Cloud only steps
+    # in when it doesn't (not installed / no model yet), and only if not turned off.
+    if cloud_enabled():
+        attempts.append(("Cursiv Cloud", lambda: _call_cursiv_cloud(messages, max_tokens)))
     attempts.append(("Ollama", lambda: _call_ollama(messages, max_tokens=max_tokens)))
 
     used: list[str] = []
@@ -1566,6 +1802,8 @@ def cascade_stream(
     def _gen() -> Generator[str, None, None]:
         failures: list[str] = []
         for label, start in attempts:
+            if label == "Cursiv Cloud" and _local_model_ready():
+                continue        # local model available -- it answers instead
             if label == "Ollama":
                 # Last stop -- nothing left to fall back to, so stream everything
                 # (including first-time download progress) straight through.
@@ -2676,8 +2914,8 @@ You are in full autonomous coding mode. Follow this protocol exactly:
         # Offline fallback — all cloud providers exhausted or unreachable
         # Ollama is local with no token rate limits — unlimited in offline mode
         if not _fa_done:
-            yield "*[All cloud providers unavailable — routing to Ollama offline mode (no token limits)]*\n\n"
-            yield from _call_ollama(_text_only_msgs(messages))
+            yield from _fallback_chain(_text_only_msgs(messages), user_text,
+                                       [n for n, k in (("xAI", key), ("OpenAI", oai), ("Claude", ant)) if k])
 
     else:
         # ── Cascade for plain chat: xAI → OpenAI → Claude → Ollama ──────
@@ -2736,29 +2974,65 @@ You are in full autonomous coding mode. Follow this protocol exactly:
                 return
             # Claude failed — fall to Ollama
 
-        # 4. Ollama — use Code Council for code questions, standard for everything else
-        _is_code = _classify_message(user_text) == "code"
-        _ollama_fn = _call_ollama_code_council if _is_code else _call_ollama
-        ollama_gen = _ollama_fn(_text_only(messages))
-        first_ol   = next(ollama_gen, None)
-        if first_ol is not None:
-            if tried:
-                _label = "Code Council" if _is_code else "Ollama"
-                yield f"*[{' → '.join(tried)} unavailable — {_label}]*\n\n"
-            yield first_ol
-            yield from ollama_gen
+        # 4. Free providers (own Gemini/Groq keys), then local Ollama -- or
+        #    Cursiv Cloud when no local model is ready.
+        yield from _fallback_chain(_text_only(messages), user_text, tried)
+
+
+def _fallback_chain(text_msgs: list[dict], user_text: str, tried: list[str]) -> Generator[str, None, None]:
+    """Last part of chat()'s cascade, after the paid providers: the user's own
+    free Gemini/Groq keys, then local Ollama. When Ollama has no usable model,
+    Cursiv Cloud (if not turned off) answers before Ollama's first-time download."""
+    for label, field, fn in (("Gemini", "gemini_key", _call_gemini_direct), ("Groq", "groq_key", _call_groq_direct)):
+        key = _saved_key(field)
+        if not key:
+            continue
+        tried.append(label)
+        gen = fn(text_msgs, key)
+        first = next(gen, None)
+        if first is not None and not first.lstrip().startswith(f"[{label} error"):
+            if len(tried) > 1:
+                yield f"*[{' → '.join(tried[:-1])} unavailable — {label}]*\n\n"
+            yield first
+            yield from gen
+            return
+
+    if cloud_enabled() and not _local_model_ready():
+        tried.append("Cursiv Cloud")
+        gen = _call_cursiv_cloud(text_msgs)
+        first = next(gen, None)
+        if first is not None and not first.lstrip().startswith("[Cursiv Cloud error"):
+            if len(tried) > 1:
+                yield f"*[{' → '.join(tried[:-1])} unavailable — Cursiv Cloud]*\n\n"
+            yield first
+            yield from gen
+            return
+
+    # Ollama -- use Code Council for code questions, standard for everything else
+    _is_code = _classify_message(user_text) == "code"
+    _ollama_fn = _call_ollama_code_council if _is_code else _call_ollama
+    ollama_gen = _ollama_fn(text_msgs)
+    first_ol   = next(ollama_gen, None)
+    if first_ol is not None:
+        if tried:
+            _label = "Code Council" if _is_code else "Ollama"
+            yield f"*[{' → '.join(tried)} unavailable — {_label}]*\n\n"
+        yield first_ol
+        yield from ollama_gen
+    else:
+        if tried:
+            yield (
+                f"*[{', '.join(tried)} unavailable and Ollama is not running.]*\n\n"
+                "Start Ollama with `ollama run llama3.1` for offline use."
+            )
         else:
-            if tried:
-                yield (
-                    f"*[{', '.join(tried)} unavailable and Ollama is not running.]*\n\n"
-                    "Start Ollama with `ollama run llama3.1` for offline use."
-                )
-            else:
-                yield (
-                    "[No API key provided and Ollama is not running.]\n\n"
-                    "**To connect xAI Grok:** paste your xAI API key in the key slot above.\n"
-                    "**To run locally:** start Ollama with `ollama run llama3.1`."
-                )
+            yield (
+                "[No AI is available yet: no API key, Ollama isn't running, and Cursiv Cloud "
+                + ("couldn't be reached" if cloud_enabled() else "is turned off ('cloud on' to use it)")
+                + ".]\n\n"
+                "**To run locally:** start Ollama with `ollama run llama3.1`.\n\n"
+                + FREE_KEY_HELP
+            )
 
 
 # ── Status bar ────────────────────────────────────────────────────────────
@@ -2826,7 +3100,9 @@ HOTKEY_JS = """
 
 # ── Build the app ─────────────────────────────────────────────────────────
 
-def build_chat_app() -> gr.Blocks:
+def build_chat_app() -> "gr.Blocks":
+    global gr
+    import gradio as gr  # noqa: F811 -- deferred import, see top of file
 
     sacred_theme = gr.themes.Base(
         primary_hue="blue",

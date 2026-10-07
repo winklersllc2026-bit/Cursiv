@@ -57,21 +57,35 @@ for _candidate in [
 OLLAMA_BASE_URL = os.environ.get("CURSIV_OLLAMA_URL", "http://localhost:11434/v1")
 OLLAMA_MODEL    = os.environ.get("CURSIV_OLLAMA_MODEL", "llama3.1")
 
-_AVAILABLE = False
+# Hermes is imported on first use, not when Cursiv starts: importing the
+# hermes-agent project pulls in its whole dependency tree, which made every
+# Cursiv startup take minutes on machines that have it checked out.
+_AVAILABLE = _HERMES_ROOT is not None
 _AgentClass: Any = None
+_LOAD_ERROR = ""
 
-if _HERMES_ROOT:
+
+def _load() -> bool:
+    """Import Hermes the first time it's actually needed."""
+    global _AgentClass, _AVAILABLE, _LOAD_ERROR
+    if _AgentClass is not None:
+        return True
+    if not _HERMES_ROOT:
+        return False
     if str(_HERMES_ROOT) not in sys.path:
         sys.path.insert(0, str(_HERMES_ROOT))
     try:
         from run_agent import AIAgent as _AIAgent  # type: ignore
         _AgentClass = _AIAgent
-        _AVAILABLE = True
-    except Exception:
-        pass
+        return True
+    except Exception as exc:
+        _AVAILABLE = False
+        _LOAD_ERROR = str(exc)
+        return False
 
 
 def is_available() -> bool:
+    """True when a hermes-agent checkout was found (it's loaded on first use)."""
     return _AVAILABLE
 
 
@@ -90,11 +104,11 @@ def run(prompt: str) -> str:
     Returns the final response string.
     Works offline — no cloud API needed.
     """
-    if not _AVAILABLE or _AgentClass is None:
+    if not _load():
         hint = (
             f"Set CURSIV_HERMES_PATH to the hermes-agent root."
             if not _HERMES_ROOT else
-            f"Hermes found at {_HERMES_ROOT} but failed to load."
+            f"Hermes found at {_HERMES_ROOT} but failed to load: {_LOAD_ERROR}"
         )
         return f"[Hermes Agent unavailable — {hint}]"
     try:

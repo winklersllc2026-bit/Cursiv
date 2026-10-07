@@ -203,19 +203,23 @@ function guardianScan(message, prevScore) {
 
 const withTimeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error("timeout")), ms))]);
 
-async function askGemini(env, message) {
+// messages: [{role: "system"|"user"|"assistant", content}]
+async function askGemini(env, messages, maxTokens, timeoutMs = 12000) {
   const models = [env.GEMINI_MODEL, ...(env.GEMINI_FALLBACK_MODELS || "").split(",")].map((m) => (m || "").trim()).filter(Boolean);
+  const system = messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n");
+  const contents = messages.filter((m) => m.role !== "system" && m.content)
+    .map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
   for (const model of models) {
     try {
       const res = await withTimeout(fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: DEMO_SYSTEM }] },
-          contents: [{ role: "user", parts: [{ text: message }] }],
-          generationConfig: { maxOutputTokens: 400, temperature: 0.7 },
+          ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
+          contents,
+          generationConfig: { maxOutputTokens: maxTokens, temperature: 0.7 },
         }),
-      }), 12000);
+      }), timeoutMs);
       if (!res.ok) { console.log(`Gemini ${model} answered ${res.status}`); continue; }
       const data = await res.json();
       const text = (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || "").join("").trim();
@@ -227,12 +231,9 @@ async function askGemini(env, message) {
   return null;
 }
 
-async function askWorkersAI(env, message) {
+async function askWorkersAI(env, messages, maxTokens, timeoutMs = 15000) {
   try {
-    const out = await withTimeout(env.AI.run(env.WORKERS_AI_MODEL, {
-      messages: [{ role: "system", content: DEMO_SYSTEM }, { role: "user", content: message }],
-      max_tokens: 400,
-    }), 15000);
+    const out = await withTimeout(env.AI.run(env.WORKERS_AI_MODEL, { messages, max_tokens: maxTokens }), timeoutMs);
     const text = (typeof out?.response === "string" ? out.response : "").trim();
     return text || null;
   } catch (e) {
@@ -242,12 +243,13 @@ async function askWorkersAI(env, message) {
 }
 
 async function demoReply(env, message) {
+  const messages = [{ role: "system", content: DEMO_SYSTEM }, { role: "user", content: message }];
   if (env.GEMINI_API_KEY) {
-    const r = await askGemini(env, message);
+    const r = await askGemini(env, messages, 400);
     if (r) return r;
   }
   if (env.AI && env.WORKERS_AI_MODEL) {
-    const r = await askWorkersAI(env, message);
+    const r = await askWorkersAI(env, messages, 400);
     if (r) return r;
   }
   return DEMO_FALLBACK;
@@ -317,6 +319,62 @@ function saveDemoSession(env, s) {
     "INSERT INTO demo_sessions (ip, count, window_start, guard_score) VALUES (?1, ?2, ?3, ?4) " +
     "ON CONFLICT(ip) DO UPDATE SET count = ?2, window_start = ?3, guard_score = ?4",
   ).bind(s.ip, s.count, s.window_start, s.guard_score).run();
+}
+
+// ── Cursiv Cloud: free backup AI for the desktop app ─────────────────────────
+// Used only when a user's machine has no local model ready (and they haven't
+// turned it off). The provider keys stay here; the app sends only the
+// conversation. Limited per visitor IP per day and site-wide per day.
+
+const CLOUD_MAX_CHARS = 60000;   // whole conversation, after trimming
+
+function cleanCloudMessages(raw) {
+  if (!Array.isArray(raw) || !raw.length || raw.length > 80) throw new HttpError(422, "messages must be a list of 1–80 items");
+  let msgs = raw.map((m) => ({
+    role: ["system", "user", "assistant"].includes(m?.role) ? m.role : "user",
+    content: str(m?.content).slice(0, 40000),
+  })).filter((m) => m.content.trim());
+  if (!msgs.some((m) => m.role === "user")) throw new HttpError(422, "No user message");
+  // Keep system messages and the newest turns; drop the oldest turns to fit.
+  const total = () => msgs.reduce((n, m) => n + m.content.length, 0);
+  while (total() > CLOUD_MAX_CHARS) {
+    const i = msgs.findIndex((m, idx) => m.role !== "system" && idx < msgs.length - 1);
+    if (i === -1) break;
+    msgs.splice(i, 1);
+  }
+  return msgs;
+}
+
+async function cursivCloudChat(env, request) {
+  const body = await readJson(request);
+  const messages = cleanCloudMessages(body.messages);
+  const maxTokens = Math.min(Math.max(parseInt(body.max_tokens, 10) || 800, 16), 1500);
+
+  const ip = request.headers.get("CF-Connecting-IP") || "local";
+  const day = nowIso().slice(0, 10);
+  const perIp = Number(env.CLOUD_PER_IP_DAILY || 150);
+  const daily = Number(env.CLOUD_DAILY_LIMIT || 1500);
+  const mine = (await env.DB.prepare("SELECT count FROM cloud_usage WHERE day = ? AND ip = ?").bind(day, ip).first())?.count || 0;
+  if (mine >= perIp) throw new HttpError(429, "Your free Cursiv Cloud messages for today are used up — they reset at midnight UTC. Add a free key ('free keys') or run Ollama for unlimited use.");
+  const used = (await env.DB.prepare("SELECT count FROM cloud_daily WHERE day = ?").bind(day).first())?.count || 0;
+  if (used >= daily) throw new HttpError(429, "Cursiv Cloud is at its free limit for today. Add a free key ('free keys') or run Ollama for unlimited use.");
+
+  let reply = null, provider = null;
+  if (env.GEMINI_API_KEY) {
+    reply = await askGemini(env, messages, maxTokens, 45000);
+    if (reply) provider = "gemini";
+  }
+  if (!reply && env.AI && env.WORKERS_AI_MODEL) {
+    reply = await askWorkersAI(env, messages, maxTokens, 60000);
+    if (reply) provider = "workers-ai";
+  }
+  if (!reply) throw new HttpError(503, "Cursiv Cloud couldn't reach an AI right now — try again in a minute.");
+
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO cloud_usage (day, ip, count) VALUES (?1, ?2, 1) ON CONFLICT(day, ip) DO UPDATE SET count = count + 1").bind(day, ip),
+    env.DB.prepare("INSERT INTO cloud_daily (day, count) VALUES (?1, 1) ON CONFLICT(day) DO UPDATE SET count = count + 1").bind(day),
+  ]);
+  return { reply, provider, remaining_today: Math.max(perIp - mine - 1, 0) };
 }
 
 async function register(env, request) {
@@ -518,6 +576,7 @@ async function route(env, request, url) {
 
   if (p === "/api/posts" && m === "GET") return feed(env);
   if (p === "/api/demo/chat" && m === "POST") return [200, await demoChat(env, request)];
+  if (p === "/api/cursiv/chat" && m === "POST") return cursivCloudChat(env, request);
   if (p === "/api/register" && m === "POST") return [201, await register(env, request)];
   if (p === "/api/login" && m === "POST") return login(env, request);
   if (p === "/api/me" && m === "GET") {
@@ -552,7 +611,7 @@ function corsHeaders(env, request) {
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Credentials": "true",
     "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Cursiv-CLI, X-Cursiv-Device, X-Fleet-Token",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Cursiv-CLI, X-Cursiv-Device, X-Cursiv-Install, X-Fleet-Token",
     "Vary": "Origin",
   };
 }
