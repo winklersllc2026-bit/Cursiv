@@ -22,6 +22,8 @@ const PAGES = [
   ["mailbox.html", "mailbox.html"],
   ["start.html", "start.html"],
   ["cloudflare/letters.html", "letters.html"],
+  ["cloudflare/app.html", "app.html"],
+  ["cloudflare/app.webmanifest", "app.webmanifest"],
 ];
 const FOLDERS = ["assets"];
 

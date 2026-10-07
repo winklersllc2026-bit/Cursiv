@@ -1,0 +1,10 @@
+{
+  "name": "Cursiv",
+  "short_name": "Cursiv",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#08090C",
+  "theme_color": "#08090C",
+  "icons": [{ "src": "/assets/cursiv_256.png", "sizes": "256x256", "type": "image/png", "purpose": "any" }]
+}

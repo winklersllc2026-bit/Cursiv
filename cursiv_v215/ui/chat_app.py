@@ -255,7 +255,8 @@ OLLAMA_MODEL       = "llama3.1"
 # Answers are limited by time, not length (see _time_boxed): the token cap is
 # only a generous safety net so a thought is never cut off mid-sentence.
 RESPONSE_MAX_TOKENS  = int(os.environ.get("CURSIV_MAX_TOKENS", "4096"))
-RESPONSE_TIME_LIMIT  = float(os.environ.get("CURSIV_RESPONSE_SECONDS", "90"))
+# 0 = no time limit (the default -- thinking time made 90 s far too short).
+RESPONSE_TIME_LIMIT  = float(os.environ.get("CURSIV_RESPONSE_SECONDS", "0"))
 OLLAMA_CODE_PRIMARY   = "qwen2.5-coder:14b"    # primary coder — architecture + logic
 OLLAMA_CODE_SECONDARY = "deepseek-coder-v2:16b" # critic/reviewer — debugging + synthesis
 
@@ -3093,6 +3094,9 @@ def _time_boxed(gen, seconds: float = RESPONSE_TIME_LIMIT, grace: float = 12.0):
     """Stream a reply, but once `seconds` have passed, finish the current
     sentence (up to `grace` more seconds) and stop cleanly with a note --
     instead of either cutting off mid-sentence or typing for five minutes."""
+    if not seconds or seconds <= 0:
+        yield from gen          # no time limit
+        return
     import time as _t
     start = _t.monotonic()
     stopping = False

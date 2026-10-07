@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cursiv</title>
+<meta name="theme-color" content="#08090C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cursiv">
+<link rel="manifest" href="/app.webmanifest">
+<link rel="icon" href="/assets/cursiv_256.png">
+<link rel="apple-touch-icon" href="/assets/cursiv_256.png">
+<style>
+  :root { --bg:#08090C; --bg2:#12131a; --line:#262838; --gold:#c9a741; --text:#e6e6ee; --dim:#8a8ca0; --me:#1d2a4a; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; overflow-x:hidden; background:var(--bg); color:var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif; font-size:16px; }
+  body { display:flex; flex-direction:column; height:100dvh; }
+  header { display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top)) 16px 10px;
+    border-bottom:1px solid var(--line); background:var(--bg2); }
+  header h1 { margin:0; font-size:17px; letter-spacing:3px; color:var(--gold); font-weight:700; flex:1; }
+  header button { background:none; border:1px solid var(--line); color:var(--dim); border-radius:8px; padding:6px 10px; font-size:13px; }
+  #chat { flex:1; overflow-y:auto; overflow-x:hidden; padding:14px 14px 6px; -webkit-overflow-scrolling:touch; }
+  .msg { max-width:88%; margin:0 0 12px; padding:10px 13px; border-radius:14px; line-height:1.45; white-space:pre-wrap; word-wrap:break-word; }
+  .user { margin-left:auto; background:var(--me); border-bottom-right-radius:4px; }
+  .ai { background:var(--bg2); border:1px solid var(--line); border-bottom-left-radius:4px; }
+  .ai .who { color:var(--gold); font-size:12px; font-weight:700; letter-spacing:1px; margin-bottom:4px; }
+  .msg img { display:block; max-width:100%; border-radius:10px; margin-bottom:6px; }
+  .thinking { color:var(--dim); font-style:italic; }
+  .err { color:#ff7d7d; }
+  .empty { color:var(--dim); text-align:center; margin-top:18vh; padding:0 24px; line-height:1.6; }
+  footer { border-top:1px solid var(--line); background:var(--bg2); padding:8px 10px calc(8px + env(safe-area-inset-bottom)); }
+  #preview { display:none; align-items:center; gap:8px; margin-bottom:8px; color:var(--dim); font-size:13px; }
+  #preview img { height:54px; border-radius:6px; }
+  #preview button { background:none; border:none; color:var(--dim); font-size:20px; }
+  .row { display:flex; gap:8px; align-items:flex-end; }
+  #cam { flex:none; width:46px; height:46px; border-radius:50%; border:1px solid var(--gold); background:none; color:var(--gold); font-size:22px; }
+  #text { flex:1; min-width:0; resize:none; max-height:120px; min-height:46px; padding:12px 14px; border-radius:23px; border:1px solid var(--line);
+    background:var(--bg); color:var(--text); font-size:16px; font-family:inherit; }
+  #send { flex:none; height:46px; padding:0 18px; border-radius:23px; border:none; background:var(--gold); color:#111; font-weight:700; font-size:15px; }
+  #send:disabled { opacity:.45; }
+  #setup { flex:1; display:none; flex-direction:column; justify-content:center; padding:28px; gap:14px; text-align:center; }
+  #setup p { color:var(--dim); line-height:1.6; margin:0 0 6px; }
+  .big { padding:15px; border-radius:12px; border:none; background:var(--gold); color:#111; font-weight:700; font-size:17px; }
+  .ghost { padding:13px; border-radius:12px; border:1px solid var(--line); background:none; color:var(--text); font-size:15px; }
+  #codebox { display:none; gap:8px; }
+  #codebox input { flex:1; padding:13px; border-radius:12px; border:1px solid var(--line); background:var(--bg); color:var(--text);
+    font-size:22px; letter-spacing:6px; text-align:center; }
+  .note { color:var(--dim); font-size:13px; }
+  #sheet { position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:flex-end; }
+  #sheet .panel { width:100%; background:var(--bg2); border-top:1px solid var(--line); border-radius:16px 16px 0 0;
+    padding:20px 20px calc(20px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:10px; }
+  #sheet .code { font-size:36px; letter-spacing:8px; color:var(--gold); text-align:center; font-weight:700; }
+</style>
+</head>
+<body>
+<header>
+  <h1>✦ CURSIV</h1>
+  <button id="menuBtn" hidden>Link</button>
+</header>
+
+<div id="setup">
+  <p style="color:var(--gold);font-size:20px;font-weight:700;margin-bottom:0">Bible study with Cursiv</p>
+  <p>Take a photo of any page from your Bibles and ask about it — differences between translations, what a word means in the original language, anything.</p>
+  <button class="big" id="startBtn">Start</button>
+  <button class="ghost" id="haveCode">I have a code from Cursiv</button>
+  <div id="codebox" class="row"><input id="codeInput" inputmode="numeric" maxlength="6" placeholder="000000"><button class="big" id="joinBtn">Link</button></div>
+  <p class="note" id="setupMsg"></p>
+</div>
+
+<div id="chat" hidden></div>
+
+<footer id="composer" hidden>
+  <div id="preview"><img id="previewImg" alt=""><span>Photo ready</span><button id="clearPhoto" aria-label="Remove photo">×</button></div>
+  <div class="row">
+    <button id="cam" aria-label="Take or choose a photo">📷</button>
+    <textarea id="text" rows="1" placeholder="Ask about this page…"></textarea>
+    <button id="send">Send</button>
+  </div>
+  <input id="file" type="file" accept="image/*" hidden>
+</footer>
+
+<div id="sheet"><div class="panel">
+  <div style="font-weight:700">Link another device</div>
+  <div class="note">On the other device, open this page (or Cursiv on your computer) and enter this code within 10 minutes. Both will share this conversation.</div>
+  <div class="code" id="pairCode">······</div>
+  <button class="ghost" id="closeSheet">Done</button>
+</div></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const TOKEN_KEY = "cursiv_space_token";
+let token = null, lastSeen = "", photo = null, busy = false, polling = null;
+const seen = new Set();
+try { token = localStorage.getItem(TOKEN_KEY); } catch (e) {}
+
+async function api(path, opts = {}) {
+  const headers = { "Content-Type": "application/json", ...(token ? { Authorization: "Space " + token } : {}) };
+  const r = await fetch(path, { ...opts, headers });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.detail || ("Error " + r.status));
+  return data;
+}
+function save(t) { token = t; try { localStorage.setItem(TOKEN_KEY, t); } catch (e) {} }
+
+function esc(s) { return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
+function fmt(s) {
+  return esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<i>$2</i>").replace(/^#+\s*(.*)$/gm, "<b>$1</b>");
+}
+function bubble(role, html, extraClass = "") {
+  const d = document.createElement("div");
+  d.className = `msg ${role === "assistant" ? "ai" : "user"} ${extraClass}`;
+  d.innerHTML = (role === "assistant" ? '<div class="who">CURSIV</div>' : "") + html;
+  $("chat").querySelector(".empty")?.remove();
+  $("chat").appendChild(d);
+  $("chat").scrollTop = $("chat").scrollHeight;
+  return d;
+}
+async function addMessage(m) {
+  if (seen.has(m.id)) return;
+  seen.add(m.id);
+  if (m.created > lastSeen) lastSeen = m.created;
+  const textHtml = m.text === "(photo)" ? "" : fmt(m.text);
+  const d = bubble(m.role, textHtml);
+  if (m.has_image) {
+    const img = document.createElement("img");
+    img.alt = "photo";
+    d.insertBefore(img, d.firstChild);
+    try { const r = await api("/api/space/image/" + m.id); img.src = `data:${r.mime};base64,${r.image}`; } catch (e) { img.remove(); }
+  }
+}
+async function poll() {
+  if (busy) return;          // a reply is on its way; its messages get added when it lands
+  try {
+    const r = await api("/api/space/messages?since=" + encodeURIComponent(lastSeen));
+    for (const m of r.messages) await addMessage(m);
+  } catch (e) {
+    if (/isn't paired/.test(e.message)) { try { localStorage.removeItem(TOKEN_KEY); } catch (_) {} location.reload(); }
+  }
+}
+function showChat() {
+  $("setup").style.display = "none";
+  $("chat").hidden = false; $("composer").hidden = false; $("menuBtn").hidden = false;
+  if (!$("chat").children.length) $("chat").innerHTML = '<div class="empty">Tap 📷 to photograph a page, then ask anything about it.<br><br>Example: "How does the NIV word this verse differently, and why?"</div>';
+  poll(); clearInterval(polling); polling = setInterval(poll, 8000);
+}
+
+// ── Photos: shrink on the phone before upload ──
+$("cam").onclick = () => $("file").click();
+$("file").onchange = async (e) => {
+  const f = e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  const bmp = await createImageBitmap(f).catch(() => null);
+  let url;
+  if (bmp) {
+    const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    url = c.toDataURL("image/jpeg", 0.82);
+  } else {
+    url = await new Promise((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(f); });
+  }
+  photo = url;
+  $("previewImg").src = url; $("preview").style.display = "flex";
+  $("text").focus();
+};
+$("clearPhoto").onclick = () => { photo = null; $("preview").style.display = "none"; };
+
+// ── Send ──
+async function send() {
+  const text = $("text").value.trim();
+  if (busy || (!text && !photo)) return;
+  busy = true; $("send").disabled = true;
+  const shot = photo;
+  photo = null; $("preview").style.display = "none"; $("text").value = ""; grow();
+  const mine = bubble("user", (shot ? `<img src="${shot}" alt="photo">` : "") + fmt(text));
+  const wait = bubble("assistant", '<span class="thinking">Reading' + (shot ? " your page" : "") + "…</span>");
+  try {
+    const r = await api("/api/space/ask", { method: "POST", body: JSON.stringify({
+      text, image: shot ? shot.split(",")[1] : "", image_mime: "image/jpeg", source: "phone" }) });
+    seen.add(r.user.id); seen.add(r.reply.id);
+    if (r.reply.created > lastSeen) lastSeen = r.reply.created;
+    wait.innerHTML = '<div class="who">CURSIV</div>' + fmt(r.reply.text);
+  } catch (e) {
+    wait.innerHTML = '<div class="who">CURSIV</div><span class="err">' + esc(e.message) + "</span>";
+  }
+  $("chat").scrollTop = $("chat").scrollHeight;
+  busy = false; $("send").disabled = false;
+}
+$("send").onclick = send;
+function grow() { const t = $("text"); t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 120) + "px"; }
+$("text").addEventListener("input", grow);
+$("text").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && window.innerWidth > 700) { e.preventDefault(); send(); } });
+
+// ── Setup / pairing ──
+$("startBtn").onclick = async () => {
+  $("setupMsg").textContent = "Setting up…";
+  try { save((await api("/api/space/create", { method: "POST" })).token); showChat(); }
+  catch (e) { $("setupMsg").textContent = e.message; }
+};
+$("haveCode").onclick = () => { $("codebox").style.display = "flex"; $("codeInput").focus(); };
+$("joinBtn").onclick = async () => {
+  $("setupMsg").textContent = "Linking…";
+  try { save((await api("/api/space/join", { method: "POST", body: JSON.stringify({ code: $("codeInput").value }) })).token); showChat(); }
+  catch (e) { $("setupMsg").textContent = e.message; }
+};
+$("menuBtn").onclick = async () => {
+  $("sheet").style.display = "flex"; $("pairCode").textContent = "······";
+  try { $("pairCode").textContent = (await api("/api/space/pair-code", { method: "POST" })).code; }
+  catch (e) { $("pairCode").textContent = "—"; }
+};
+$("closeSheet").onclick = () => { $("sheet").style.display = "none"; };
+
+if (token) showChat(); else $("setup").style.display = "flex";
+</script>
+</body>
+</html>

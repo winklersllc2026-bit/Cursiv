@@ -482,7 +482,9 @@ async function spaceImage(env, request, id) {
   return { image: row.image, mime: row.image_mime || "image/jpeg" };
 }
 
+let lastVisionError = "";
 async function askVision(env, messages, image, mime) {
+  lastVisionError = "";
   // Gemini reads photos best; Workers AI's vision model is the keyless fallback.
   if (env.GEMINI_API_KEY) {
     const models = [env.GEMINI_MODEL, ...(env.GEMINI_FALLBACK_MODELS || "").split(",")].map((m) => (m || "").trim()).filter(Boolean);
@@ -490,14 +492,15 @@ async function askVision(env, messages, image, mime) {
     const contents = messages.filter((m) => m.role !== "system")
       .map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
     if (image) contents[contents.length - 1].parts.unshift({ inline_data: { mime_type: mime, data: image } });
-    for (const model of models) {
+    for (const model of [...models, ...models]) {     // second pass = one retry per model (Gemini 503s are brief)
       try {
         const res = await withTimeout(fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
-          body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents, generationConfig: { maxOutputTokens: 1500 } }),
+          body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents, generationConfig: { maxOutputTokens: 4096 } }),
         }), 60000);
-        if (!res.ok) { console.log(`Gemini vision ${model}: ${res.status}`); continue; }
+        if (res.status === 503 || res.status === 429) { lastVisionError = `Gemini ${model} busy (${res.status})`; await new Promise((r) => setTimeout(r, 1500)); continue; }
+        if (!res.ok) { lastVisionError = `Gemini ${model} ${res.status}: ${(await res.text()).slice(0, 300)}`; console.log(lastVisionError); continue; }
         const data = await res.json();
         const text = (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || "").join("").trim();
         if (text) return text;
@@ -506,12 +509,16 @@ async function askVision(env, messages, image, mime) {
   }
   if (env.AI) {
     try {
-      const input = { messages, max_tokens: 1200 };
-      if (image) input.image = Array.from(Uint8Array.from(atob(image), (c) => c.charCodeAt(0)));
-      const out = await withTimeout(env.AI.run(env.VISION_MODEL || "@cf/meta/llama-3.2-11b-vision-instruct", input), 60000);
+      // Llama 4 Scout reads images too and needs no separate license agreement.
+      const msgs = messages.map((m) => ({ ...m }));
+      if (image) {
+        const last = msgs[msgs.length - 1];
+        last.content = [{ type: "text", text: last.content }, { type: "image_url", image_url: { url: `data:${mime};base64,${image}` } }];
+      }
+      const out = await withTimeout(env.AI.run(env.VISION_MODEL || env.WORKERS_AI_MODEL, { messages: msgs, max_tokens: 2048 }), 60000);
       const text = (typeof out?.response === "string" ? out.response : "").trim();
       if (text) return text;
-    } catch (e) { console.log(`Workers AI vision failed: ${e.message}`); }
+    } catch (e) { lastVisionError += ` | Workers AI: ${e.message}`; console.log(`Workers AI vision failed: ${e.message}`); }
   }
   return null;
 }
@@ -541,7 +548,7 @@ async function spaceAsk(env, request) {
   const history = recent.reverse().map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.text }));
   const prompt = text || "What does this page say? Point out anything notable about this translation's wording.";
   const reply = await askVision(env, [{ role: "system", content: BIBLE_SYSTEM }, ...history, { role: "user", content: prompt }], image || null, mime);
-  if (!reply) throw new HttpError(503, "Cursiv couldn't reach its AI right now — your message is saved; try asking again in a minute.");
+  if (!reply) throw new HttpError(503, "Cursiv couldn't reach its AI right now — your message is saved; try asking again in a minute." + (lastVisionError ? ` (${lastVisionError.slice(0, 400)})` : ""));
 
   const aiMsg = { id: uuid(), created: nowIso(), role: "assistant", source: "ai", text: reply };
   await env.DB.prepare("INSERT INTO space_messages (id, space_id, created, role, source, text) VALUES (?, ?, ?, ?, ?, ?)")
