@@ -45,6 +45,12 @@
 -->
 # Changelog
 
+## v3.14-U43 — Saved conversations, resizable window (2026-10-07)
+
+- **Saved conversations** (`launcher/conversations.py`, `launcher/conversation_sidebar.py`): a left sidebar with + New chat, 💾 Save, and the person's saved conversations (newest first; right-click to rename or delete). Nothing is saved unless the user chooses; once saved, a conversation keeps itself up to date after every reply. Each file keeps the messages (so Cursiv continues with full context) and the on-screen transcript. Stored per person in `%USERPROFILE%\.cursiv\conversations\`.
+- **Asks before leaving an unsaved conversation:** Save / Don't Save / Cancel on quit (title bar ✕, tray Quit), New chat, opening another conversation, and before an in-app update closes Cursiv. `clear` now starts a new conversation.
+- **Resizable and full screen:** drag any edge or corner (Windows handles the resize and snapping), □ maximizes / restores, double-click the title bar to maximize, F11 for full screen, Esc to leave it, ☰ shows or hides the sidebar. Default size 1120×740, minimum 780×520.
+
 ## v3.14-U42 — Memory that learns, per person (2026-10-07)
 
 New `cursiv_v215/memory/semantic.py`:

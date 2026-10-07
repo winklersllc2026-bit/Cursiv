@@ -152,6 +152,7 @@ class _ChatInput(QPlainTextEdit):
 
 
 class ChatPanel(QWidget):
+    conversation_changed = pyqtSignal()     # saved / opened / new / renamed -> sidebar refresh
     """
     Self-contained chat view: transcript + input box, wired to the real
     chat() streaming core and the full command router. cfg/history persist
@@ -161,6 +162,8 @@ class ChatPanel(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._history: list[dict] = []          # [{"role": "user"|"assistant", "content": str}]
+        self._conv_id: Optional[str] = None     # set once the user saves this conversation
+        self._dirty = False                     # messages since the last save
         self._streaming = False
         self._backend_ready = False
         self._reply_text = ""
@@ -257,6 +260,50 @@ class ChatPanel(QWidget):
             )
 
     # ── UI ────────────────────────────────────────────────────────────────
+
+    # ── Saved conversations ──────────────────────────────────────────────
+    def _after_turn(self) -> None:
+        self._dirty = True
+        if self._conv_id:                       # saved once -> keep it current
+            self.save_conversation()
+
+    def has_unsaved(self) -> bool:
+        return self._dirty and bool(self._history) and not self._conv_id
+
+    def is_busy(self) -> bool:
+        return self._streaming
+
+    def current_conversation_id(self) -> Optional[str]:
+        return self._conv_id
+
+    def save_conversation(self, title: Optional[str] = None) -> Optional[str]:
+        if not self._history:
+            return None
+        import conversations
+        self._conv_id = conversations.save(self._conv_id, self._history, self._transcript.toHtml(), title)
+        self._dirty = False
+        self.conversation_changed.emit()
+        return self._conv_id
+
+    def new_conversation(self) -> None:
+        self._transcript.clear()
+        self._history = []
+        self._conv_id = None
+        self._dirty = False
+        self.conversation_changed.emit()
+
+    def open_conversation(self, conv_id: str) -> bool:
+        import conversations
+        data = conversations.load(conv_id)
+        if not data:
+            return False
+        self._transcript.setHtml(data.get("html", ""))
+        self._history = list(data.get("messages", []))
+        self._conv_id = conv_id
+        self._dirty = False
+        self._transcript.verticalScrollBar().setValue(self._transcript.verticalScrollBar().maximum())
+        self.conversation_changed.emit()
+        return True
 
     def reload_keys(self) -> None:
         """Pick up keys changed in Settings without restarting."""
@@ -484,8 +531,7 @@ class ChatPanel(QWidget):
         # access) to do here, so it's handled directly on the main thread.
         if text.strip().lower() == "clear":
             self._input.clear()
-            self._transcript.clear()
-            self._history = []
+            self.new_conversation()
             self._append_system("History cleared.")
             return
 
@@ -673,6 +719,7 @@ class ChatPanel(QWidget):
         for role, content in (getattr(self, "_pending_history_append", None) or []):
             self._history.append({"role": role, "content": content})
         self._pending_history_append = None
+        self._after_turn()
         self._streaming = False
         self._send_btn.setEnabled(True)
         self._voice_btn.setEnabled(True)
@@ -687,6 +734,7 @@ class ChatPanel(QWidget):
         for role, content in (getattr(self, "_pending_history_append", None) or []):
             self._history.append({"role": role, "content": content})
         self._pending_history_append = None
+        self._after_turn()
         self._cancel_event = None
         self._streaming = False
         self._send_btn.setEnabled(True)
@@ -761,6 +809,7 @@ class ChatPanel(QWidget):
         self._end_ai_reply()
         self._history.append({"role": "user", "content": stripped})
         self._history.append({"role": "assistant", "content": full})
+        self._after_turn()
         self._pending_write_context = {}
         self._cancel_event = None
         self._streaming = False

@@ -48,7 +48,7 @@ from pathlib import Path
 from typing import Optional
 
 from PyQt6.QtCore import QPoint, QSize, Qt, QTimer, pyqtSignal, QObject
-from PyQt6.QtGui import QAction, QColor, QFont, QFontDatabase, QIcon, QPainter, QPixmap
+from PyQt6.QtGui import QAction, QColor, QFont, QFontDatabase, QIcon, QKeySequence, QPainter, QPixmap, QShortcut
 from PyQt6.QtWidgets import (
     QApplication, QCheckBox, QDialog, QDialogButtonBox, QHBoxLayout, QLabel, QMainWindow,
     QMenu, QMessageBox, QProgressBar, QPushButton, QScrollArea,
@@ -83,7 +83,7 @@ _WATCHDOG_MS     = 3_000         # ms between app-health checks
 _POLL_DEADLINE_S = 30            # seconds to wait for app to bind its port
 
 # ── Update checker ─────────────────────────────────────────────────────────────
-_CURRENT_VERSION   = "3.14-U42"
+_CURRENT_VERSION   = "3.14-U43"
 _GITHUB_API        = "https://api.github.com/repos/winklersllc2026-bit/Cursiv/releases/latest"
 _GITHUB_RELEASES   = "https://github.com/winklersllc2026-bit/Cursiv/releases"
 
@@ -544,6 +544,12 @@ class UpdateDialog(QDialog):
             return
         self._progress.setRange(0, 100)
         self._progress.setValue(100)
+        parent = self.parent()
+        if parent is not None and hasattr(parent, "_confirm_leave") and not parent._confirm_leave():
+            self._status.setText("Update downloaded. Click Update Now again when you're ready.")
+            self._dl_btn.setEnabled(True)
+            self._later_btn.setEnabled(True)
+            return
         self._status.setText("Installing… Cursiv will close and reopen on its own in a minute.")
         try:
             _run_installer_and_quit(info)
@@ -1140,8 +1146,13 @@ class TitleBar(QWidget):
              lambda: parent._open_phone() if hasattr(parent, "_open_phone") else None, GOLD),
             ("⚙", "Settings — AI keys, Cursiv Cloud, data folder",
              lambda: parent._open_settings() if hasattr(parent, "_open_settings") else None, GOLD),
+            ("☰", "Show or hide saved conversations",
+             lambda: parent._toggle_sidebar() if hasattr(parent, "_toggle_sidebar") else None, SILV2),
             ("─", "Minimise", lambda: parent.showMinimized(), SILV2),
-            ("✕", "Quit",     QApplication.quit,              RED),
+            ("□", "Maximise / restore  (F11: full screen)",
+             lambda: parent._toggle_maximized() if hasattr(parent, "_toggle_maximized") else None, SILV2),
+            ("✕", "Quit",
+             lambda: parent._request_quit() if hasattr(parent, "_request_quit") else QApplication.quit(), RED),
         ]:
             btn = QPushButton(symbol)
             btn.setToolTip(tip)
@@ -1159,15 +1170,69 @@ class TitleBar(QWidget):
 
     def mousePressEvent(self, e):
         if e.button() == Qt.MouseButton.LeftButton:
+            # Let Windows move the window (supports snapping to screen edges);
+            # fall back to manual dragging if that isn't available.
+            handle = self._win.windowHandle()
+            if handle is not None and handle.startSystemMove():
+                return
             self._drag   = True
             self._origin = e.globalPosition().toPoint() - self._win.frameGeometry().topLeft()
 
+    def mouseDoubleClickEvent(self, e):
+        if e.button() == Qt.MouseButton.LeftButton and hasattr(self._win, "_toggle_maximized"):
+            self._win._toggle_maximized()
+
     def mouseMoveEvent(self, e):
-        if self._drag and e.buttons() == Qt.MouseButton.LeftButton:
+        if self._drag and e.buttons() == Qt.MouseButton.LeftButton and not self._win.isMaximized():
             self._win.move(e.globalPosition().toPoint() - self._origin)
 
     def mouseReleaseEvent(self, e):
         self._drag = False
+
+
+class _ResizeRoot(QWidget):
+    """Root of the frameless main window: dragging within a few pixels of any
+    edge or corner resizes the window (handed to Windows via startSystemResize)."""
+    _M = 6
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setMouseTracking(True)
+
+    def _edges(self, pos) -> Qt.Edge:
+        w, h, m = self.width(), self.height(), self._M
+        edges = Qt.Edge(0)
+        if pos.x() <= m: edges |= Qt.Edge.LeftEdge
+        if pos.x() >= w - m: edges |= Qt.Edge.RightEdge
+        if pos.y() <= m: edges |= Qt.Edge.TopEdge
+        if pos.y() >= h - m: edges |= Qt.Edge.BottomEdge
+        return edges
+
+    def mouseMoveEvent(self, e):
+        win = self.window()
+        edges = self._edges(e.position().toPoint()) if not (win.isMaximized() or win.isFullScreen()) else Qt.Edge(0)
+        diag1 = (Qt.Edge.LeftEdge | Qt.Edge.TopEdge, Qt.Edge.RightEdge | Qt.Edge.BottomEdge)
+        diag2 = (Qt.Edge.RightEdge | Qt.Edge.TopEdge, Qt.Edge.LeftEdge | Qt.Edge.BottomEdge)
+        if edges in diag1:
+            self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+        elif edges in diag2:
+            self.setCursor(Qt.CursorShape.SizeBDiagCursor)
+        elif edges & (Qt.Edge.LeftEdge | Qt.Edge.RightEdge):
+            self.setCursor(Qt.CursorShape.SizeHorCursor)
+        elif edges & (Qt.Edge.TopEdge | Qt.Edge.BottomEdge):
+            self.setCursor(Qt.CursorShape.SizeVerCursor)
+        else:
+            self.unsetCursor()
+        super().mouseMoveEvent(e)
+
+    def mousePressEvent(self, e):
+        win = self.window()
+        if e.button() == Qt.MouseButton.LeftButton and not (win.isMaximized() or win.isFullScreen()):
+            edges = self._edges(e.position().toPoint())
+            if edges and win.windowHandle() is not None:
+                win.windowHandle().startSystemResize(edges)
+                return
+        super().mousePressEvent(e)
 
 
 class GettingStartedDialog(QDialog):
@@ -1320,10 +1385,13 @@ class CursivLauncher(QMainWindow):
         # windows don't get free edge-resize handling from Qt, so this is
         # a fixed size rather than a minimum; true drag-to-resize is a
         # follow-up, not part of this pass.
-        self.setFixedSize(980, 680)
+        self.resize(1120, 740)
+        self.setMinimumSize(780, 520)
         self.setStyleSheet(QSS)
 
         self._build_ui()
+        QShortcut(QKeySequence("F11"), self, activated=self._toggle_fullscreen)
+        QShortcut(QKeySequence("Escape"), self, activated=lambda: self.showNormal() if self.isFullScreen() else None)
         self._build_tray()
 
         screen = QApplication.primaryScreen().availableGeometry()
@@ -1437,12 +1505,12 @@ class CursivLauncher(QMainWindow):
     # ── UI ────────────────────────────────────────────────────────────────
 
     def _build_ui(self):
-        root = QWidget()
+        root = _ResizeRoot()
         self.setCentralWidget(root)
         root.setStyleSheet(f"background: {BG}; border: 1px solid {LGOLD};")
 
         vlay = QVBoxLayout(root)
-        vlay.setContentsMargins(0, 0, 0, 0)
+        vlay.setContentsMargins(_ResizeRoot._M, 0, _ResizeRoot._M, _ResizeRoot._M)   # edge strips for resizing
         vlay.setSpacing(0)
 
         vlay.addWidget(TitleBar(self, self._username))
@@ -1466,10 +1534,18 @@ class CursivLauncher(QMainWindow):
         # ── Chat panel: the only view now
         chat_wrap = QWidget()
         chat_wrap.setStyleSheet(f"background: {BG};")
-        chat_lay = QVBoxLayout(chat_wrap)
+        body = QHBoxLayout(chat_wrap)
+        body.setContentsMargins(0, 0, 0, 0)
+        body.setSpacing(0)
+        chat_col = QWidget()
+        chat_lay = QVBoxLayout(chat_col)
         chat_lay.setContentsMargins(16, 16, 16, 16)
         self._chat_panel = ChatPanel()
         chat_lay.addWidget(self._chat_panel)
+        from conversation_sidebar import ConversationSidebar
+        self._conv_sidebar = ConversationSidebar(self._chat_panel)
+        body.addWidget(self._conv_sidebar)
+        body.addWidget(chat_col, 1)
 
         vlay.addWidget(chat_wrap, 1)
         vlay.addWidget(self._build_footer())
@@ -1973,6 +2049,35 @@ class CursivLauncher(QMainWindow):
         """Installing Ollama happens in the Setup window (real progress, no console)."""
         self._open_setup()
 
+    def _toggle_sidebar(self):
+        self._conv_sidebar.setVisible(not self._conv_sidebar.isVisible())
+
+    def _toggle_maximized(self):
+        if self.isFullScreen():
+            self.showNormal()
+        elif self.isMaximized():
+            self.showNormal()
+        else:
+            self.showMaximized()
+
+    def _toggle_fullscreen(self):
+        if self.isFullScreen():
+            self.showNormal()
+        else:
+            self.showFullScreen()
+
+    def _confirm_leave(self) -> bool:
+        """Ask to save an unsaved conversation. False = the user cancelled."""
+        try:
+            from conversation_sidebar import confirm_leave
+            return confirm_leave(self, getattr(self, "_chat_panel", None))
+        except Exception:
+            return True
+
+    def _request_quit(self):
+        if self._confirm_leave():
+            QApplication.quit()
+
     def _open_phone(self):
         try:
             from phone_link import PhoneDialog
@@ -2155,7 +2260,7 @@ class CursivLauncher(QMainWindow):
 
         menu.addSeparator()
         quit_act = QAction("Quit", self)
-        quit_act.triggered.connect(QApplication.quit)
+        quit_act.triggered.connect(lambda: self._request_quit())
         menu.addAction(quit_act)
 
         self._tray.setContextMenu(menu)
