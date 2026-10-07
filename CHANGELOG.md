@@ -45,6 +45,15 @@
 -->
 # Changelog
 
+## v3.14-U47 — Follow-ups keep context; Ollama hiccups handled (2026-10-07)
+
+From a real session: `codex …` said "no local model" on a PC with 22 GB of models, the reply to "done" was a canned greeting, and the follow-up didn't know about the codex request.
+
+- **Command answers join the conversation** (codex, council, search, babel, …), so "done" or "now add X" has context. `codex` also sees the last few messages.
+- **The startup greeting is only for an actual first greeting**, never for "done", "now?" or follow-ups.
+- **`codex` falls back** to your keys / free keys / Cursiv Cloud when the local AI isn't ready, instead of only failing locally; it says which it used.
+- **Ollama not answering ≠ no models:** a slow Ollama (e.g. busy downloading) gets a "not responding, try again" message instead of a bogus download. And when Ollama is running but lists nothing while models sit on disk (seen for real after a reinstall), Cursiv says to restart it instead of re-downloading; **Setup → Restart Ollama** does it in one click.
+
 ## v3.14-U46 — Normal mouse cursor inside the window (2026-10-07)
 
 After hovering a window edge, the double-arrow resize cursor stuck over the sidebar and chat: inner widgets inherited the root's cursor. The title bar, sidebar/chat area and footer now set the normal cursor explicitly, so resize arrows only appear on the edge strips.

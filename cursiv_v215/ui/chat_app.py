@@ -1398,7 +1398,16 @@ def _call_ollama_raw(messages: list[dict], max_tokens: int = RESPONSE_MAX_TOKENS
     if not _ensure_ollama():
         yield "\n[Ollama not found. Install from https://ollama.com then run: ollama pull llama3.1]"
         return
+    if _ollama_tags() is None:
+        yield "\n[Ollama unavailable: it isn't responding right now -- it may be busy downloading a model. Try again in a minute.]"
+        return
     model = _resolve_ollama_model()
+    if model is None and _models_on_disk():
+        # Seen for real: Ollama started with the wrong settings mid-reinstall and
+        # listed nothing while 22 GB of models sat on disk. Re-downloading won't help.
+        yield ("\n[Ollama is running but can't see your downloaded models. Restart it: open Cursiv's "
+               "Setup window and click Restart Ollama (or quit Ollama from its tray icon and open it again).]")
+        return
     if model is None:
         # Ollama is running but has no models at all -- download the default
         # once (progress shown in the reply) instead of failing with a 404.
@@ -1494,13 +1503,34 @@ def _ollama_pulled_models() -> set[str]:
 _OLLAMA_FALLBACK_MODELS = ("cursiv-tuned", "qwen2.5:1.5b", "qwen2.5")
 
 
+def _ollama_tags() -> list[str] | None:
+    """Installed model tags, or None if Ollama didn't answer (busy or not running).
+    A slow Ollama -- e.g. while it downloads another model -- must not look like
+    'no models installed'."""
+    for timeout in (8, 20):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(OLLAMA_TAGS_URL), timeout=timeout) as resp:
+                return [m.get("name", "") for m in json.loads(resp.read().decode()).get("models", [])]
+        except Exception:
+            continue
+    return None
+
+
+def _models_on_disk() -> bool:
+    """True if Ollama's model folder holds downloaded models (whether or not the
+    running Ollama currently lists them)."""
+    base = Path(os.environ.get("OLLAMA_MODELS") or (Path.home() / ".ollama" / "models"))
+    lib = base / "manifests" / "registry.ollama.ai" / "library"
+    try:
+        return any(lib.iterdir())
+    except Exception:
+        return False
+
+
 def _resolve_ollama_model() -> str | None:
     """Pick an installed Ollama model for general chat, or None if none are pulled."""
-    try:
-        req = urllib.request.Request(OLLAMA_TAGS_URL)
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            tags = [m.get("name", "") for m in json.loads(resp.read().decode()).get("models", [])]
-    except Exception:
+    tags = _ollama_tags()
+    if tags is None:
         return None
     available = set(tags) | {t.split(":")[0] for t in tags}
     for name in (OLLAMA_MODEL, *_OLLAMA_FALLBACK_MODELS):

@@ -669,11 +669,20 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
         # ever downloaded.
         def _finish(full: str):
             _session_append(prompt, full, "codex_ollama")
-        gen = _call_ollama_code_council([
-            {"role": "system", "content": "You are a careful, precise coding assistant."},
-            {"role": "user", "content": prompt},
-        ])
-        return StreamResult(f"⬡ Codex — {prompt[:60]}", gen, _finish)
+        msgs = [{"role": "system", "content": "You are a careful, precise coding assistant. Give complete, "
+                                               "working code with brief explanations."}]
+        msgs += [m for m in history[-6:] if isinstance(m.get("content"), str)]     # follow-ups keep context
+        msgs.append({"role": "user", "content": prompt})
+        try:
+            from cursiv_v215.ui.chat_app import _local_model_ready
+            local = _local_model_ready()
+        except Exception:
+            local = False
+        if local:
+            gen, via = _call_ollama_code_council(msgs), "local coding models"
+        else:   # local AI not ready -> your keys, free keys, Cursiv Cloud
+            gen, via = _cascade_gen(cfg, msgs, max_tokens=4000)
+        return StreamResult(f"⬡ Codex — {prompt[:60]}  (via {via})", gen, _finish)
 
     if cmd == "hermes" or cmd.startswith("hermes "):
         if not _HERMES_OK or not _hermes_avail():

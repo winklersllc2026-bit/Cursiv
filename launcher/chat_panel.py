@@ -581,7 +581,7 @@ class ChatPanel(QWidget):
                 result = cc.handle_command(text, self._cfg, history)
 
             if result is not None:
-                self._deliver_result(result, history)
+                self._deliver_result(result, history, text)
                 return
 
             # No built-in command matched (or a "hey <provider>" prefix
@@ -634,7 +634,7 @@ class ChatPanel(QWidget):
         except Exception as e:
             self._signals.error.emit(str(e))
 
-    def _deliver_result(self, result, history: list[dict]) -> None:
+    def _deliver_result(self, result, history: list[dict], text: str = "") -> None:
         """Runs on the background thread -- streams a command's TextResult/StreamResult."""
         if isinstance(result, cc.TextResult):
             if result.text:
@@ -678,6 +678,10 @@ class ChatPanel(QWidget):
                 "or check that the API key is valid.]" if rate_limited else
                 "[No response received from the provider.]"
             )
+        # Streamed command answers (codex, council, search, babel, …) join the
+        # conversation, so a follow-up like "done" or "now add a gripper" has context.
+        if full.strip() and text:
+            self._pending_history_append = [("user", text), ("assistant", full[-6000:])]
         if result.on_complete:
             try:
                 result.on_complete(full)

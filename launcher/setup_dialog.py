@@ -94,6 +94,26 @@ def start_ollama() -> bool:
     return False
 
 
+def restart_ollama() -> bool:
+    """Quit and restart Ollama (fixes it not seeing downloaded models)."""
+    for name in ("ollama app.exe", "ollama.exe"):
+        subprocess.run(["taskkill", "/F", "/IM", name], capture_output=True, creationflags=_NO_WINDOW)
+    time.sleep(2)
+    app = OLLAMA_EXE.with_name("ollama app.exe")
+    try:
+        if app.exists():
+            subprocess.Popen([str(app)], creationflags=_NO_WINDOW)
+        else:
+            return start_ollama()
+    except Exception:
+        return False
+    for _ in range(30):
+        time.sleep(1)
+        if ollama_running():
+            return True
+    return False
+
+
 def needs_setup() -> bool:
     """True when this computer can't run Cursiv locally yet (no Ollama, or no model)."""
     if not ollama_installed():
@@ -154,6 +174,11 @@ class SetupDialog(QDialog):
         self._s1_btn = QPushButton("Install Ollama")
         self._s1_btn.clicked.connect(self._install_ollama)
         self._s1["row"].addWidget(self._s1_btn)
+        self._s1_restart = QPushButton("Restart Ollama")
+        self._s1_restart.setObjectName("ghost")
+        self._s1_restart.setToolTip("Fixes Ollama not seeing models you've already downloaded")
+        self._s1_restart.clicked.connect(self._restart_ollama)
+        self._s1["row"].addWidget(self._s1_restart)
 
         # Step 2 — model
         self._s2 = self._card(lay, "2  ·  AI model")
@@ -273,6 +298,8 @@ class SetupDialog(QDialog):
         self._s1_btn.setText("Install Ollama" if not installed else "Start Ollama")
         self._s1_btn.setVisible(not running)
         self._s1_btn.setEnabled(not self._busy)
+        self._s1_restart.setVisible(running)
+        self._s1_restart.setEnabled(not self._busy)
 
         if models:
             self._set_status(self._s2, True, "Installed: " + ", ".join(models))
@@ -332,6 +359,15 @@ class SetupDialog(QDialog):
             self._sig.done.emit("s1", True, "Ollama is installed and running.")
         except Exception as exc:
             self._sig.done.emit("s1", False, f"Couldn't install Ollama: {exc}")
+
+    def _restart_ollama(self):
+        self._busy = True
+        self._s1_restart.setEnabled(False)
+        self._sig.progress.emit("s1", -1, "Restarting Ollama…")
+        def work():
+            ok = restart_ollama()
+            self._sig.done.emit("s1", ok, "Ollama restarted." if ok else "Ollama didn't come back -- try restarting the computer.")
+        threading.Thread(target=work, daemon=True).start()
 
     # ── Step 2 ───────────────────────────────────────────────────────────
     def _pull_model(self):
