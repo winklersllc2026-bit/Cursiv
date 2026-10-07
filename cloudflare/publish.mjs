@@ -22,6 +22,7 @@ const PAGES = [
   ["mailbox.html", "mailbox.html"],
   ["start.html", "start.html"],
   ["cloudflare/letters.html", "letters.html"],
+  ["cloudflare/story.html", "story.html"],
   ["cloudflare/app.html", "app.html"],
   ["cloudflare/app.webmanifest", "app.webmanifest"],
 ];
