@@ -982,7 +982,7 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
         gen, label = _cascade_gen(cfg, [
             {"role": "system", "content": "Translate the following text to English. Return only the translation, nothing else."},
             {"role": "user", "content": raw_input},
-        ], max_tokens=500)
+        ], max_tokens=1500)
         return StreamResult(f"⬡ Babel → English (via {label})", gen)
 
     # ── Web search + synthesis ───────────────────────────────────────────

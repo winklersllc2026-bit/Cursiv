@@ -3062,7 +3062,7 @@ def main() -> None:
                         {"role": "system", "content": _out_sys},
                         {"role": "user",   "content": _out_user},
                     ]
-                    _out_gen, _    = cascade_stream(_out_msgs, cfg, max_tokens=800)
+                    _out_gen, _    = cascade_stream(_out_msgs, cfg, max_tokens=2500)
                     _out_label2    = _cascade_label(cfg)
                     print(f"  {DIM}via {_out_label2}{RESET}\n")
                     for _oc in _out_gen:
@@ -3283,7 +3283,7 @@ def main() -> None:
                 {"role": "system", "content": _BABEL_SYSTEM},
                 {"role": "user",   "content": decoded},
             ]
-            _babel_gen, _ = cascade_stream(_babel_tx_msgs, cfg, max_tokens=400)
+            _babel_gen, _ = cascade_stream(_babel_tx_msgs, cfg, max_tokens=1500)
             _babel_label  = _cascade_label(cfg)
 
             print(f"  {GOLD}Translation{RESET}  {DIM}via {_babel_label}{RESET}:")

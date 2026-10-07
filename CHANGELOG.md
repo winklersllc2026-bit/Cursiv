@@ -45,6 +45,10 @@
 -->
 # Changelog
 
+## v3.14-U38 — Answers finish their thought (2026-10-07)
+
+Replies were cut off mid-sentence by length caps (mostly 1,200 tokens), and local Ollama had only a 6,144-token context — Cursiv's instructions alone take about 6,000 — leaving almost no room to answer. Every cap is now 4,096 tokens (`RESPONSE_MAX_TOKENS`), Ollama gets a 16,384-token context, and babel, council seats/synthesis and Cursiv Cloud were raised to match. Instead of a length limit, chat replies are time-boxed (`_time_boxed`, `RESPONSE_TIME_LIMIT` = 90 s): after the limit Cursiv finishes the sentence it's on, stops cleanly and says 'continue' picks up where it left off.
+
 ## v3.14-U37 — Fix data-folder links and key checks (2026-10-07)
 
 - U35's directory junctions for the program-folder data folders fail on some Windows 11 setups ("WinError 448: untrusted mount point"). On startup the installed app now replaces any such junction with a real folder filled from the home copy (`launcher/data_home.py`); no data is lost.

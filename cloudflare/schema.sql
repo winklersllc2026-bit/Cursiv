@@ -98,3 +98,33 @@ CREATE TABLE IF NOT EXISTS reports (
   logs       TEXT
 );
 CREATE INDEX IF NOT EXISTS reports_ip_day ON reports (ip_hash, created);
+
+-- Phone app ↔ desktop: a "space" is one person's shared conversation.
+-- The desktop creates it, shows a 6-digit pairing code, the phone joins with it.
+CREATE TABLE IF NOT EXISTS spaces (
+  id          TEXT PRIMARY KEY,
+  created     TEXT NOT NULL
+);
+-- Each paired device (the desktop, her phone, ...) has its own token for the same space.
+CREATE TABLE IF NOT EXISTS space_devices (
+  token_hash  TEXT PRIMARY KEY,
+  space_id    TEXT NOT NULL,
+  device      TEXT NOT NULL,          -- 'desktop' | 'phone'
+  created     TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS pair_codes (
+  code      TEXT PRIMARY KEY,
+  space_id  TEXT NOT NULL,
+  expires   INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS space_messages (
+  id          TEXT PRIMARY KEY,
+  space_id    TEXT NOT NULL,
+  created     TEXT NOT NULL,
+  role        TEXT NOT NULL,          -- 'user' | 'assistant'
+  source      TEXT NOT NULL,          -- 'phone' | 'desktop' | 'ai'
+  text        TEXT NOT NULL,
+  image       TEXT,                   -- base64 JPEG/PNG (resized on the phone), optional
+  image_mime  TEXT
+);
+CREATE INDEX IF NOT EXISTS space_messages_by_space ON space_messages (space_id, created);

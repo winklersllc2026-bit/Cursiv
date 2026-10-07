@@ -348,7 +348,7 @@ function cleanCloudMessages(raw) {
 async function cursivCloudChat(env, request) {
   const body = await readJson(request);
   const messages = cleanCloudMessages(body.messages);
-  const maxTokens = Math.min(Math.max(parseInt(body.max_tokens, 10) || 800, 16), 1500);
+  const maxTokens = Math.min(Math.max(parseInt(body.max_tokens, 10) || 2000, 16), 4096);
 
   const ip = request.headers.get("CF-Connecting-IP") || "local";
   const day = nowIso().slice(0, 10);
@@ -401,6 +401,152 @@ async function problemReport(env, request) {
   ).bind(id, nowIso(), ipHash, str(body.install_id).slice(0, 64), str(body.version).slice(0, 32),
          str(body.os).slice(0, 200), str(body.note).slice(0, 4000), str(body.logs).slice(0, REPORT_MAX_LOG_CHARS)).run();
   return { ok: true, id };
+}
+
+// ── Phone app ↔ desktop spaces ────────────────────────────────────────────────
+// A space is one person's shared conversation (photos + chat). The desktop
+// creates it and gets a space token; it shows a 6-digit code; the phone joins
+// with the code and gets the same token. Every space call sends
+// "Authorization: Space <token>". Only a hash of the token is stored.
+
+const SPACE_IMAGE_MAX = 1_400_000;   // base64 chars (~1 MB image); the phone resizes first
+const BIBLE_SYSTEM =
+  "You are Cursiv, a personal AI built by Joshua Winkler, here as a Bible study companion. " +
+  "The user often photographs pages from different Bibles and asks about differences between them. " +
+  "When there is a photo: first read the text in it carefully (book, chapter, verse, translation if visible). " +
+  "When comparing translations or pointing out discrepancies: quote the exact wording side by side, name the " +
+  "translations (KJV, NKJV, NIV, ESV, NASB, NLT, …), and explain *why* they differ — underlying Hebrew/Greek words, " +
+  "manuscript families (e.g. Textus Receptus vs. critical text), translation philosophy (word-for-word vs. " +
+  "thought-for-thought), or added/omitted verses. Be even-handed and respectful of every tradition, separate what " +
+  "scholars broadly agree on from what is debated, and say plainly when you're not sure. Use clear, warm language.";
+
+async function spaceFromRequest(env, request) {
+  const auth = request.headers.get("Authorization") || "";
+  if (!auth.startsWith("Space ")) throw new HttpError(401, "Not paired");
+  const row = await env.DB.prepare("SELECT space_id FROM space_devices WHERE token_hash = ?")
+    .bind(await sha256Hex(auth.slice(6).trim())).first();
+  if (!row) throw new HttpError(401, "This device isn't paired anymore — pair it again from Cursiv on your computer.");
+  return row.space_id;
+}
+
+async function newDeviceToken(env, spaceId, device) {
+  const token = hex(crypto.getRandomValues(new Uint8Array(32)));
+  await env.DB.prepare("INSERT INTO space_devices (token_hash, space_id, device, created) VALUES (?, ?, ?, ?)")
+    .bind(await sha256Hex(token), spaceId, device, nowIso()).run();
+  return token;
+}
+
+// Desktop: create a space (once per install) -> its device token.
+async function spaceCreate(env) {
+  const id = uuid();
+  await env.DB.prepare("INSERT INTO spaces (id, created) VALUES (?, ?)").bind(id, nowIso()).run();
+  return { space_id: id, token: await newDeviceToken(env, id, "desktop") };
+}
+
+// Desktop: a 6-digit code (10 minutes, single use) for pairing a phone.
+async function spacePairCode(env, request) {
+  const space = await spaceFromRequest(env, request);
+  const code = String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM pair_codes WHERE expires < ? OR space_id = ?").bind(Date.now(), space),
+    env.DB.prepare("INSERT INTO pair_codes (code, space_id, expires) VALUES (?, ?, ?)").bind(code, space, Date.now() + 10 * 60e3),
+  ]);
+  return { code, expires_in_minutes: 10 };
+}
+
+// Phone: trade the code for its own device token on the same space.
+async function spaceJoin(env, request) {
+  const body = await readJson(request);
+  const code = str(body.code).replace(/\D/g, "");
+  const row = await env.DB.prepare("SELECT space_id FROM pair_codes WHERE code = ? AND expires >= ?").bind(code, Date.now()).first();
+  if (!row) throw new HttpError(404, "That code didn't work — it may have expired. Get a new one from Cursiv on your computer.");
+  await env.DB.prepare("DELETE FROM pair_codes WHERE code = ?").bind(code).run();
+  return { space_id: row.space_id, token: await newDeviceToken(env, row.space_id, "phone") };
+}
+
+// Both: messages newer than ?since= (images are fetched separately, by id).
+async function spaceMessages(env, request, url) {
+  const space = await spaceFromRequest(env, request);
+  const since = url.searchParams.get("since") || "";
+  const { results } = await env.DB.prepare(
+    "SELECT id, created, role, source, text, image IS NOT NULL AS has_image FROM space_messages " +
+    "WHERE space_id = ? AND created > ? ORDER BY created ASC LIMIT 200",
+  ).bind(space, since).all();
+  return { messages: results };
+}
+
+async function spaceImage(env, request, id) {
+  const space = await spaceFromRequest(env, request);
+  const row = await env.DB.prepare("SELECT image, image_mime FROM space_messages WHERE id = ? AND space_id = ?").bind(id, space).first();
+  if (!row?.image) throw new HttpError(404, "No image");
+  return { image: row.image, mime: row.image_mime || "image/jpeg" };
+}
+
+async function askVision(env, messages, image, mime) {
+  // Gemini reads photos best; Workers AI's vision model is the keyless fallback.
+  if (env.GEMINI_API_KEY) {
+    const models = [env.GEMINI_MODEL, ...(env.GEMINI_FALLBACK_MODELS || "").split(",")].map((m) => (m || "").trim()).filter(Boolean);
+    const system = messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n");
+    const contents = messages.filter((m) => m.role !== "system")
+      .map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
+    if (image) contents[contents.length - 1].parts.unshift({ inline_data: { mime_type: mime, data: image } });
+    for (const model of models) {
+      try {
+        const res = await withTimeout(fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+          body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents, generationConfig: { maxOutputTokens: 1500 } }),
+        }), 60000);
+        if (!res.ok) { console.log(`Gemini vision ${model}: ${res.status}`); continue; }
+        const data = await res.json();
+        const text = (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || "").join("").trim();
+        if (text) return text;
+      } catch (e) { console.log(`Gemini vision ${model} failed: ${e.message}`); }
+    }
+  }
+  if (env.AI) {
+    try {
+      const input = { messages, max_tokens: 1200 };
+      if (image) input.image = Array.from(Uint8Array.from(atob(image), (c) => c.charCodeAt(0)));
+      const out = await withTimeout(env.AI.run(env.VISION_MODEL || "@cf/meta/llama-3.2-11b-vision-instruct", input), 60000);
+      const text = (typeof out?.response === "string" ? out.response : "").trim();
+      if (text) return text;
+    } catch (e) { console.log(`Workers AI vision failed: ${e.message}`); }
+  }
+  return null;
+}
+
+// Both: send a message (optionally with a photo); the AI answers; both are stored.
+async function spaceAsk(env, request) {
+  const space = await spaceFromRequest(env, request);
+  const body = await readJson(request);
+  const text = str(body.text).trim().slice(0, 8000);
+  const image = str(body.image).replace(/^data:[^,]*,/, "");
+  const mime = ["image/jpeg", "image/png", "image/webp"].includes(body.image_mime) ? body.image_mime : "image/jpeg";
+  if (!text && !image) throw new HttpError(422, "Send a question or a photo");
+  if (image.length > SPACE_IMAGE_MAX) throw new HttpError(413, "That photo is too large — try again (the app shrinks photos automatically).");
+  const source = body.source === "desktop" ? "desktop" : "phone";
+
+  const day = nowIso().slice(0, 10);
+  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM space_messages WHERE space_id = ? AND role = 'assistant' AND created LIKE ?")
+    .bind(space, `${day}%`).first();
+  if (n >= Number(env.SPACE_DAILY_LIMIT || 150)) throw new HttpError(429, "That's today's limit — it resets at midnight UTC.");
+
+  const userMsg = { id: uuid(), created: nowIso(), role: "user", source, text: text || "(photo)" };
+  await env.DB.prepare("INSERT INTO space_messages (id, space_id, created, role, source, text, image, image_mime) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(userMsg.id, space, userMsg.created, "user", source, userMsg.text, image || null, image ? mime : null).run();
+
+  const { results: recent } = await env.DB.prepare(
+    "SELECT role, text FROM space_messages WHERE space_id = ? AND id != ? ORDER BY created DESC LIMIT 12").bind(space, userMsg.id).all();
+  const history = recent.reverse().map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.text }));
+  const prompt = text || "What does this page say? Point out anything notable about this translation's wording.";
+  const reply = await askVision(env, [{ role: "system", content: BIBLE_SYSTEM }, ...history, { role: "user", content: prompt }], image || null, mime);
+  if (!reply) throw new HttpError(503, "Cursiv couldn't reach its AI right now — your message is saved; try asking again in a minute.");
+
+  const aiMsg = { id: uuid(), created: nowIso(), role: "assistant", source: "ai", text: reply };
+  await env.DB.prepare("INSERT INTO space_messages (id, space_id, created, role, source, text) VALUES (?, ?, ?, ?, ?, ?)")
+    .bind(aiMsg.id, space, aiMsg.created, "assistant", "ai", reply).run();
+  return { user: { ...userMsg, has_image: !!image }, reply: aiMsg };
 }
 
 async function register(env, request) {
@@ -604,6 +750,12 @@ async function route(env, request, url) {
   if (p === "/api/demo/chat" && m === "POST") return [200, await demoChat(env, request)];
   if (p === "/api/cursiv/chat" && m === "POST") return cursivCloudChat(env, request);
   if (p === "/api/report" && m === "POST") return [201, await problemReport(env, request)];
+  if (p === "/api/space/create" && m === "POST") return [201, await spaceCreate(env)];
+  if (p === "/api/space/pair-code" && m === "POST") return spacePairCode(env, request);
+  if (p === "/api/space/join" && m === "POST") return spaceJoin(env, request);
+  if (p === "/api/space/messages" && m === "GET") return spaceMessages(env, request, url);
+  if (p === "/api/space/ask" && m === "POST") return spaceAsk(env, request);
+  if ((match = p.match(/^\/api\/space\/image\/([^/]+)$/)) && m === "GET") return spaceImage(env, request, decodeURIComponent(match[1]));
   if (p === "/api/register" && m === "POST") return [201, await register(env, request)];
   if (p === "/api/login" && m === "POST") return login(env, request);
   if (p === "/api/me" && m === "GET") {

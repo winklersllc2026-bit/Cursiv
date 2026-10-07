@@ -252,6 +252,10 @@ XAI_MODEL_VIS  = "grok-2-vision-1212"   # vision-capable model for images
 OLLAMA_URL         = "http://localhost:11434/api/generate"
 OLLAMA_TAGS_URL    = "http://localhost:11434/api/tags"
 OLLAMA_MODEL       = "llama3.1"
+# Answers are limited by time, not length (see _time_boxed): the token cap is
+# only a generous safety net so a thought is never cut off mid-sentence.
+RESPONSE_MAX_TOKENS  = int(os.environ.get("CURSIV_MAX_TOKENS", "4096"))
+RESPONSE_TIME_LIMIT  = float(os.environ.get("CURSIV_RESPONSE_SECONDS", "90"))
 OLLAMA_CODE_PRIMARY   = "qwen2.5-coder:14b"    # primary coder — architecture + logic
 OLLAMA_CODE_SECONDARY = "deepseek-coder-v2:16b" # critic/reviewer — debugging + synthesis
 
@@ -1361,7 +1365,7 @@ def process_uploaded_files(files: list | None) -> tuple[str, list[dict]]:
 
 # ── LLM callers ───────────────────────────────────────────────────────────
 
-def _call_ollama_raw(messages: list[dict], max_tokens: int = 1200) -> Generator[str, None, None]:
+def _call_ollama_raw(messages: list[dict], max_tokens: int = RESPONSE_MAX_TOKENS) -> Generator[str, None, None]:
     """Stream from local Ollama with full system prompt injection."""
     import json as _json
 
@@ -1400,7 +1404,7 @@ def _call_ollama_raw(messages: list[dict], max_tokens: int = 1200) -> Generator[
         "stream": True,
         "options": {
             "num_predict": max_tokens,
-            "num_ctx": 6144,
+            "num_ctx": 16384,   # Cursiv's instructions alone are ~6k tokens
         },
     }).encode()
     try:
@@ -1418,7 +1422,7 @@ def _call_ollama_raw(messages: list[dict], max_tokens: int = 1200) -> Generator[
         yield f"\n[Ollama unavailable: {e}]"
 
 
-def _call_ollama(messages: list[dict], max_tokens: int = 1200) -> "Generator[str, None, None]":
+def _call_ollama(messages: list[dict], max_tokens: int = RESPONSE_MAX_TOKENS) -> "Generator[str, None, None]":
     yield from _filter_stream(_call_ollama_raw(messages, max_tokens))
 
 
@@ -1597,7 +1601,7 @@ def _post_json(url: str, payload: dict, headers: dict, timeout: float) -> dict:
         return json.loads(resp.read().decode("utf-8"))
 
 
-def _call_gemini_direct(messages: list[dict], key: str, max_tokens: int = 1200) -> Generator[str, None, None]:
+def _call_gemini_direct(messages: list[dict], key: str, max_tokens: int = RESPONSE_MAX_TOKENS) -> Generator[str, None, None]:
     msgs = _text_messages(messages)
     system = "\n\n".join(m["content"] for m in msgs if m["role"] == "system")
     contents = [{"role": "model" if m["role"] == "assistant" else "user", "parts": [{"text": m["content"]}]}
@@ -1665,7 +1669,7 @@ def check_free_key(field: str, key: str) -> tuple[bool, str]:
         return False, f"couldn't reach the provider: {e}"[:220]
 
 
-def _call_groq_direct(messages: list[dict], key: str, max_tokens: int = 1200) -> Generator[str, None, None]:
+def _call_groq_direct(messages: list[dict], key: str, max_tokens: int = RESPONSE_MAX_TOKENS) -> Generator[str, None, None]:
     try:
         data = _post_json(GROQ_URL, {"model": GROQ_MODEL, "messages": _text_messages(messages),
                                      "max_tokens": max_tokens},
@@ -1717,7 +1721,7 @@ def set_cloud_enabled(on: bool) -> None:
     _save_cloud_settings(data)
 
 
-def _call_cursiv_cloud(messages: list[dict], max_tokens: int = 1200) -> Generator[str, None, None]:
+def _call_cursiv_cloud(messages: list[dict], max_tokens: int = RESPONSE_MAX_TOKENS) -> Generator[str, None, None]:
     settings = _cloud_settings()
     try:
         data = _post_json(CURSIV_CLOUD_URL, {"messages": _text_messages(messages), "max_tokens": max_tokens},
@@ -1812,7 +1816,7 @@ _PROVIDER_ERROR_PREFIXES = ("[xAI auth error", "[Claude error", "[OpenAI error",
 def cascade_stream(
     messages: list[dict],
     keys: dict,
-    max_tokens: int = 900,
+    max_tokens: int = RESPONSE_MAX_TOKENS,
 ) -> tuple[Generator[str, None, None], list[str]]:
     """
     Stream a one-shot reply (Babel, grow, ...) through every configured provider
@@ -2023,7 +2027,7 @@ def _call_xai_stream(
     messages: list[dict],
     api_key: str,
     has_images: bool = False,
-    max_tokens: int = 1200,
+    max_tokens: int = RESPONSE_MAX_TOKENS,
 ) -> Generator[str, None, None]:
     """Stream from xAI Grok. Handles text and vision."""
     model = XAI_MODEL_VIS if has_images else XAI_MODEL
@@ -2678,7 +2682,7 @@ def _is_online() -> bool:
 
 # ── Core chat function ────────────────────────────────────────────────────
 
-def chat(
+def _chat_inner(
     message: dict | str,
     history: list[dict],
     api_key: str,
@@ -3080,6 +3084,53 @@ def _fallback_chain(text_msgs: list[dict], user_text: str, tried: list[str]) -> 
                 + FREE_KEY_HELP
             )
 
+
+
+_SENTENCE_END = (".", "!", "?", "\n", ":", ";")
+
+
+def _time_boxed(gen, seconds: float = RESPONSE_TIME_LIMIT, grace: float = 12.0):
+    """Stream a reply, but once `seconds` have passed, finish the current
+    sentence (up to `grace` more seconds) and stop cleanly with a note --
+    instead of either cutting off mid-sentence or typing for five minutes."""
+    import time as _t
+    start = _t.monotonic()
+    stopping = False
+    for chunk in gen:
+        if not isinstance(chunk, str) or chunk in (RATE_SENTINEL, WRITE_SENTINEL) or chunk.startswith(WRITE_SENTINEL):
+            yield chunk
+            continue
+        elapsed = _t.monotonic() - start
+        if not stopping and elapsed > seconds:
+            stopping = True
+        if stopping:
+            cut = max(chunk.rfind(c) for c in _SENTENCE_END)
+            if cut >= 0 or elapsed > seconds + grace:
+                yield chunk[:cut + 1] if cut >= 0 else chunk
+                try:
+                    gen.close()
+                except Exception:
+                    pass
+                yield ("\n\n*[Stopped after about {0} seconds to keep things quick — say "
+                       "\"continue\" and I'll pick up right where I left off.]*").format(int(seconds))
+                return
+        yield chunk
+
+
+def chat(
+    message: dict | str,
+    history: list[dict],
+    api_key: str,
+    files: list | None,
+    file_access: bool = False,
+    root_path: str = "",
+    openai_key: str = "",
+    confirm_writes: bool = False,
+    anthropic_key: str = "",
+    force_provider: str = "",   
+) -> Generator[str, None, None]:
+    """Cursiv's main chat entry point: _chat_inner, time-boxed (see _time_boxed)."""
+    yield from _time_boxed(_chat_inner(message=message, history=history, api_key=api_key, files=files, file_access=file_access, root_path=root_path, openai_key=openai_key, confirm_writes=confirm_writes, anthropic_key=anthropic_key, force_provider=force_provider))
 
 # ── Status bar ────────────────────────────────────────────────────────────
 

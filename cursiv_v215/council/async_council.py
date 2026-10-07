@@ -379,7 +379,7 @@ def _synthesize(query: str, signals: dict[str, str], engines: list[dict], answer
         engine = by_id[eid]
         collected: list[str] = []
         try:
-            for chunk in engine["call"](messages, 1400 if full_mode else 800):
+            for chunk in engine["call"](messages, 3000 if full_mode else 2000):
                 if chunk == ca.RATE_SENTINEL:
                     continue
                 if not collected and (chunk.strip().startswith(ca._PROVIDER_ERROR_PREFIXES) or not chunk.strip()):
@@ -443,7 +443,7 @@ def run_council(
         return None
 
     seats = _plan_seats(engines, full_mode)
-    max_tokens = 700 if full_mode else 350
+    max_tokens = 1200 if full_mode else 700
 
     mode_str = (f"{_B}{_MAG}FULL DELIBERATION{_R}" if full_mode
                 else f"{_DIM}SIGNAL MODE · /full <question> for the complete deliberation{_R}")
