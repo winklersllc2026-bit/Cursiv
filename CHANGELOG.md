@@ -45,6 +45,17 @@
 -->
 # Changelog
 
+## v3.14-U33 — In-app updates that actually install (2026-10-06)
+
+The launcher's update button found new releases but never really installed them: its status updates were sent from a background thread through `QTimer.singleShot`, which never fires there, so the dialog sat on "Downloading installer…"; it ran the full installer wizard while Cursiv was still running (files locked), which on a normal install also re-ran the 12-step first-time setup; and nothing restarted Cursiv afterward. Version comparison also treated any different tag as "newer".
+
+- Cursiv now checks GitHub for a newer release automatically about 10 seconds after it opens, and stays silent unless one exists. The "Check for Updates" button and tray item still work.
+- "Update Now" downloads the installer with real progress (MB and percent, through Qt signals), verifies the size, runs it in update mode (`/SILENT /SUPPRESSMSGBOXES /CLOSEAPPLICATIONS /UPDATE=1` — no wizard, no first-time setup), then quits Cursiv cleanly so its files can be replaced. The installer reopens Cursiv when it finishes (`IsAppUpdate` [Run] entry).
+- Updates install over the existing folder, so data in `_internal\.cursiv` (memory, strands, sessions, settings, training data) is kept.
+- Real version comparison (`3.14-U33` > `3.14-U32`, `U100` > `U99`).
+
+Installs older than U33 have the broken updater, so moving to U33 means running the installer once by hand; every update after that happens in the app.
+
 ## v3.14-U32 — Babel always works: provider failover down to local Ollama (2026-10-06)
 
 Babel only worked reliably with a Claude key. It picked a provider once, by "first key that exists" (Claude → xAI → OpenAI → Ollama), and never moved on if that provider failed. With the Claude key removed it went to xAI, and when xAI failed for any reason other than a bad key (out of credits, rate limited, offline) the xAI caller yields only `RATE_SENTINEL` — which Babel skips — so the translation came back blank. With no keys at all it went to Ollama, which asked for a hardcoded `llama3.1` and got a 404 on a machine where that model wasn't pulled.

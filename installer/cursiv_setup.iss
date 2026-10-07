@@ -16,8 +16,8 @@
 ; Encoded local stamp: ΧκΖ∈ηβōΡν∀λ∂ψΩāΣγφΨδĀΨνā∇αΗĪΩŪχΥīΚκεδΜΟδζ∂Ι=
 ; CURSIV-CRUCIBLE-STAMP END
 ; ============================================================
-; Cursiv v3.14-U32 — Babel always works: provider failover down to local Ollama
-; Produces: installer\Output\Cursiv-Setup-3.14-U32.exe
+; Cursiv v3.14-U33 — In-app updates that actually install
+; Produces: installer\Output\Cursiv-Setup-3.14-U33.exe
 ;
 ; Single PyInstaller bundle: Cursiv.exe (GUI launcher with embedded chat
 ; panel, tray, guardian, feedback loops, and terminal/chat mode via -t).
@@ -28,7 +28,7 @@
 ; ============================================================
 
 #define AppName      "Cursiv"
-#define AppVer       "3.14-U32"
+#define AppVer       "3.14-U33"
 #define AppPublisher "Joshua Winkler"
 #define AppURL       "https://github.com/winklersllc2026-bit/Cursiv"
 #define AppExe       "Cursiv.exe"
@@ -50,7 +50,7 @@ LicenseFile=..\LICENSE
 InfoAfterFile=..\CHANGELOG.md
 AppComments=Offline AI workspace with cascade routing (xAI → OpenAI → Claude → Ollama), live status indicators, and security-question password recovery. No internet required after install. Your data never leaves your machine.
 OutputDir=Output
-OutputBaseFilename=Cursiv-Setup-3.14-U32
+OutputBaseFilename=Cursiv-Setup-3.14-U33
 SetupIconFile=..\launcher\resources\icons\cursiv.ico
 WizardSmallImageFile=..\launcher\resources\icons\cursiv_256.png
 Compression=lzma2/ultra64
@@ -128,12 +128,22 @@ Filename: "powershell.exe"; \
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; \
   Flags: nowait postinstall skipifsilent
 
+; In-app update (launched by Cursiv with /SILENT /UPDATE=1): reopen Cursiv
+; when the update finishes. Normal installs use the checkbox entry above.
+Filename: "{app}\{#AppExe}"; Flags: nowait runasoriginaluser; Check: IsAppUpdate
+
 [UninstallRun]
 ; Kill running instance before uninstall
 Filename: "taskkill"; Parameters: "/f /im {#AppExe}"; \
   Flags: runhidden; RunOnceId: "KillCursiv"
 
 [Code]
+// True when Cursiv's in-app updater launched this installer (/UPDATE=1).
+function IsAppUpdate: Boolean;
+begin
+  Result := ExpandConstant('{param:UPDATE|0}') = '1';
+end;
+
 // Returns true if Param is not already in the user PATH
 function NeedsAddPath(Param: string): boolean;
 var

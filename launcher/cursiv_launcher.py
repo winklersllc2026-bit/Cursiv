@@ -83,7 +83,7 @@ _WATCHDOG_MS     = 3_000         # ms between app-health checks
 _POLL_DEADLINE_S = 30            # seconds to wait for app to bind its port
 
 # ── Update checker ─────────────────────────────────────────────────────────────
-_CURRENT_VERSION   = "3.14-U32"
+_CURRENT_VERSION   = "3.14-U33"
 _GITHUB_API        = "https://api.github.com/repos/winklersllc2026-bit/Cursiv/releases/latest"
 _GITHUB_RELEASES   = "https://github.com/winklersllc2026-bit/Cursiv/releases"
 
@@ -331,9 +331,21 @@ def _open_terminal_window(title: str, cmd: str, cwd: Optional[str] = None) -> No
 
 # ── Update checker ────────────────────────────────────────────────────────────
 
+def _version_key(v: str) -> Optional[tuple[int, ...]]:
+    """'3.14-U32' / 'v3.14-U32' / '3.14' -> (3, 14, 32) / (3, 14, 0). None if unparseable."""
+    import re as _re
+    m = _re.fullmatch(r"v?(\d+)\.(\d+)(?:-U(\d+))?", v.strip(), _re.IGNORECASE)
+    if not m:
+        return None
+    return int(m.group(1)), int(m.group(2)), int(m.group(3) or 0)
+
+
 def _version_is_newer(remote: str, current: str) -> bool:
-    """True if remote tag is different from (and presumably newer than) current."""
-    return remote.lstrip("v").strip().lower() != current.strip().lower()
+    """True if the remote release is newer than this build."""
+    r, c = _version_key(remote), _version_key(current)
+    if r is None or c is None:
+        return remote.lstrip("v").strip().lower() != current.strip().lower()
+    return r > c
 
 
 class _UpdateSignals(QObject):
@@ -360,29 +372,55 @@ class UpdateChecker:
                 data = json.loads(resp.read().decode("utf-8"))
             tag  = data.get("tag_name", "").lstrip("v")
             body = data.get("body", "")
-            assets = data.get("assets", [])
-            exe_url = next(
-                (a["browser_download_url"] for a in assets if a["name"].endswith(".exe")),
-                None,
-            )
+            exes = [a for a in data.get("assets", []) if a.get("name", "").lower().endswith(".exe")]
+            # Prefer the stable "-latest" name, then any setup exe.
+            exes.sort(key=lambda a: 0 if a["name"].lower() == "cursiv-setup-latest.exe" else 1)
+            asset = exes[0] if exes else None
             self._signals.result.emit({
-                "ok":      True,
-                "tag":     tag,
-                "body":    body,
-                "exe_url": exe_url,
+                "ok":       True,
+                "tag":      tag,
+                "body":     body,
+                "exe_url":  asset["browser_download_url"] if asset else None,
+                "exe_size": asset.get("size", 0) if asset else 0,
             })
         except Exception as exc:
             self._signals.result.emit({"ok": False, "error": str(exc)})
 
 
-class UpdateDialog(QDialog):
-    """Shows release notes and lets the user download + run the new installer."""
+class _DownloadSignals(QObject):
+    progress = pyqtSignal(int, str)    # percent (-1 = unknown), status text
+    done     = pyqtSignal(bool, str)   # ok, installer path or error message
 
-    def __init__(self, tag: str, body: str, exe_url: Optional[str], parent=None):
+
+def _run_installer_and_quit(installer: str) -> None:
+    """
+    Run the downloaded installer in update mode, then quit so it can replace
+    our files. /SILENT shows only a small progress window -- no wizard, and the
+    12-step first-time setup is skipped (its [Run] entry is skipifsilent).
+    /UPDATE=1 makes the installer reopen Cursiv when it finishes.
+    """
+    subprocess.Popen(
+        [installer, "/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS", "/UPDATE=1"],
+        close_fds=True,
+    )
+    # Give the installer a moment to start, then shut down cleanly (aboutToQuit
+    # -> _cleanup stops our process, services, and the instance lock).
+    QTimer.singleShot(1500, QApplication.quit)
+
+
+class UpdateDialog(QDialog):
+    """Shows release notes, downloads the new installer, and installs it."""
+
+    def __init__(self, tag: str, body: str, exe_url: Optional[str], parent=None, exe_size: int = 0):
         super().__init__(parent)
         self.setWindowTitle("Cursiv — Update Available")
         self.setFixedWidth(500)
         self.setStyleSheet(f"background: {BG}; color: {SILVER};")
+        self._tag = tag
+        self._expected_size = exe_size
+        self._signals = _DownloadSignals()
+        self._signals.progress.connect(self._on_progress)
+        self._signals.done.connect(self._on_done)
 
         vlay = QVBoxLayout(self)
         vlay.setSpacing(12)
@@ -407,15 +445,16 @@ class UpdateDialog(QDialog):
         vlay.addWidget(notes)
 
         self._progress = QProgressBar()
-        self._progress.setRange(0, 0)   # indeterminate
+        self._progress.setRange(0, 100)
         self._progress.setVisible(False)
         self._progress.setStyleSheet(
-            f"QProgressBar {{ background: {BG2}; border: 1px solid {BORDER}; }}"
+            f"QProgressBar {{ background: {BG2}; border: 1px solid {BORDER}; color: {SILVER}; }}"
             f"QProgressBar::chunk {{ background: #2255DD; }}"
         )
         vlay.addWidget(self._progress)
 
         self._status = QLabel("")
+        self._status.setWordWrap(True)
         self._status.setStyleSheet(f"color: {SILV2}; font-size: 11px;")
         self._status.setVisible(False)
         vlay.addWidget(self._status)
@@ -424,7 +463,7 @@ class UpdateDialog(QDialog):
         btn_row.setSpacing(8)
 
         if exe_url:
-            self._dl_btn = QPushButton("Download & Install")
+            self._dl_btn = QPushButton("Update Now")
             self._dl_btn.setStyleSheet(
                 f"background: #2255DD; color: #fff; border-radius: 4px;"
                 " font-weight: 600; padding: 6px 16px;"
@@ -443,41 +482,75 @@ class UpdateDialog(QDialog):
         btn_row.addWidget(open_btn)
 
         btn_row.addStretch()
-        later_btn = QPushButton("Not Now")
-        later_btn.setStyleSheet(
+        self._later_btn = QPushButton("Not Now")
+        self._later_btn.setStyleSheet(
             f"background: transparent; color: {SILV2}; border: none; padding: 6px 8px;"
         )
-        later_btn.clicked.connect(self.reject)
-        btn_row.addWidget(later_btn)
+        self._later_btn.clicked.connect(self.reject)
+        btn_row.addWidget(self._later_btn)
 
         vlay.addLayout(btn_row)
 
     def _download(self, url: str):
         self._dl_btn.setEnabled(False)
+        self._later_btn.setEnabled(False)
+        self._progress.setValue(0)
         self._progress.setVisible(True)
-        self._status.setText("Downloading installer…")
+        self._status.setText("Downloading the update…")
         self._status.setVisible(True)
         threading.Thread(target=self._do_download, args=(url,), daemon=True).start()
 
     def _do_download(self, url: str):
+        """Background thread -- talks to the UI only through self._signals."""
         try:
-            tmp = tempfile.mktemp(suffix=".exe", prefix="Cursiv-Setup-")
-            urllib.request.urlretrieve(url, tmp)
-            # Launch installer (Inno Setup runs in-place, overwrites without uninstall)
-            subprocess.Popen([tmp], creationflags=subprocess.CREATE_NO_WINDOW)
-            self._finish("Installer launched. Cursiv will update and restart.")
+            dest = Path(tempfile.gettempdir()) / f"Cursiv-Setup-{self._tag}.exe"
+            req = urllib.request.Request(url, headers={"User-Agent": "Cursiv-Launcher"})
+            with urllib.request.urlopen(req, timeout=30) as resp, open(dest, "wb") as out:
+                total = int(resp.headers.get("Content-Length") or self._expected_size or 0)
+                got, last_pct = 0, -1
+                while True:
+                    chunk = resp.read(1 << 20)
+                    if not chunk:
+                        break
+                    out.write(chunk)
+                    got += len(chunk)
+                    pct = int(got * 100 / total) if total else -1
+                    if pct != last_pct:
+                        last_pct = pct
+                        mb = got / (1 << 20)
+                        self._signals.progress.emit(
+                            pct, f"Downloading the update… {mb:.0f} MB" + (f" of {total / (1 << 20):.0f} MB" if total else "")
+                        )
+            if total and got != total:
+                raise IOError(f"download was incomplete ({got} of {total} bytes)")
+            self._signals.done.emit(True, str(dest))
         except Exception as exc:
-            self._finish(f"Download failed: {exc}  —  use 'Open Releases Page' instead.")
+            self._signals.done.emit(False, str(exc))
 
-    def _finish(self, msg: str):
-        # Must update UI on main thread
-        QTimer.singleShot(0, lambda: self._apply_finish(msg))
+    def _on_progress(self, pct: int, text: str):
+        if pct < 0:
+            self._progress.setRange(0, 0)       # size unknown: busy indicator
+        else:
+            self._progress.setRange(0, 100)
+            self._progress.setValue(pct)
+        self._status.setText(text)
 
-    def _apply_finish(self, msg: str):
-        self._progress.setVisible(False)
-        self._status.setText(msg)
-        if hasattr(self, "_dl_btn"):
+    def _on_done(self, ok: bool, info: str):
+        if not ok:
+            self._progress.setVisible(False)
+            self._status.setText(f"Download failed: {info}  —  try again, or use 'Open Releases Page'.")
             self._dl_btn.setEnabled(True)
+            self._later_btn.setEnabled(True)
+            return
+        self._progress.setRange(0, 100)
+        self._progress.setValue(100)
+        self._status.setText("Installing… Cursiv will close and reopen on its own in a minute.")
+        try:
+            _run_installer_and_quit(info)
+        except Exception as exc:
+            self._status.setText(f"Couldn't start the installer: {exc}")
+            self._dl_btn.setEnabled(True)
+            self._later_btn.setEnabled(True)
 
 
 # ── Command-access management ─────────────────────────────────────────────────
@@ -1252,6 +1325,8 @@ class CursivLauncher(QMainWindow):
 
         # Cleanup hook — fires on every quit path (TitleBar X, tray Quit, etc.)
         QApplication.instance().aboutToQuit.connect(self._cleanup)
+        # Look for a newer release shortly after startup; silent unless one exists.
+        QTimer.singleShot(10_000, lambda: self._check_updates(automatic=True))
 
         # Start Guardian + Training Watcher (hidden background services,
         # see _launch_terminals) after first paint. The Eye of Horus
@@ -1544,7 +1619,7 @@ class CursivLauncher(QMainWindow):
         self._upd_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._upd_btn.setToolTip("Query GitHub for the latest Cursiv release")
         self._upd_btn.setStyleSheet(_util_style)
-        self._upd_btn.clicked.connect(self._check_updates)
+        self._upd_btn.clicked.connect(lambda: self._check_updates())
         util_row.addWidget(self._upd_btn)
 
         col.addLayout(util_row)
@@ -1748,25 +1823,35 @@ class CursivLauncher(QMainWindow):
 
     # ── Update checker ────────────────────────────────────────────────────
 
-    def _check_updates(self):
-        self._upd_btn.setEnabled(False)
-        self._upd_btn.setText("Checking…")
-        self._set_status("Querying GitHub for updates…")
-        checker = UpdateChecker(self._on_update_result)
-        checker.check()
+    def _check_updates(self, automatic: bool = False):
+        """Manual (button/tray) or automatic (shortly after startup) update check.
+        The automatic one stays silent unless a newer version actually exists."""
+        self._update_check_auto = automatic
+        if not automatic:
+            self._upd_btn.setEnabled(False)
+            self._upd_btn.setText("Checking…")
+            self._set_status("Querying GitHub for updates…")
+        # Keep a reference -- the checker's signal object must outlive this call.
+        self._update_checker = UpdateChecker(self._on_update_result)
+        self._update_checker.check()
 
     def _on_update_result(self, result: dict):
+        automatic = getattr(self, "_update_check_auto", False)
         self._upd_btn.setEnabled(True)
         self._upd_btn.setText("Check for Updates")
         if not result.get("ok"):
-            self._set_status(f"Update check failed — {result.get('error', 'no internet?')}")
+            if not automatic:
+                self._set_status(f"Update check failed — {result.get('error', 'no internet?')}")
             return
         tag = result["tag"]
         if not _version_is_newer(tag, _CURRENT_VERSION):
-            self._set_status(f"You're up to date  ({_CURRENT_VERSION})")
+            if not automatic:
+                self._set_status(f"You're up to date  ({_CURRENT_VERSION})")
             return
         self._set_status(f"Update available: v{tag}")
-        dlg = UpdateDialog(tag, result["body"], result["exe_url"], self)
+        if automatic and self.isHidden():
+            self.showNormal()
+        dlg = UpdateDialog(tag, result["body"], result["exe_url"], self, exe_size=result.get("exe_size", 0))
         dlg.exec()
 
     # ── llama3.1 model download ───────────────────────────────────────────
@@ -2112,7 +2197,7 @@ class CursivLauncher(QMainWindow):
         menu.addAction(sq_act)
 
         upd_act = QAction("Check for Updates", self)
-        upd_act.triggered.connect(self._check_updates)
+        upd_act.triggered.connect(lambda: self._check_updates())
         menu.addAction(upd_act)
 
         codex_act = QAction("Winkler-Codex Download", self)
