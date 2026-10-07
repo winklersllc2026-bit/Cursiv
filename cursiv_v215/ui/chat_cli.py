@@ -3943,6 +3943,11 @@ def main() -> None:
             print(f"  {LGOLD}{_free_reply}{RESET}")
             continue
 
+        # Memory: remember / forget / what do you remember / memory learn on|off
+        elif (_mem_reply := __import__("cursiv_v215.memory.semantic", fromlist=["memory_command"]).memory_command(raw)) is not None:
+            print(f"  {LGOLD}{_mem_reply}{RESET}")
+            continue
+
         elif cmd.startswith("openai "):
             new_key = raw[7:].strip()
             if new_key.startswith("xai-"):

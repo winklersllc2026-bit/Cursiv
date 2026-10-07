@@ -592,6 +592,13 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
     _free_reply = _free_key_command(text)
     if _free_reply is not None:
         return TextResult(_free_reply)
+    try:
+        from cursiv_v215.memory.semantic import memory_command as _memory_command
+        _mem_reply = _memory_command(text)
+    except Exception:
+        _mem_reply = None
+    if _mem_reply is not None:
+        return TextResult(_mem_reply)
 
     # ── API keys ─────────────────────────────────────────────────────────
     if cmd.startswith("key "):

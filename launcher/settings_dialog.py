@@ -161,6 +161,9 @@ class SettingsDialog(QDialog):
         dl = QLabel(f"Your data (memory, chats, settings): {data_dir}")
         dl.setStyleSheet(f"color: {SILV2}; font-size: 11px;")
         data_row.addWidget(dl, 1)
+        mem_btn = QPushButton("What I remember…"); mem_btn.setObjectName("ghost")
+        mem_btn.clicked.connect(self._open_memory)
+        data_row.addWidget(mem_btn)
         open_btn = QPushButton("Open folder"); open_btn.setObjectName("ghost")
         open_btn.clicked.connect(lambda: os.startfile(str(data_dir)) if data_dir.exists() else None)
         data_row.addWidget(open_btn)
@@ -168,6 +171,13 @@ class SettingsDialog(QDialog):
         done.clicked.connect(self.accept)
         data_row.addWidget(done)
         lay.addLayout(data_row)
+
+    def _open_memory(self):
+        try:
+            from memory_dialog import MemoryDialog
+            MemoryDialog(self).exec()
+        except Exception:
+            pass
 
     # ── Actions ──
     def _set_status(self, field: str, ok: bool | None, text: str):

@@ -45,6 +45,16 @@
 -->
 # Changelog
 
+## v3.14-U42 — Memory that learns, per person (2026-10-07)
+
+New `cursiv_v215/memory/semantic.py`:
+- **Finds by meaning.** Facts and saved conversation notes are matched to the question with a small local embedding model through Ollama (`nomic-embed-text`, ~270 MB, downloaded once in the background when Ollama is running). Without it, recall falls back to word overlap. Used by chat and the council.
+- **Learns.** After each conversation turn, lasting facts (people, preferences, beliefs, ongoing projects) are picked out in the background by the user's free Groq/Gemini key or the local model — never paid keys, never Cursiv Cloud — and saved unless already known. `memory learn off` turns it off.
+- **Per person.** Facts are saved under the logged-in user; "family" facts are shared. One person's memories never appear for another.
+- **What I remember.** Window (tray → What I remember…, or Settings) to see, search, add (just me / whole family) and forget memories, with the learning switch. Chat commands: `remember …`, `forget …`, `what do you remember`, `memory learn on|off`.
+
+Tested: a question about "my Bible study" recalled "compares the KJV and NIV" with no shared words; near-duplicates skipped; no leakage between people; learning saved lasting facts from a sample exchange.
+
 ## v3.14-U41 — A council you can trust (2026-10-07)
 
 From a real offline council run where 4 of 7 seats timed out, the refinement round had no engines, and seats invented things about Cursiv ("brain-computer interfaces", "an American system"):

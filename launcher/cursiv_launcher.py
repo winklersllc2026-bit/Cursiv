@@ -83,7 +83,7 @@ _WATCHDOG_MS     = 3_000         # ms between app-health checks
 _POLL_DEADLINE_S = 30            # seconds to wait for app to bind its port
 
 # ── Update checker ─────────────────────────────────────────────────────────────
-_CURRENT_VERSION   = "3.14-U41"
+_CURRENT_VERSION   = "3.14-U42"
 _GITHUB_API        = "https://api.github.com/repos/winklersllc2026-bit/Cursiv/releases/latest"
 _GITHUB_RELEASES   = "https://github.com/winklersllc2026-bit/Cursiv/releases"
 
@@ -1302,6 +1302,11 @@ class GettingStartedDialog(QDialog):
 class CursivLauncher(QMainWindow):
     def __init__(self, username: str = "Joshua"):
         super().__init__()
+        try:   # memory is kept per person: whoever logged in
+            from cursiv_v215.memory import semantic as _sem
+            _sem.set_person(username)
+        except Exception:
+            pass
         self._username   = username
         self._app_proc:  Optional[subprocess.Popen] = None
         self._app_alive  = False           # True while app process is running
@@ -1975,6 +1980,13 @@ class CursivLauncher(QMainWindow):
         except Exception as e:
             self._set_status(f"Phone window failed to open: {e}")
 
+    def _open_memory(self):
+        try:
+            from memory_dialog import MemoryDialog
+            MemoryDialog(self).exec()
+        except Exception as e:
+            self._set_status(f"Memory window failed to open: {e}")
+
     def _open_settings(self):
         try:
             from settings_dialog import SettingsDialog
@@ -2097,6 +2109,10 @@ class CursivLauncher(QMainWindow):
         gs_act = QAction("Getting Started", self)
         gs_act.triggered.connect(self._show_getting_started)
         menu.addAction(gs_act)
+
+        memory_act = QAction("What I remember…", self)
+        memory_act.triggered.connect(lambda: self._open_memory())
+        menu.addAction(memory_act)
 
         phone_act = QAction("Phone…", self)
         phone_act.triggered.connect(lambda: self._open_phone())

@@ -1098,7 +1098,16 @@ def _compact_system_for_tools(is_owner: bool = False) -> str:
 
 
 def _build_strand_context(query: str, top_k: int = 2) -> str:
-    """Retrieve relevant Strands and format them for system prompt injection."""
+    """Memory for the system prompt: the person's facts and related earlier
+    conversations, matched by meaning (memory/semantic.py). Falls back to the
+    keyword search over Strands if semantic memory isn't available."""
+    try:
+        from cursiv_v215.memory import semantic as _sem
+        ctx = _sem.build_context(query)
+        if ctx:
+            return ctx
+    except Exception:
+        pass
     if not _STRAND_APP_OK or _strand_count() == 0:
         return ""
     try:
@@ -1802,6 +1811,22 @@ def _store_key(field: str, value: str) -> None:
         _KEYS_FILE_APP.write_text(json.dumps(data, indent=2), encoding="utf-8")
     except Exception:
         pass
+
+
+def _quick_llm(messages: list[dict], max_tokens: int = 400) -> str:
+    """Small background jobs (memory learning): the user's free Groq/Gemini key,
+    else the local model. Never paid keys and never Cursiv Cloud. "" if none."""
+    for field, fn in (("groq_key", _call_groq_direct), ("gemini_key", _call_gemini_direct)):
+        key = _saved_key(field)
+        if key:
+            out = "".join(fn(messages, key, max_tokens)).strip()
+            if out and not out.startswith(("[Groq error", "[Gemini error")):
+                return out
+    if _ollama_running() and _resolve_ollama_model():
+        out = "".join(c for c in _call_ollama(messages, max_tokens=max_tokens) if c != RATE_SENTINEL).strip()
+        if out and not out.startswith(("[Ollama", "\n[Ollama")):
+            return out
+    return ""
 
 
 def _local_model_ready() -> bool:
@@ -3087,6 +3112,20 @@ def _fallback_chain(text_msgs: list[dict], user_text: str, tried: list[str]) -> 
 
 
 
+def _learn_later(message, reply: str) -> None:
+    """Save lasting facts from this exchange (memory/semantic.py), off the UI thread."""
+    text = message.get("text", "") if isinstance(message, dict) else str(message or "")
+    if not reply.strip() or reply.lstrip().startswith(("[", "*[")) or len(text.strip()) < 20:
+        return
+    def work():
+        try:
+            from cursiv_v215.memory import semantic as _sem
+            _sem.learn_from_exchange(text, reply, _quick_llm)
+        except Exception:
+            pass
+    threading.Thread(target=work, daemon=True).start()
+
+
 _SENTENCE_END = (".", "!", "?", "\n", ":", ";")
 
 
@@ -3133,8 +3172,14 @@ def chat(
     anthropic_key: str = "",
     force_provider: str = "",   
 ) -> Generator[str, None, None]:
-    """Cursiv's main chat entry point: _chat_inner, time-boxed (see _time_boxed)."""
-    yield from _time_boxed(_chat_inner(message=message, history=history, api_key=api_key, files=files, file_access=file_access, root_path=root_path, openai_key=openai_key, confirm_writes=confirm_writes, anthropic_key=anthropic_key, force_provider=force_provider))
+    """Cursiv's main chat entry point: _chat_inner, time-boxed (see _time_boxed);
+    afterwards, lasting facts from the exchange are learned in the background."""
+    reply: list[str] = []
+    for chunk in _time_boxed(_chat_inner(message=message, history=history, api_key=api_key, files=files, file_access=file_access, root_path=root_path, openai_key=openai_key, confirm_writes=confirm_writes, anthropic_key=anthropic_key, force_provider=force_provider)):
+        if isinstance(chunk, str) and chunk not in (RATE_SENTINEL,) and not chunk.startswith(WRITE_SENTINEL):
+            reply.append(chunk)
+        yield chunk
+    _learn_later(message, "".join(reply))
 
 # ── Status bar ────────────────────────────────────────────────────────────
 
