@@ -53,7 +53,7 @@ from typing import Any
 
 from cursiv_v215.postal.sealed_store import get_sealed_entry, open_letter
 
-_OLLAMA_URL   = "http://localhost:11434/api/chat"
+_OLLAMA_URL   = "http://127.0.0.1:11434/api/chat"
 _OLLAMA_MODEL = "llama3.1"
 
 # ── Letter-specific council questions ────────────────────────────────────────

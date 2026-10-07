@@ -486,7 +486,7 @@ async def _demo_llm(message: str) -> str:
             "stream": False,
         }).encode()
         _req = _ur.Request(
-            "http://localhost:11434/api/generate",
+            "http://127.0.0.1:11434/api/generate",
             data=_payload,
             headers={"Content-Type": "application/json"},
         )

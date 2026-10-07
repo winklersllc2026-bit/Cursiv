@@ -32,7 +32,7 @@ CURSIV_DIR = ROOT / ".cursiv"
 FACTS_FILE = CURSIV_DIR / "memory_facts.jsonl"
 EMB_CACHE_FILE = CURSIV_DIR / "embeddings_cache.json"
 SETTINGS_FILE = CURSIV_DIR / "memory_settings.json"
-OLLAMA = "http://localhost:11434"
+OLLAMA = "http://127.0.0.1:11434"
 EMBED_MODEL = "nomic-embed-text"
 SHARED = "family"
 

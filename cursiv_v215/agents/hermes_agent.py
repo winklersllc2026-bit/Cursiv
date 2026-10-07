@@ -54,7 +54,7 @@ for _candidate in [
         _HERMES_ROOT = _candidate
         break
 
-OLLAMA_BASE_URL = os.environ.get("CURSIV_OLLAMA_URL", "http://localhost:11434/v1")
+OLLAMA_BASE_URL = os.environ.get("CURSIV_OLLAMA_URL", "http://127.0.0.1:11434/v1")
 OLLAMA_MODEL    = os.environ.get("CURSIV_OLLAMA_MODEL", "llama3.1")
 
 # Hermes is imported on first use, not when Cursiv starts: importing the

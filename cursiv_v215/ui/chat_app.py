@@ -250,8 +250,8 @@ TRAINING_JSONL     = ROOT / ".cursiv" / "training_data.jsonl"
 XAI_URL        = "https://api.x.ai/v1/chat/completions"
 XAI_MODEL      = "grok-3-latest"
 XAI_MODEL_VIS  = "grok-2-vision-1212"   # vision-capable model for images
-OLLAMA_URL         = "http://localhost:11434/api/generate"
-OLLAMA_TAGS_URL    = "http://localhost:11434/api/tags"
+OLLAMA_URL         = "http://127.0.0.1:11434/api/generate"
+OLLAMA_TAGS_URL    = "http://127.0.0.1:11434/api/tags"
 OLLAMA_MODEL       = "llama3.1"
 # Answers are limited by time, not length (see _time_boxed): the token cap is
 # only a generous safety net so a thought is never cut off mid-sentence.
@@ -1383,6 +1383,10 @@ def _call_ollama_raw(messages: list[dict], max_tokens: int = RESPONSE_MAX_TOKENS
     # Separate system instructions from conversation turns.
     # Ollama's /api/generate accepts a dedicated `system` field — using it
     # properly grounds the model in the Cursiv identity and capabilities.
+    from cursiv_v215.core import speed as _speed
+    # Small GPUs: the CPU reads the whole prompt before the first word, so send the
+    # compact persona + what fits (the full one took up to a minute on a 4 GB card).
+    messages = _slim(messages, 14000 if _speed.small_gpu() else 48000)
     system_parts = [
         m["content"] for m in messages
         if m.get("role") == "system" and isinstance(m.get("content"), str)
@@ -1422,15 +1426,17 @@ def _call_ollama_raw(messages: list[dict], max_tokens: int = RESPONSE_MAX_TOKENS
         "system": system_str,
         "prompt": turns,
         "stream": True,
+        "keep_alive": _speed.KEEP_ALIVE,          # stay loaded: a cold load took ~100 s
         "options": {
             "num_predict": max_tokens,
-            "num_ctx": 16384,   # Cursiv's instructions alone are ~6k tokens
+            "num_ctx": _speed.num_ctx(),
         },
     }).encode()
     try:
         req = urllib.request.Request(OLLAMA_URL, data=payload,
                                      headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        # 600 s: loading a model that doesn't fit the GPU can take ~2 minutes
+        with urllib.request.urlopen(req, timeout=600) as resp:
             for line in resp:
                 chunk = _json.loads(line.decode())
                 token = chunk.get("response", "")
@@ -1467,8 +1473,10 @@ def _ensure_ollama() -> bool:
         return False  # not installed — nothing to start
 
     try:
+        from cursiv_v215.core import speed as _speed
         _sp.Popen(
             ["ollama", "serve"],
+            env=_speed.ollama_env(),          # flash attention + compact cache, this server only
             stdout=_sp.DEVNULL,
             stderr=_sp.DEVNULL,
             creationflags=_sp.CREATE_NO_WINDOW if hasattr(_sp, "CREATE_NO_WINDOW") else 0,
@@ -1534,7 +1542,9 @@ def _resolve_ollama_model() -> str | None:
     if tags is None:
         return None
     available = set(tags) | {t.split(":")[0] for t in tags}
-    for name in (OLLAMA_MODEL, *_OLLAMA_FALLBACK_MODELS):
+    from cursiv_v215.core import speed as _speed
+    # Fastest good model for this GPU first (e.g. a 3B model on a 4 GB card), if installed
+    for name in (*_speed.chat_model_prefs(), OLLAMA_MODEL, *_OLLAMA_FALLBACK_MODELS):
         if name in available:
             return name
     # Anything else that isn't an embedding-only model
@@ -1583,9 +1593,17 @@ def _pull_ollama_model(model: str) -> Generator[str, None, None]:
 # provider keys stay on the server, and the app only sends the conversation.
 
 GEMINI_URL   = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-GEMINI_MODELS = ("gemini-3.8-flash", "gemini-3.5-flash")
+# Several fallbacks: the newest model is often "high demand" (503) on free keys.
+GEMINI_MODELS = ("gemini-3.8-flash", "gemini-3.5-flash", "gemini-flash-latest", "gemini-3.1-flash-lite")
+GEMINI_TIMEOUT = 20          # per model; overloaded models hang rather than refuse
+_GEMINI_DOWN: dict[str, float] = {}   # model -> time until which it's skipped (timed out / 503)
 GROQ_URL     = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MODEL   = "qwen/qwen3.8-27b"
+GROQ_MODELS  = (GROQ_MODEL, "openai/gpt-oss-120b", "openai/gpt-oss-20b")
+# Prompt budgets (characters). Groq's free tier rejects big requests (413);
+# smaller prompts are also simply faster everywhere.
+GROQ_BUDGET   = 18000
+GEMINI_BUDGET = 60000
 CURSIV_CLOUD_URL = os.environ.get("CURSIV_CLOUD_URL", "https://cursiv.winklers-llc.com/api/cursiv/chat")
 
 FREE_KEY_HELP = """\
@@ -1642,8 +1660,18 @@ def _post_json(url: str, payload: dict, headers: dict, timeout: float) -> dict:
         return json.loads(resp.read().decode("utf-8"))
 
 
+_FULL_PERSONA = ""   # the full persona prefix of the current system prompt (set in _chat_inner)
+
+
+def _slim(messages: list[dict], budget: int) -> list[dict]:
+    """Compact persona + newest turns that fit `budget` characters (core/speed.py)."""
+    from cursiv_v215.core import speed
+    return speed.slim_messages(_text_messages(messages), budget, _FULL_PERSONA,
+                               speed.compact_persona(SYSTEM_PROMPT_FILE))
+
+
 def _call_gemini_direct(messages: list[dict], key: str, max_tokens: int = RESPONSE_MAX_TOKENS) -> Generator[str, None, None]:
-    msgs = _text_messages(messages)
+    msgs = _slim(messages, GEMINI_BUDGET)
     system = "\n\n".join(m["content"] for m in msgs if m["role"] == "system")
     contents = [{"role": "model" if m["role"] == "assistant" else "user", "parts": [{"text": m["content"]}]}
                 for m in msgs if m["role"] in ("user", "assistant") and m["content"]]
@@ -1651,14 +1679,20 @@ def _call_gemini_direct(messages: list[dict], key: str, max_tokens: int = RESPON
     if system:
         payload["systemInstruction"] = {"parts": [{"text": system}]}
     last_err = ""
-    for model in GEMINI_MODELS:
+    import time as _t
+    now = _t.time()
+    order = [m for m in GEMINI_MODELS if _GEMINI_DOWN.get(m, 0) < now] or list(GEMINI_MODELS[-1:])
+    for model in order:
         url = GEMINI_URL.format(model=model)
+        body = payload
+        if "lite" in model:   # the fast fallback: skip "thinking" (4 s instead of 30 s)
+            body = {**payload, "generationConfig": {**payload["generationConfig"], "thinkingConfig": {"thinkingBudget": 0}}}
         for use_query in (False, True):    # header first; some newer keys only work as ?key=
             try:
                 if use_query:
-                    data = _post_json(f"{url}?key={urllib.parse.quote(key)}", payload, {}, 60)
+                    data = _post_json(f"{url}?key={urllib.parse.quote(key)}", body, {}, GEMINI_TIMEOUT)
                 else:
-                    data = _post_json(url, payload, {"x-goog-api-key": key}, 60)
+                    data = _post_json(url, body, {"x-goog-api-key": key}, GEMINI_TIMEOUT)
                 cand = (data.get("candidates") or [{}])[0]
                 text = "".join(p.get("text", "") for p in cand.get("content", {}).get("parts", []))
                 if text.strip():
@@ -1670,9 +1704,13 @@ def _call_gemini_direct(messages: list[dict], key: str, max_tokens: int = RESPON
                 last_err = f"{e.code}: {e.read().decode(errors='ignore')[:200]}"
                 if e.code in (401, 403) and not use_query:
                     continue        # try the same model with ?key=
-                break
+                if e.code in (404, 429, 500, 503):
+                    _GEMINI_DOWN[model] = _t.time() + (3600 if e.code == 404 else 600)
+                break               # 404/429/5xx: next model
             except Exception as e:
                 last_err = str(e)
+                if "timed out" in last_err.lower():
+                    _GEMINI_DOWN[model] = _t.time() + 600     # overloaded: skip it for 10 minutes
                 break
         if last_err[:3] in ("400", "401", "403"):
             break                   # bad key or request -- another model won't help
@@ -1698,7 +1736,16 @@ def check_free_key(field: str, key: str) -> tuple[bool, str]:
                 get(f"{base}?key={urllib.parse.quote(key)}", {})
         else:
             get("https://api.groq.com/openai/v1/models", {"Authorization": f"Bearer {key}"})
-        return True, "Working."
+        # The key is valid -- now prove chat works (a valid key can still fail in chat).
+        import time as _t
+        t0 = _t.time()
+        msgs = [{"role": "system", "content": "Reply in five words or fewer."},
+                {"role": "user", "content": "Say hello."}]
+        fn = _call_gemini_direct if field == "gemini_key" else _call_groq_direct
+        out = "".join(fn(msgs, key, 64)).strip()
+        if not out or out.startswith("["):
+            return False, ("Key is valid, but chat failed: " + out.strip("[]"))[:220]
+        return True, f"Working — answered in {_t.time() - t0:.1f}s."
     except urllib.error.HTTPError as e:
         try:
             detail = json.loads(e.read().decode("utf-8", "ignore")).get("error", {})
@@ -1711,19 +1758,33 @@ def check_free_key(field: str, key: str) -> tuple[bool, str]:
 
 
 def _call_groq_direct(messages: list[dict], key: str, max_tokens: int = RESPONSE_MAX_TOKENS) -> Generator[str, None, None]:
-    try:
-        data = _post_json(GROQ_URL, {"model": GROQ_MODEL, "messages": _text_messages(messages),
-                                     "max_tokens": max_tokens},
-                          {"Authorization": f"Bearer {key}"}, 60)
-        text = data["choices"][0]["message"].get("content") or ""
-        if text.strip():
-            yield _filter_identity(text)
-        else:
-            yield "\n[Groq error: empty reply]"
-    except urllib.error.HTTPError as e:
-        yield f"\n[Groq error {e.code}: {e.read().decode(errors='ignore')[:160]}]"
-    except Exception as e:
-        yield f"\n[Groq error: {e}]"
+    """Groq: very fast. Free-tier limits are per model, so on "too large" (413) or
+    "rate limited" (429) try a smaller prompt, then the next model."""
+    last = ""
+    for model in GROQ_MODELS:
+        for budget, cap in ((GROQ_BUDGET, max_tokens), (GROQ_BUDGET // 2, min(max_tokens, 2048))):
+            try:
+                data = _post_json(GROQ_URL, {"model": model, "messages": _slim(messages, budget),
+                                             "max_tokens": cap},
+                                  {"Authorization": f"Bearer {key}"}, 60)
+                text = data["choices"][0]["message"].get("content") or ""
+                if text.strip():
+                    yield _filter_identity(text)
+                    return
+                last = "empty reply"
+                break
+            except urllib.error.HTTPError as e:
+                last = f"{e.code}: {e.read().decode(errors='ignore')[:160]}"
+                if e.code in (401, 403):
+                    yield f"\n[Groq error {last}]"
+                    return
+                if e.code == 413:
+                    continue        # same model, smaller request
+                break               # 429/5xx/404: next model
+            except Exception as e:
+                last = str(e)
+                break
+    yield f"\n[Groq error {last}]"
 
 
 def _cloud_settings() -> dict:
@@ -1853,6 +1914,9 @@ def _quick_llm(messages: list[dict], max_tokens: int = 400) -> str:
             out = "".join(fn(messages, key, max_tokens)).strip()
             if out and not out.startswith(("[Groq error", "[Gemini error")):
                 return out
+    from cursiv_v215.core import speed as _speed
+    if not _speed.wait_idle(300):          # never compete with a chat for the local model
+        return ""
     if _ollama_running() and _resolve_ollama_model():
         out = "".join(c for c in _call_ollama(messages, max_tokens=max_tokens) if c != RATE_SENTINEL).strip()
         if out and not out.startswith(("[Ollama", "\n[Ollama")):
@@ -1895,10 +1959,10 @@ def cascade_stream(
         attempts.append(("OpenAI", lambda: _call_openai_direct(messages, keys["openai_key"])))
     gemini_key = keys.get("gemini_key") or _saved_key("gemini_key")
     groq_key = keys.get("groq_key") or _saved_key("groq_key")
-    if gemini_key:
-        attempts.append(("Gemini", lambda: _call_gemini_direct(messages, gemini_key, max_tokens)))
     if groq_key:
         attempts.append(("Groq", lambda: _call_groq_direct(messages, groq_key, max_tokens)))
+    if gemini_key:
+        attempts.append(("Gemini", lambda: _call_gemini_direct(messages, gemini_key, max_tokens)))
     # Local first: Ollama answers whenever it has a model. Cursiv Cloud only steps
     # in when it doesn't (not installed / no model yet), and only if not turned off.
     if cloud_enabled():
@@ -1993,7 +2057,8 @@ def _call_ollama_model(
         "stream": not collect,
         # 16k context: coding prompts carry playbooks + worked examples; at 8k Ollama
         # silently dropped the start of the prompt (the instructions).
-        "options": {"num_predict": max_tokens, "num_ctx": 16384},
+        "keep_alive": "30m",
+        "options": {"num_predict": max_tokens, "num_ctx": _num_ctx()},
     }).encode()
     try:
         req = urllib.request.Request(
@@ -2022,22 +2087,16 @@ def _call_ollama_model(
         yield f"\n[{model} error: {e}]"
 
 
-_BIG_GPU: bool | None = None
-
-
 def _big_gpu() -> bool:
-    """>= 12 GB of GPU memory: room to run a second coding model as a reviewer.
-    On smaller GPUs swapping 14B/16B models in and out took minutes per answer."""
-    global _BIG_GPU
-    if _BIG_GPU is None:
-        try:
-            out = subprocess.run(["nvidia-smi", "--query-gpu=memory.total", "--format=csv,noheader,nounits"],
-                                 capture_output=True, text=True, timeout=5,
-                                 creationflags=0x08000000 if os.name == "nt" else 0).stdout
-            _BIG_GPU = max(int(x) for x in out.split()) >= 12000
-        except Exception:
-            _BIG_GPU = False
-    return _BIG_GPU
+    """>= 12 GB of GPU memory (NVIDIA or AMD): room for a second coding model as a
+    reviewer. On smaller GPUs swapping 14B/16B models took minutes per answer."""
+    from cursiv_v215.core import speed
+    return speed.big_gpu()
+
+
+def _num_ctx() -> int:
+    from cursiv_v215.core import speed
+    return speed.num_ctx()
 
 
 def _call_ollama_code_council(
@@ -2054,6 +2113,11 @@ def _call_ollama_code_council(
     # Use the exact tags that are installed (e.g. qwen2.5-coder:7b), not only the
     # 14b/16b defaults -- asking Ollama for a tag that isn't pulled just fails.
     def _installed(preferred: str, family: str) -> str | None:
+        if family == "qwen2.5-coder":       # the size that suits this GPU, if installed
+            from cursiv_v215.core import speed
+            for tag in speed.code_model_prefs():
+                if tag in available:
+                    return tag
         if preferred in available:
             return preferred
         tags = sorted(t for t in available if t.startswith(family + ":"))
@@ -2853,6 +2917,8 @@ def _chat_inner(
 
     # ── Build system prompt ─────────────────────────────────────────────
     system_text = load_system_prompt() + load_nexus_context() + load_vault_context() + _load_session_ctx()
+    global _FULL_PERSONA
+    _FULL_PERSONA = system_text      # free/local providers swap this for the compact persona
     if _owner_active():
         system_text += (
             "\n\n## OWNER VERIFIED\n"
@@ -3176,7 +3242,8 @@ def _fallback_chain(text_msgs: list[dict], user_text: str, tried: list[str]) -> 
     """Last part of chat()'s cascade, after the paid providers: the user's own
     free Gemini/Groq keys, then local Ollama. When Ollama has no usable model,
     Cursiv Cloud (if not turned off) answers before Ollama's first-time download."""
-    for label, field, fn in (("Gemini", "gemini_key", _call_gemini_direct), ("Groq", "groq_key", _call_groq_direct)):
+    # Groq first: it answers in under a second; Gemini is often overloaded on free keys
+    for label, field, fn in (("Groq", "groq_key", _call_groq_direct), ("Gemini", "gemini_key", _call_gemini_direct)):
         key = _saved_key(field)
         if not key:
             continue
@@ -3203,6 +3270,16 @@ def _fallback_chain(text_msgs: list[dict], user_text: str, tried: list[str]) -> 
 
     # Ollama -- use Code Council for code questions, standard for everything else
     _is_code = _classify_message(user_text) == "code"
+    try:
+        from cursiv_v215.core import speed as _speed
+        if _is_code and _speed.small_gpu():
+            _loaded = _speed.loaded_models()
+            # On a small GPU, switching from the loaded chat model to a coding model
+            # costs minutes; keep the loaded one (`codex` still uses the coding models).
+            if _loaded and not any("coder" in m for m in _loaded):
+                _is_code = False
+    except Exception:
+        pass
     _ollama_fn = _call_ollama_code_council if _is_code else _call_ollama
     ollama_gen = _ollama_fn(text_msgs)
     first_ol   = next(ollama_gen, None)
@@ -3304,13 +3381,34 @@ def chat(
     global _PHASE_AFTER
     _PHASE_AFTER = ""                # set by the phases for this message only
     reply: list[str] = []
+    from cursiv_v215.core import speed as _speed
+    _speed.chat_started()
+    try:
+        yield from _chat_stream(message, history, api_key, files, file_access, root_path,
+                                openai_key, confirm_writes, anthropic_key, force_provider, reply)
+    finally:
+        _speed.chat_finished()
+    if _PHASE_AFTER:                 # Route / Recovery notes from the phases
+        yield _PHASE_AFTER
+    _learn_later(message, "".join(reply))
+
+
+def _chat_stream(message, history, api_key, files, file_access, root_path, openai_key,
+                 confirm_writes, anthropic_key, force_provider, reply: list[str]):
     for chunk in _time_boxed(_chat_inner(message=message, history=history, api_key=api_key, files=files, file_access=file_access, root_path=root_path, openai_key=openai_key, confirm_writes=confirm_writes, anthropic_key=anthropic_key, force_provider=force_provider)):
         if isinstance(chunk, str) and chunk not in (RATE_SENTINEL,) and not chunk.startswith(WRITE_SENTINEL):
             reply.append(chunk)
         yield chunk
-    if _PHASE_AFTER:                 # Route / Recovery notes from the phases
-        yield _PHASE_AFTER
-    _learn_later(message, "".join(reply))
+
+
+def warm_up_local() -> None:
+    """Load the local chat model ahead of the first message (call off the UI thread)."""
+    try:
+        from cursiv_v215.core import speed
+        if _ollama_running():
+            speed.warm_up(_resolve_ollama_model() or "")
+    except Exception:
+        pass
 
 # ── Status bar ────────────────────────────────────────────────────────────
 
@@ -3326,7 +3424,7 @@ def status_bar(api_key: str, openai_key: str = "", anthropic_key: str = "") -> s
     queue_s    = f"Queue:{_queue_count()}" if _QUEUE_OK else "Queue —"
     ollama_ok  = "Ollama ?"
     try:
-        urllib.request.urlopen("http://localhost:11434", timeout=1)
+        urllib.request.urlopen("http://127.0.0.1:11434", timeout=1)
         ollama_ok = "Ollama ✓"
     except Exception:
         ollama_ok = "Ollama —"

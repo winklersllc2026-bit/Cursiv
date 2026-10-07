@@ -45,6 +45,19 @@
 -->
 # Changelog
 
+## v3.14-U49 — Speed + automatic conversation titles (2026-10-07)
+**Speed**
+- Free Groq/Gemini keys actually answer now. Groq rejected every normal chat as "too large" (Cursiv sent its full 27,000-character prompt); free providers and local models now get a compact version of Cursiv's core identity (~3,400 characters) plus your memory and the current context.
+- Groq is tried first (answers in about a second); Gemini falls back across several models, gives each 20 seconds, and skips an overloaded model for 10 minutes instead of waiting on it every time.
+- Every message was waiting ~4 seconds on Windows' slow "localhost" lookup before the AI was even asked. Fixed (127.0.0.1). Typical online answer: ~2 seconds, down from 15+.
+- The Settings key test now sends a real chat message and shows the answer time, so "Working" means chat works.
+- Local AI: detects your graphics card's memory (NVIDIA and AMD) and picks models and settings that fit it; keeps the model loaded for 30 minutes and loads it at startup when it will be used (a cold load took ~100 seconds); waits up to 10 minutes for a slow load instead of timing out at 2; turns on Ollama's flash attention and compact cache when Cursiv starts Ollama.
+- Small graphics cards: normal chat keeps the already-loaded model instead of swapping to a coding model (minutes per swap); the Setup window recommends the fast 3B models.
+- Background jobs (memory learning, phone sync) wait while you're chatting.
+
+**Conversations**
+- Saved conversations get a 3–5 word title about their topic automatically (e.g. "PyBullet Setup In WSL"), refined by the AI as the chat goes on. Titles you set yourself are kept. Older saved chats are retitled once.
+
 ## v3.14-U48 — Coding overhaul + the phone app knows you (2026-10-07)
 **Coding**
 - New coding brain for `codex` and for code questions/pasted terminal errors in normal chat: a focused coding prompt instead of Cursiv's whole persona prompt (no more council/owner text in code answers).

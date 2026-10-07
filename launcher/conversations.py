@@ -8,9 +8,12 @@ exactly). Nothing is saved unless the user chooses to.
 from __future__ import annotations
 
 import json
+import re
+import threading
 import time
 import uuid
 from pathlib import Path
+from typing import Callable, Optional
 
 DIR = Path.home() / ".cursiv" / "conversations"
 
@@ -23,13 +26,76 @@ def _person() -> str:
         return "family"
 
 
+_FILLER = re.compile(
+    r"^(?:(?:good (?:morning|afternoon|evening)|hi|hello|hey|yo|ok(?:ay)?|so|um|well|cursiv|please|"
+    r"can you|could you|would you|will you|i want(?: you)? to|i need(?: you)? to|i'?d like to|"
+    r"help me(?: to)?|show me(?: how to)?|tell me(?: about)?|how do i|how can i|what is|what are|"
+    r"let'?s|lets)\b[\s,.!?:-]*)+", re.I)
+
+
 def title_from(messages: list[dict]) -> str:
+    """Quick 3-5 word title from the first message (until the AI one is ready)."""
     first = next((m.get("content", "") for m in messages if m.get("role") == "user" and m.get("content")), "")
-    first = " ".join(str(first).split())
-    return (first[:48] + "…") if len(first) > 48 else (first or "New conversation")
+    text = " ".join(str(first).split())
+    text = _FILLER.sub("", text)
+    words = re.findall(r"[A-Za-z0-9][\w'+#.-]*", text)
+    small = {"the", "a", "an", "and", "or", "to", "of", "for", "with", "my", "your", "me", "please", "in", "on"}
+    while words and words[0].lower() in {"the", "a", "an", "please"}:
+        words.pop(0)
+    words = words[:5]
+    while len(words) > 1 and words[-1].lower() in small:
+        words.pop()
+    if not words:
+        return "New conversation"
+    return " ".join(w if w.isupper() else w[:1].upper() + w[1:] for w in words).rstrip(".")
 
 
-def save(conv_id: str | None, messages: list[dict], html: str, title: str | None = None) -> str:
+_TITLE_PROMPT = (
+    "Write a 3 to 5 word title that sums up what this conversation is about (its main topic, "
+    "not the greeting). Title Case. No quotes, no ending punctuation, no emojis. Reply with the title only."
+)
+
+
+def _clean_title(raw: str) -> str | None:
+    line = next((l for l in (raw or "").splitlines() if l.strip()), "")
+    line = re.sub(r"^(title\s*:\s*)", "", line.strip(), flags=re.I).strip(" \"'*#`.:")
+    words = line.split()
+    if not 2 <= len(words) <= 7 or line.startswith("["):
+        return None
+    return " ".join(words[:6])[:60]
+
+
+def _smart_title(conv_id: str, messages: list[dict], on_done: Optional[Callable[[], None]]) -> None:
+    """Background: ask the AI for a 3-5 word topic title and store it (unless renamed by hand)."""
+    parts = []
+    for m in messages[:12]:
+        c = m.get("content")
+        if isinstance(c, str) and c.strip():
+            parts.append(f"{'User' if m.get('role') == 'user' else 'Assistant'}: {' '.join(c.split())[:400]}")
+    convo = "\n".join(parts)[:3000]
+    try:
+        from cursiv_v215.ui.chat_app import _quick_llm
+        title = _clean_title(_quick_llm([{"role": "system", "content": _TITLE_PROMPT},
+                                         {"role": "user", "content": convo}], max_tokens=24))
+    except Exception:
+        title = None
+    if not title:
+        return
+    d = load(conv_id)
+    if not d or not d.get("title_auto", True):
+        return                                   # renamed by hand meanwhile -- keep theirs
+    d["title"] = title
+    d["titled_at"] = len(messages)
+    (DIR / f"{conv_id}.json").write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+    if on_done:
+        try:
+            on_done()
+        except Exception:
+            pass
+
+
+def save(conv_id: str | None, messages: list[dict], html: str, title: str | None = None,
+         on_titled: Optional[Callable[[], None]] = None) -> str:
     DIR.mkdir(parents=True, exist_ok=True)
     conv_id = conv_id or uuid.uuid4().hex[:12]
     path = DIR / f"{conv_id}.json"
@@ -38,6 +104,9 @@ def save(conv_id: str | None, messages: list[dict], html: str, title: str | None
         "id": conv_id,
         "person": existing.get("person") or _person(),
         "title": title or existing.get("title") or title_from(messages),
+        # auto titles are rewritten by the AI as the chat goes on; a name the user typed is kept
+        "title_auto": False if title else existing.get("title_auto", True),
+        "titled_at": existing.get("titled_at", 0),
         "created": existing.get("created") or time.time(),
         "updated": time.time(),
         "messages": messages,
@@ -46,6 +115,10 @@ def save(conv_id: str | None, messages: list[dict], html: str, title: str | None
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     tmp.replace(path)
+    # AI title: once there's an exchange, and again as the topic develops
+    if data["title_auto"] and len(messages) >= 2 and (
+            data["titled_at"] == 0 or len(messages) - data["titled_at"] >= 10):
+        threading.Thread(target=_smart_title, args=(conv_id, list(messages), on_titled), daemon=True).start()
     return conv_id
 
 
@@ -71,10 +144,42 @@ def list_all() -> list[dict]:
     return sorted(out, key=lambda c: c["updated"], reverse=True)
 
 
+def _old_style_title(messages: list[dict]) -> str:
+    """How titles were made before U49 (first line of the chat), to spot untouched ones."""
+    first = next((m.get("content", "") for m in messages if m.get("role") == "user" and m.get("content")), "")
+    first = " ".join(str(first).split())
+    return (first[:48] + "…") if len(first) > 48 else (first or "New conversation")
+
+
+def retitle_old(on_done: Optional[Callable[[], None]] = None) -> None:
+    """One-time, in the background: give older saved chats a 3-5 word topic title.
+    Only ones still named after their first line (never ones renamed by hand)."""
+    def work():
+        for f in sorted(DIR.glob("*.json")) if DIR.exists() else []:
+            try:
+                d = json.loads(f.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            if d.get("titled_at") or "title_auto" in d:
+                continue
+            msgs = d.get("messages") or []
+            if d.get("title") != _old_style_title(msgs) or len(msgs) < 2:
+                d["title_auto"] = d.get("title") == _old_style_title(msgs)
+                f.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+                continue
+            d["title"], d["title_auto"] = title_from(msgs), True
+            f.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+            if on_done:
+                on_done()
+            _smart_title(d["id"], msgs, on_done)
+    threading.Thread(target=work, daemon=True).start()
+
+
 def rename(conv_id: str, title: str) -> None:
     d = load(conv_id)
     if d and title.strip():
         d["title"] = title.strip()[:80]
+        d["title_auto"] = False
         (DIR / f"{conv_id}.json").write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
 
 

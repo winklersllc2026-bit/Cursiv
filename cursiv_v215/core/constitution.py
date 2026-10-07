@@ -77,7 +77,7 @@ PROVIDER_REGISTRY: list[dict[str, Any]] = [
     {
         "id": "ollama", "name": "Ollama", "short": "OLM",
         "local": True, "api_key_env": None,
-        "url": "http://localhost:11434", "model": "llama3.1",
+        "url": "http://127.0.0.1:11434", "model": "llama3.1",
     },
     {
         "id": "xai", "name": "xAI Grok", "short": "xAI",

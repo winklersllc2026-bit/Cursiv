@@ -280,7 +280,8 @@ class ChatPanel(QWidget):
         if not self._history:
             return None
         import conversations
-        self._conv_id = conversations.save(self._conv_id, self._history, self._transcript.toHtml(), title)
+        self._conv_id = conversations.save(self._conv_id, self._history, self._transcript.toHtml(), title,
+                                           on_titled=self.conversation_changed.emit)   # AI title -> sidebar
         self._dirty = False
         self.conversation_changed.emit()
         return self._conv_id

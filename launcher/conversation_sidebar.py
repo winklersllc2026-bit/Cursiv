@@ -92,6 +92,8 @@ class ConversationSidebar(QWidget):
         lay.addWidget(self._empty)
         panel.conversation_changed.connect(self.refresh)
         self.refresh()
+        # older chats named after their first line get a 3-5 word topic title (signal -> refresh on the UI thread)
+        conversations.retitle_old(panel.conversation_changed.emit)
 
     def refresh(self):
         current = self._panel.current_conversation_id()

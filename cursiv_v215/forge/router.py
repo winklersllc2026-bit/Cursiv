@@ -65,7 +65,7 @@ class OracleRouter:
     def __init__(
         self,
         ollama_model: str = "llama3.1",
-        ollama_url: str = "http://localhost:11434",
+        ollama_url: str = "http://127.0.0.1:11434",
         ollama_num_ctx: int = 32768,
         ollama_timeout_s: int = 120,
         xai_api_key: str | None = None,

@@ -36,19 +36,30 @@ GREEN, RED, AMBER = "#3ecf6e", "#FF4455", "#e8a020"
 
 OLLAMA_INSTALLER_URL = "https://ollama.com/download/OllamaSetup.exe"
 OLLAMA_EXE = Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Ollama" / "ollama.exe"
-OLLAMA_API = "http://localhost:11434"
+OLLAMA_API = "http://127.0.0.1:11434"
 
 # Coding models for Cursiv's offline code council: (label, tag)
 CODE_MODELS = [
-    ("qwen2.5-coder 7B — recommended for most PCs (4.7 GB)", "qwen2.5-coder:7b"),
-    ("qwen2.5-coder 14B — smarter, needs a strong PC (9 GB)", "qwen2.5-coder:14b"),
+    ("qwen2.5-coder 3B — fast on 4–6 GB graphics cards (1.9 GB)", "qwen2.5-coder:3b"),
+    ("qwen2.5-coder 7B — for 8 GB+ graphics cards (4.7 GB)", "qwen2.5-coder:7b"),
+    ("qwen2.5-coder 14B — smartest, needs 12 GB+ (9 GB)", "qwen2.5-coder:14b"),
 ]
 
 # (label, model tag, approximate download size)
 MODELS = [
-    ("llama3.1 — best answers (4.9 GB)", "llama3.1", "4.9 GB"),
-    ("qwen2.5 1.5B — small and fast (1 GB)", "qwen2.5:1.5b", "1 GB"),
+    ("llama3.1 — best answers, for 8 GB+ graphics cards (4.9 GB)", "llama3.1", "4.9 GB"),
+    ("qwen2.5 3B — fast on 4–6 GB graphics cards (1.9 GB)", "qwen2.5:3b", "1.9 GB"),
+    ("qwen2.5 1.5B — smallest and fastest (1 GB)", "qwen2.5:1.5b", "1 GB"),
 ]
+
+
+def recommended_index(options: list, small: bool) -> int:
+    """Which entry to preselect for this PC's graphics card."""
+    want = ":3b" if small else None
+    for i, opt in enumerate(options):
+        if want and opt[1].endswith(want):
+            return i
+    return 0 if not small else min(1, len(options) - 1)
 _NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 
@@ -83,8 +94,13 @@ def start_ollama() -> bool:
     if not exe:
         return False
     try:
+        try:
+            from cursiv_v215.core import speed
+            env = speed.ollama_env()          # flash attention + compact cache for this server
+        except Exception:
+            env = None
         subprocess.Popen([exe, "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                         creationflags=_NO_WINDOW)
+                         creationflags=_NO_WINDOW, env=env)
     except Exception:
         return False
     for _ in range(30):
@@ -185,6 +201,12 @@ class SetupDialog(QDialog):
         self._model_box = QComboBox()
         for label, tag, _size in MODELS:
             self._model_box.addItem(label, tag)
+        try:
+            from cursiv_v215.core import speed
+            _small = speed.small_gpu()
+        except Exception:
+            _small = False
+        self._model_box.setCurrentIndex(recommended_index(MODELS, _small))
         self._s2["row"].addWidget(self._model_box, 1)
         self._s2_btn = QPushButton("Download")
         self._s2_btn.clicked.connect(self._pull_model)
@@ -201,6 +223,7 @@ class SetupDialog(QDialog):
         self._code_box = QComboBox()
         for label, tag in CODE_MODELS:
             self._code_box.addItem(label, tag)
+        self._code_box.setCurrentIndex(recommended_index(CODE_MODELS, _small))
         self._s4["row"].addWidget(self._code_box, 1)
         self._s4_btn = QPushButton("Download")
         self._s4_btn.clicked.connect(self._pull_code_model)
