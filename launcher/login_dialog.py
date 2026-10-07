@@ -469,6 +469,21 @@ class ResetPasswordDialog(_BaseDialog):
 
 # ── Setup dialog (account creation) ───────────────────────────────────────────
 
+def _log_setup_error(where: str, exc: BaseException) -> None:
+    """Save the full error so a problem report can include it."""
+    try:
+        import datetime
+        import traceback
+        from pathlib import Path
+        log = Path.home() / ".cursiv" / "logs" / "login.log"
+        log.parent.mkdir(parents=True, exist_ok=True)
+        with log.open("a", encoding="utf-8") as f:
+            f.write(f"\n{datetime.datetime.now().isoformat()}  {where}\n")
+            traceback.print_exception(type(exc), exc, exc.__traceback__, file=f)
+    except Exception:
+        pass
+
+
 class SetupDialog(_BaseDialog):
     """
     Create username + password. First-run mode (is_additional=False, the
@@ -511,12 +526,25 @@ class SetupDialog(_BaseDialog):
         for w in (self._user, self._pw, self._pw2, self._err):
             vlay.addWidget(w)
 
+        # Shown only when creating the account fails: sends the error to Joshua.
+        self._report_btn = QPushButton("Send problem report")
+        self._report_btn.setVisible(False)
+        self._report_btn.clicked.connect(self._send_report)
+        vlay.addWidget(self._report_btn)
+
         btn = QPushButton("Add Account" if self._is_additional else "Create Account")
         btn.clicked.connect(self._submit)
         self._pw2.returnPressed.connect(self._submit)
         vlay.addWidget(btn)
 
         self._user.setFocus()
+
+    def _send_report(self):
+        try:
+            from problem_report import open_report
+            open_report(self, f"Create Account failed: {self._err.text()}")
+        except Exception:
+            pass
 
     def _submit(self):
         username = self._user.text().strip()
@@ -547,7 +575,9 @@ class SetupDialog(_BaseDialog):
             else:
                 setup_credentials(username, password)
         except Exception as exc:
+            _log_setup_error("Create Account", exc)
             self._err.setText(f"Setup error: {exc}")
+            self._report_btn.setVisible(True)
             return
 
         self._username_result = username

@@ -83,7 +83,7 @@ _WATCHDOG_MS     = 3_000         # ms between app-health checks
 _POLL_DEADLINE_S = 30            # seconds to wait for app to bind its port
 
 # ── Update checker ─────────────────────────────────────────────────────────────
-_CURRENT_VERSION   = "3.14-U34"
+_CURRENT_VERSION   = "3.14-U35"
 _GITHUB_API        = "https://api.github.com/repos/winklersllc2026-bit/Cursiv/releases/latest"
 _GITHUB_RELEASES   = "https://github.com/winklersllc2026-bit/Cursiv/releases"
 
@@ -1340,6 +1340,9 @@ class CursivLauncher(QMainWindow):
         # window has had a moment to finish rendering.
         if not _getting_started_seen():
             QTimer.singleShot(1800, self._show_getting_started)
+        # Setup window if Ollama or a model is missing (replaces the old
+        # installer-time PowerShell setup windows).
+        QTimer.singleShot(2500, self._maybe_open_setup)
 
         # Watchdog: detect if the app process dies unexpectedly
         self._watchdog = QTimer(self)
@@ -1572,7 +1575,7 @@ class CursivLauncher(QMainWindow):
             warn_lbl.setWordWrap(True)
             ob_lay.addWidget(warn_lbl, 1)
 
-            self._ollama_btn = QPushButton("Install Ollama")
+            self._ollama_btn = QPushButton("Set Up")
             self._ollama_btn.setFixedHeight(26)
             self._ollama_btn.setCursor(Qt.CursorShape.PointingHandCursor)
             self._ollama_btn.setToolTip(
@@ -1621,6 +1624,14 @@ class CursivLauncher(QMainWindow):
         self._upd_btn.setStyleSheet(_util_style)
         self._upd_btn.clicked.connect(lambda: self._check_updates())
         util_row.addWidget(self._upd_btn)
+
+        rep_btn = QPushButton("Report a Problem")
+        rep_btn.setFixedHeight(28)
+        rep_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        rep_btn.setToolTip("Send Cursiv's error logs to Joshua (never chats, letters or keys)")
+        rep_btn.setStyleSheet(_util_style)
+        rep_btn.clicked.connect(lambda: self._send_problem_report())
+        util_row.addWidget(rep_btn)
 
         col.addLayout(util_row)
 
@@ -1857,66 +1868,10 @@ class CursivLauncher(QMainWindow):
     # ── llama3.1 model download ───────────────────────────────────────────
 
     def _download_llama_model(self, on_done: "Callable[[], None] | None" = None):
-        if not _is_ollama_installed():
-            reply = QMessageBox.question(
-                self, "Ollama Required",
-                "llama3.1 runs inside Ollama, which isn't installed yet.\n\n"
-                "Install Ollama first?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            )
-            if reply == QMessageBox.StandardButton.Yes:
-                self._install_ollama()
-            return
-
-        msg = QMessageBox(self)
-        msg.setWindowTitle("Download llama3.1")
-        msg.setIcon(QMessageBox.Icon.Warning)
-        msg.setText("<b>Download llama3.1?</b>")
-        msg.setInformativeText(
-            "This is Cursiv's default local model — a ~4.7 GB one-time download.\n\n"
-            "Requires Ollama to be running and ~6 GB of free disk space.\n\n"
-            "This runs in a terminal window. You can minimise it and continue using Cursiv."
-        )
-        msg.setStandardButtons(
-            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
-        )
-        msg.button(QMessageBox.StandardButton.Ok).setText("Download (~4.7 GB)")
-        msg.button(QMessageBox.StandardButton.Cancel).setText("Not Now")
-        msg.setStyleSheet(QSS)
-
-        if msg.exec() != QMessageBox.StandardButton.Ok:
-            return
-
-        self._set_status("Launching llama3.1 download — see terminal window…")
-
-        _ollama = _ollama_ps_invocation()
-        script = (
-            "Write-Host '' ;"
-            "Write-Host '  Cursiv — llama3.1' -ForegroundColor DarkYellow ;"
-            "Write-Host '' ;"
-            "Write-Host '  Pulling llama3.1...' -ForegroundColor Cyan ;"
-            f"{_ollama} pull llama3.1 ;"
-            "if ($LASTEXITCODE -eq 0) { Write-Host '  [OK] llama3.1 ready.' -ForegroundColor Green }"
-            "else { Write-Host '  [!] Pull failed -- run: ollama pull llama3.1' -ForegroundColor Yellow } ;"
-            "Write-Host '' ;"
-            "Write-Host '  Press Enter to close...' -NoNewline ;"
-            "Read-Host"
-        )
-        try:
-            subprocess.Popen(
-                ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
-                 "-Command", script],
-                creationflags=subprocess.CREATE_NEW_CONSOLE,
-                cwd=str(_ROOT),
-            )
-        except Exception as exc:
-            self._set_status(f"Could not launch download: {exc}")
-        # The new console window steals focus on open -- bring Cursiv's own
-        # window back afterward so starting a download doesn't feel like it
-        # kicked the user out of the app.
-        QTimer.singleShot(400, lambda: (self.raise_(), self.activateWindow()))
+        """Model downloads happen in the Setup window (real progress, no console)."""
+        self._open_setup()
         if on_done is not None:
-            QTimer.singleShot(500, on_done)
+            on_done()
 
     # ── Winkler-Codex model download ─────────────────────────────────────
 
@@ -2006,106 +1961,40 @@ class CursivLauncher(QMainWindow):
     # ── Ollama installer ──────────────────────────────────────────────────
 
     def _install_ollama(self):
-        msg = QMessageBox(self)
-        msg.setWindowTitle("Install Ollama")
-        msg.setIcon(QMessageBox.Icon.Information)
-        msg.setText("<b>Download and install Ollama?</b>")
-        msg.setInformativeText(
-            "Ollama powers all local AI features in Cursiv.\n\n"
-            "The official Ollama installer (~50 MB) will be downloaded, "
-            "then launched — you'll see its normal Windows install window.\n\n"
-            "Ollama installs to:\n"
-            "  %LOCALAPPDATA%\\Programs\\Ollama\\\n\n"
-            "This is the standard user-level location; no admin rights needed."
-        )
-        msg.setStandardButtons(
-            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
-        )
-        msg.button(QMessageBox.StandardButton.Ok).setText("Download & Install")
-        msg.button(QMessageBox.StandardButton.Cancel).setText("Not Now")
-        msg.setStyleSheet(QSS)
+        """Installing Ollama happens in the Setup window (real progress, no console)."""
+        self._open_setup()
 
-        if msg.exec() != QMessageBox.StandardButton.Ok:
-            return
+    def _send_problem_report(self, context: str = ""):
+        from problem_report import open_report
+        open_report(self, context)
 
-        self._ollama_btn.setEnabled(False)
-        self._ollama_btn.setText("Downloading…")
-        self._set_status("Downloading Ollama installer…")
+    def _open_setup(self):
+        try:
+            from setup_dialog import SetupDialog
+            SetupDialog(self).exec()
+        except Exception as e:
+            self._set_status(f"Setup window failed to open: {e}")
 
-        dest = Path(tempfile.gettempdir()) / "OllamaSetup.exe"
+    def _maybe_open_setup(self):
+        """First launch / after install: if this computer can't run Cursiv
+        locally yet, open Setup. The check can take a few seconds (it may start
+        Ollama), so it runs off the UI thread."""
+        if not hasattr(self, "_setup_signal"):
+            from PyQt6.QtCore import QObject, pyqtSignal
 
-        progress = QProgressDialog("Downloading Ollama installer…", "Cancel", 0, 100, self)
-        progress.setWindowTitle("Cursiv — Installing Ollama")
-        progress.setWindowModality(Qt.WindowModality.WindowModal)
-        progress.setMinimumWidth(380)
-        progress.setAutoClose(False)
-        progress.setAutoReset(False)
-        progress.setStyleSheet(
-            f"QProgressDialog {{ background: {BG2}; color: {SILVER}; }}"
-            f"QProgressBar {{ background: {BG}; border: 1px solid {BORDER}; }}"
-            f"QProgressBar::chunk {{ background: #e8a020; }}"
-            f"QPushButton {{ background: {BG}; color: {SILVER}; border: 1px solid {BORDER}; }}"
-        )
-        progress.setValue(0)
-        progress.show()
+            class _SetupSignal(QObject):
+                needed = pyqtSignal()
+            self._setup_signal = _SetupSignal()
+            self._setup_signal.needed.connect(self._open_setup)
 
-        cancelled = [False]
-
-        def _on_cancel():
-            cancelled[0] = True
-
-        progress.canceled.connect(_on_cancel)
-
-        def _download():
+        def check():
             try:
-                def _reporthook(block_num, block_size, total_size):
-                    if cancelled[0] or total_size <= 0:
-                        return
-                    pct = min(int(block_num * block_size * 100 / total_size), 99)
-                    QTimer.singleShot(0, lambda p=pct: progress.setValue(p))
-
-                urllib.request.urlretrieve(
-                    _OLLAMA_INSTALLER_URL, str(dest), reporthook=_reporthook
-                )
-
-                if cancelled[0]:
-                    return
-
-                QTimer.singleShot(0, lambda: _launch_installer(dest))
-
-            except Exception as exc:
-                QTimer.singleShot(0, lambda e=str(exc): _on_error(e))
-
-        def _launch_installer(exe_path: Path):
-            progress.close()
-            self._set_status("Ollama installer launched — follow the on-screen steps.")
-            try:
-                subprocess.Popen(
-                    [str(exe_path)],
-                    cwd=str(exe_path.parent),
-                )
-            except Exception as exc:
-                QMessageBox.warning(
-                    self, "Ollama Installer",
-                    f"Download complete but could not launch installer:\n{exe_path}\n\n{exc}"
-                )
-            finally:
-                self._ollama_btn.setEnabled(True)
-                self._ollama_btn.setText("Install Ollama")
-
-        def _on_error(err: str):
-            progress.close()
-            self._set_status("Ollama download failed.")
-            QMessageBox.warning(
-                self, "Ollama Download Failed",
-                f"Could not download the Ollama installer:\n\n{err}\n\n"
-                "Check your internet connection and try again, or visit:\n"
-                "https://ollama.com/download"
-            )
-            self._ollama_btn.setEnabled(True)
-            self._ollama_btn.setText("Install Ollama")
-
-        threading.Thread(target=_download, daemon=True).start()
+                from setup_dialog import needs_setup
+                if needs_setup():
+                    self._setup_signal.needed.emit()
+            except Exception:
+                pass
+        threading.Thread(target=check, daemon=True).start()
 
     # ── Fleet heartbeat + dashboard ───────────────────────────────────────
 
@@ -2186,6 +2075,14 @@ class CursivLauncher(QMainWindow):
         gs_act = QAction("Getting Started", self)
         gs_act.triggered.connect(self._show_getting_started)
         menu.addAction(gs_act)
+
+        setup_act = QAction("Setup…", self)
+        setup_act.triggered.connect(self._open_setup)
+        menu.addAction(setup_act)
+
+        report_act = QAction("Send problem report…", self)
+        report_act.triggered.connect(lambda: self._send_problem_report())
+        menu.addAction(report_act)
 
         term_act = QAction("Open in Terminal", self)
         term_act.triggered.connect(self._launch_terminal_chat)

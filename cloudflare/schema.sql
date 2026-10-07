@@ -84,3 +84,17 @@ CREATE TABLE IF NOT EXISTS cloud_daily (
   day   TEXT PRIMARY KEY,
   count INTEGER NOT NULL DEFAULT 0
 );
+
+-- Problem reports sent from the desktop app ("Send problem report").
+-- Read them with:  npx wrangler d1 execute cursiv --remote --command "SELECT id, created, version, note FROM reports ORDER BY created DESC LIMIT 20"
+CREATE TABLE IF NOT EXISTS reports (
+  id         TEXT PRIMARY KEY,
+  created    TEXT NOT NULL,
+  ip_hash    TEXT NOT NULL,
+  install_id TEXT,
+  version    TEXT,
+  os         TEXT,
+  note       TEXT,
+  logs       TEXT
+);
+CREATE INDEX IF NOT EXISTS reports_ip_day ON reports (ip_hash, created);

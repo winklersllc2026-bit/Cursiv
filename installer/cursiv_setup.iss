@@ -16,8 +16,8 @@
 ; Encoded local stamp: ΧκΖ∈ηβōΡν∀λ∂ψΩāΣγφΨδĀΨνā∇αΗĪΩŪχΥīΚκεδΜΟδζ∂Ι=
 ; CURSIV-CRUCIBLE-STAMP END
 ; ============================================================
-; Cursiv v3.14-U34 — Cursiv Cloud, free keys, agent council, fast startup
-; Produces: installer\Output\Cursiv-Setup-3.14-U34.exe
+; Cursiv v3.14-U35 — Data in one safe place, one-screen setup, problem reports
+; Produces: installer\Output\Cursiv-Setup-3.14-U35.exe
 ;
 ; Single PyInstaller bundle: Cursiv.exe (GUI launcher with embedded chat
 ; panel, tray, guardian, feedback loops, and terminal/chat mode via -t).
@@ -28,7 +28,7 @@
 ; ============================================================
 
 #define AppName      "Cursiv"
-#define AppVer       "3.14-U34"
+#define AppVer       "3.14-U35"
 #define AppPublisher "Joshua Winkler"
 #define AppURL       "https://github.com/winklersllc2026-bit/Cursiv"
 #define AppExe       "Cursiv.exe"
@@ -50,7 +50,7 @@ LicenseFile=..\LICENSE
 InfoAfterFile=..\CHANGELOG.md
 AppComments=Offline AI workspace with cascade routing (xAI → OpenAI → Claude → Ollama), live status indicators, and security-question password recovery. No internet required after install. Your data never leaves your machine.
 OutputDir=Output
-OutputBaseFilename=Cursiv-Setup-3.14-U34
+OutputBaseFilename=Cursiv-Setup-3.14-U35
 SetupIconFile=..\launcher\resources\icons\cursiv.ico
 WizardSmallImageFile=..\launcher\resources\icons\cursiv_256.png
 Compression=lzma2/ultra64
@@ -115,14 +115,17 @@ Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; \
 ; uninstaller removes just this one entry instead -- see RemoveFromUserPath.
 
 [Run]
-; ── Full one-click bootstrap ─────────────────────────────────────────────────
+; ── Optional developer bootstrap (unchecked) ─────────────────────────────────
+; Cursiv's own Setup window (launcher/setup_dialog.py) installs Ollama and a
+; model when the app opens. This script is only for running Cursiv from source.
+; ── (was: Full one-click bootstrap) ─────────────────────────────────────────────────
 ; Opens 12 visible windows — installs Git, Python, Visual C++, Ollama,
 ; llama3.1 model, all pip packages, and verifies everything.
 ; Non-blocking so installer finishes; user watches each step in its own window.
 Filename: "powershell.exe"; \
   Parameters: "-NoProfile -ExecutionPolicy Bypass -WindowStyle Normal -File ""{app}\scripts\cursiv_full_setup.ps1"" -CursivDir ""{app}"""; \
-  Description: "Full setup — install Git, Python, Ollama, AI model, and all packages (12 steps)"; \
-  Flags: nowait postinstall skipifsilent runascurrentuser
+  Description: "Developer tools (optional): Git, Python, packages — Cursiv sets up its own AI engine when it opens"; \
+  Flags: nowait postinstall skipifsilent runascurrentuser unchecked
 
 ; Launch after install (the setup script also launches, but this is the checkbox option)
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; \

@@ -1550,8 +1550,8 @@ GOOGLE GEMINI  (the most generous free tier)
   1. Open https://aistudio.google.com/apikey
   2. Sign in with any Google account and accept the terms
   3. Click "Create API key" (pick any project, or let it make one)
-  4. Copy the key -- it starts with AIza
-  5. In Cursiv, type:   gemini AIza...your key...
+  4. Copy the key (it usually starts with AIza or AQ)
+  5. In Cursiv, type:   gemini <your key>
 
 GROQ  (very fast)
   1. Open https://console.groq.com/keys
@@ -1707,8 +1707,10 @@ def free_key_command(text: str) -> str | None:
     cmd = t.lower()
     if cmd in ("free keys", "free key", "keys free"):
         return FREE_KEY_HELP
-    for name, field, prefix, fn in (("gemini", "gemini_key", "AIza", _call_gemini_direct),
-                                    ("groq", "groq_key", "gsk_", _call_groq_direct)):
+    # Prefixes are only hints: providers change key formats (Google issues both
+    # "AIza..." and newer "AQ..." Gemini keys), so the live test call decides.
+    for name, field, prefixes, fn in (("gemini", "gemini_key", ("AIza", "AQ"), _call_gemini_direct),
+                                      ("groq", "groq_key", ("gsk_",), _call_groq_direct)):
         if cmd == name:
             return f"Usage: {name} <key>   ({'set' if _saved_key(field) else 'no key set'})\n\n" + FREE_KEY_HELP
         if cmd.startswith(name + " "):
@@ -1716,12 +1718,14 @@ def free_key_command(text: str) -> str | None:
             if key.lower() in ("off", "remove", "clear"):
                 _store_key(field, "")
                 return f"{name.title()} key removed."
-            if not key.startswith(prefix):
-                return f"That doesn't look like a {name.title()} key (they start with {prefix}).\n\n" + FREE_KEY_HELP
+            if len(key) < 20 or " " in key:
+                return f"That doesn't look like a whole {name.title()} key -- copy the full key and try again.\n\n" + FREE_KEY_HELP
             reply = "".join(fn([{"role": "user", "content": "Reply with just: OK"}], key, 8))
             if reply.lstrip().startswith(f"[{name.title()} error"):
+                hint = "" if key.startswith(prefixes) else (
+                    f"\n(Most {name.title()} keys start with {' or '.join(prefixes)} -- make sure you copied the API key itself.)")
                 return (f"{name.title()} key NOT saved -- the test call failed: {reply.strip()}\n"
-                        f"Check that you copied the whole key, then try again.")
+                        f"Check that you copied the whole key, then try again.{hint}")
             _store_key(field, key)
             return f"{name.title()} key saved and working. Cursiv will use it when your other providers aren't available."
     if cmd in ("cloud", "cloud status"):

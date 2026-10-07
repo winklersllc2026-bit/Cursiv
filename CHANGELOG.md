@@ -45,6 +45,16 @@
 -->
 # Changelog
 
+## v3.14-U35 — Data in one safe place, one-screen setup, problem reports (2026-10-07)
+
+**User data lives in `%USERPROFILE%\.cursiv`.** The installed app used to keep memory, strands, sessions, settings and keys inside the program folder (`_internal\.cursiv`, plus `{app}\.cursiv` for modules that resolve paths from the working directory), where reinstalls and updates could wipe them. On startup the installed app now copies anything missing into the home folder (never overwriting what's there — home's login files are the real ones), keeps the old folders as `.cursiv.moved-<date>` backups, and replaces them with directory junctions to the home folder, so every module reads and writes the same place (`launcher/data_home.py`). Source checkouts keep using the repo's `.cursiv`.
+
+**One Setup window instead of 12 PowerShell windows.** `launcher/setup_dialog.py`: install Ollama (download with progress, quiet install, start), download a model through Ollama's API (llama3.1 or a 1 GB qwen2.5, real GB/% progress, cancel and resume), and a "while you wait" step for Cursiv Cloud on/off and a free Gemini/Groq key (tested before saving). Opens automatically when Ollama or a model is missing; also launcher → Set Up and tray → Setup…. The installer's PowerShell bootstrap is now an unchecked optional "developer tools" step.
+
+**Gemini keys in any format.** `gemini <key>` refused Google's newer keys (they can start with `AQ`, not only `AIza`). The live test call now decides; the prefix is only a hint if the test fails.
+
+**Send problem report.** Launcher button, tray item, and a button on the crash / Login Unavailable / Startup Error popups and on a failed Create Account. Sends version and system info plus the tail of Cursiv's own logs — never chats, letters, memory or keys; keys, tokens, email addresses and the Windows user name are scrubbed, and the user sees exactly what will be sent. Stored on the Cloudflare site (`POST /api/report`, `reports` table, 10 per person per day); the user gets a short report ID. Create Account errors are now written to `logs/login.log` so a report can include them.
+
 ## v3.14-U34 — Cursiv Cloud, free AI keys, an agent council that runs on anything, fast startup (2026-10-07)
 
 **Cursiv Cloud.** A free backup AI served by the owner's Cloudflare Worker (`POST /api/cursiv/chat` on cursiv.winklers-llc.com): Gemini when the Worker has a key, otherwise Cloudflare Workers AI. Provider keys stay on the server; the app sends only the conversation. Local stays first — Cursiv Cloud answers only when no local model is ready (Ollama not installed, or no model yet), says so plainly the first time, and `cloud off` turns it off entirely. Limited to 150 messages per person and 1,500 site-wide per day.

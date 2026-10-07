@@ -377,6 +377,32 @@ async function cursivCloudChat(env, request) {
   return { reply, provider, remaining_today: Math.max(perIp - mine - 1, 0) };
 }
 
+// ── Problem reports from the desktop app ─────────────────────────────────────
+// The app's "Send problem report" button posts version info and its own log
+// files (scrubbed of keys and the Windows user name on the app side). Stored
+// for the owner to read; nothing is shown publicly. The visitor IP is stored
+// only as a hash, for the daily limit.
+
+const REPORT_MAX_LOG_CHARS = 200000;
+
+async function problemReport(env, request) {
+  const body = await readJson(request);
+  const ip = request.headers.get("CF-Connecting-IP") || "local";
+  const ipHash = (await sha256Hex(`report|${ip}`)).slice(0, 16);
+  const day = nowIso().slice(0, 10);
+  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM reports WHERE ip_hash = ? AND created LIKE ?")
+    .bind(ipHash, `${day}%`).first();
+  if (n >= Number(env.REPORTS_PER_IP_DAILY || 10)) throw new HttpError(429, "Too many reports today — try again tomorrow.");
+
+  const id = Array.from(crypto.getRandomValues(new Uint8Array(4)), (b) => "ABCDEFGHJKMNPQRSTUVWXYZ23456789"[b % 31]).join("")
+           + "-" + Array.from(crypto.getRandomValues(new Uint8Array(4)), (b) => "ABCDEFGHJKMNPQRSTUVWXYZ23456789"[b % 31]).join("");
+  await env.DB.prepare(
+    "INSERT INTO reports (id, created, ip_hash, install_id, version, os, note, logs) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+  ).bind(id, nowIso(), ipHash, str(body.install_id).slice(0, 64), str(body.version).slice(0, 32),
+         str(body.os).slice(0, 200), str(body.note).slice(0, 4000), str(body.logs).slice(0, REPORT_MAX_LOG_CHARS)).run();
+  return { ok: true, id };
+}
+
 async function register(env, request) {
   const body = await readJson(request);
   const username = str(body.username).trim().toLowerCase();
@@ -577,6 +603,7 @@ async function route(env, request, url) {
   if (p === "/api/posts" && m === "GET") return feed(env);
   if (p === "/api/demo/chat" && m === "POST") return [200, await demoChat(env, request)];
   if (p === "/api/cursiv/chat" && m === "POST") return cursivCloudChat(env, request);
+  if (p === "/api/report" && m === "POST") return [201, await problemReport(env, request)];
   if (p === "/api/register" && m === "POST") return [201, await register(env, request)];
   if (p === "/api/login" && m === "POST") return login(env, request);
   if (p === "/api/me" && m === "GET") {

@@ -34,6 +34,32 @@ else:
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
+# ── One home for user data (installed app only) ───────────────────────────
+# Before anything touches .cursiv: point the program-folder .cursiv folders at
+# %USERPROFILE%\.cursiv so updates and reinstalls can never wipe user data.
+try:
+    from data_home import link_data_folders
+    link_data_folders()
+except Exception:
+    pass
+
+# ── Error popups with a "Send problem report" button ─────────────────────
+def _error_box(title: str, text: str, critical: bool = True) -> None:
+    """Show an error with a 'Send problem report' button (sends Cursiv's logs
+    to Joshua -- see problem_report.py). Falls back to a plain box."""
+    try:
+        from PyQt6.QtWidgets import QMessageBox
+        box = QMessageBox(QMessageBox.Icon.Critical if critical else QMessageBox.Icon.Warning, title, text)
+        report_btn = box.addButton("Send problem report", QMessageBox.ButtonRole.ActionRole)
+        box.addButton(QMessageBox.StandardButton.Ok)
+        box.exec()
+        if box.clickedButton() is report_btn:
+            from problem_report import open_report
+            open_report(None, f"{title}\n{text}")
+    except Exception:
+        pass
+
+
 # ── Crash logging ─────────────────────────────────────────────────────────
 # The packaged build runs with console=False (no terminal window), which
 # means Python's *default* crash handler tries to write to sys.stderr --
@@ -65,8 +91,8 @@ def _log_crash(exc_type, exc_value, exc_tb) -> None:
     try:
         from PyQt6.QtWidgets import QApplication, QMessageBox
         if QApplication.instance() is not None:
-            QMessageBox.critical(
-                None, "Cursiv — Unexpected Error",
+            _error_box(
+                "Cursiv — Unexpected Error",
                 "Cursiv hit an unexpected error and needs to close.\n\n"
                 f"Details were saved to:\n{_CRASH_LOG}\n\n"
                 f"{exc_type.__name__}: {exc_value}",
@@ -235,14 +261,14 @@ def main():
         # and drop straight into an unauthenticated "Joshua" session with no
         # register/reset UI -- surface it instead so a real install failure
         # doesn't look like "there's no login screen."
-        QMessageBox.warning(
-            None,
+        _error_box(
             "Cursiv — Login Unavailable",
             "Account login/setup couldn't load, so you're continuing without "
             "a password gate and can't create or reset an account right now.\n\n"
             f"Technical detail: {e}\n\n"
             "This usually means a required package didn't install correctly. "
-            "Try reinstalling, or report this message.",
+            "Try reinstalling, or click Send problem report.",
+            critical=False,
         )
 
     # ── Family member welcome ─────────────────────────────────────────────
@@ -281,8 +307,8 @@ def main():
     except Exception:
         import traceback
         details = traceback.format_exc()
-        QMessageBox.critical(
-            None, "Cursiv — Startup Error",
+        _error_box(
+            "Cursiv — Startup Error",
             "Cursiv couldn't finish opening its main window.\n\n"
             f"{details}",
         )
