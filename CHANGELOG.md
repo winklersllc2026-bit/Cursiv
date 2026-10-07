@@ -45,6 +45,10 @@
 -->
 # Changelog
 
+## v3.14-U46 — Normal mouse cursor inside the window (2026-10-07)
+
+After hovering a window edge, the double-arrow resize cursor stuck over the sidebar and chat: inner widgets inherited the root's cursor. The title bar, sidebar/chat area and footer now set the normal cursor explicitly, so resize arrows only appear on the edge strips.
+
 ## v3.14-U45 — Coding models in the Setup window; no console windows (2026-10-07)
 
 - **Setup → Coding model (optional):** download qwen2.5-coder 7B (recommended for most PCs, 4.7 GB) or 14B inside Cursiv with a progress bar. The launcher's coding-model buttons open Setup instead of a PowerShell console.
