@@ -73,6 +73,7 @@ import sys
 import threading
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable
 
 # ── ANSI palette ──────────────────────────────────────────────────────────────
@@ -190,9 +191,13 @@ def _engines(cfg: dict) -> list[dict[str, Any]]:
     from cursiv_v215.ui import chat_app as ca
 
     out: list[dict[str, Any]] = []
+    online = ca._is_online()      # checked once: offline -> only local engines
 
     def add(eid: str, name: str, short: str, call: Callable) -> None:
-        out.append({"id": eid, "name": name, "short": short, "color": _ENGINE_COLORS[eid], "call": call})
+        if eid != "ollama" and not online:
+            return
+        out.append({"id": eid, "name": name, "short": short, "color": _ENGINE_COLORS[eid], "call": call,
+                    "local": eid == "ollama"})
 
     key = (cfg.get("api_key") or "").strip()
     if key:
@@ -234,11 +239,27 @@ def council_available(cfg: dict) -> bool:
 _NOTICE_RE = re.compile(r"^\s*\*\[[^\]]*\]\*\s*")   # e.g. Cursiv Cloud's first-use notice
 
 
+# One local model can only think about one thing at a time; parallel requests
+# just queue inside Ollama until they time out. Local seats take turns instead.
+_LOCAL_LOCK = threading.Lock()
+
+_TRANSIENT = ("timed out", "timeout", "busy", "429", "503", "502", "overload", "temporarily", "no reply", "unavailable")
+
+
+def _is_transient(err: str) -> bool:
+    e = (err or "").lower()
+    return any(t in e for t in _TRANSIENT)
+
+
 def _ask(engine: dict, messages: list[dict], max_tokens: int) -> tuple[str, str | None]:
     """Run one engine to completion. Returns (text, error)."""
     from cursiv_v215.ui import chat_app as ca
     try:
-        text = "".join(c for c in engine["call"](messages, max_tokens) if c != ca.RATE_SENTINEL)
+        if engine.get("local"):
+            with _LOCAL_LOCK:
+                text = "".join(c for c in engine["call"](messages, max_tokens) if c != ca.RATE_SENTINEL)
+        else:
+            text = "".join(c for c in engine["call"](messages, max_tokens) if c != ca.RATE_SENTINEL)
     except Exception as exc:
         return "", f"{type(exc).__name__}: {exc}"[:160]
     text = _NOTICE_RE.sub("", text).strip()
@@ -255,7 +276,27 @@ def _ask(engine: dict, messages: list[dict], max_tokens: int) -> tuple[str, str 
 _SEAT_ORDER = ("Depth", "Anchor", "Spark", "Horizon", "Forge", "Story", "Speed", "Cosmos", "Echo", "Pulse")
 
 
-def _seat_system(agent: "CouncilAgent", full_mode: bool) -> str:
+_FACTS_FILE = Path(__file__).with_name("cursiv_facts.md")
+
+
+def _grounding(query: str) -> str:
+    """What Cursiv really is, plus the user's saved notes that match the question."""
+    parts = []
+    try:
+        parts.append(_FACTS_FILE.read_text(encoding="utf-8").strip())
+    except Exception:
+        pass
+    try:
+        from cursiv_v215.ui import chat_app as ca
+        mem = ca._build_strand_context(query, top_k=3)
+        if mem and mem.strip():
+            parts.append("The user's own saved notes that match this question:\n" + mem.strip())
+    except Exception:
+        pass
+    return "\n\n".join(parts)
+
+
+def _seat_system(agent: "CouncilAgent", full_mode: bool, grounding: str = "") -> str:
     # A genuine role brief, not an identity override: the engine is told what
     # Cursiv is and which seat it's powering, never told to claim to be a
     # different AI (models correctly refuse that as jailbreak-shaped).
@@ -272,12 +313,17 @@ def _seat_system(agent: "CouncilAgent", full_mode: bool) -> str:
         + "\nAnswer the user's question strictly through this seat's lens, in your own voice. "
         "You are not being asked to claim to be Cursiv or any other AI -- you are the engine for "
         "this one seat. Be concrete and substantive; skip preamble. " + length
+        + ("\n\nGround truth -- use it, and never contradict it:\n" + grounding if grounding else "")
+        + "\n\nIf the facts above don't cover something about Cursiv or the user, say you don't know "
+          "instead of inventing features, history or details."
     )
 
 
 def _plan_seats(engines: list[dict], full_mode: bool) -> list[dict]:
     from cursiv_v215.council.agents import COUNCIL_BY_NAME
     target = 7 if full_mode else 4
+    if all(e.get("local") for e in engines):
+        target = 4 if full_mode else 3        # one local model answers seats one at a time
     count = max(1, min(target, max(3, len(engines) * 3)))
     seats = []
     for i, name in enumerate(_SEAT_ORDER[:count]):
@@ -300,8 +346,16 @@ def _run_seat(seat: dict, engines: list[dict], messages_for, max_tokens: int,
         if err is None:
             return {**seat, "engine": engine, "text": text, "tried": tried}
         tried.append(f"{engine['short']}: {err}")
-        with lock:
-            bad.add(engine["id"])
+        if not _is_transient(err):          # bad key, offline, refused -> skip it for the rest of the run
+            with lock:
+                bad.add(engine["id"])
+    # Every engine failed; if a local one failed only temporarily, give it one more turn.
+    local = next((e for e in engines if e.get("local") and e["id"] not in bad), None)
+    if local is not None:
+        text, err = _ask(local, messages_for(seat), max_tokens)
+        if err is None:
+            return {**seat, "engine": local, "text": text, "tried": tried}
+        tried.append(f"{local['short']} (retry): {err}")
     return {**seat, "engine": None, "text": "", "tried": tried}
 
 
@@ -348,7 +402,7 @@ def _score_seats(query: str, results: list[dict], write_fn: Callable[[str], None
 # ── Synthesis ─────────────────────────────────────────────────────────────────
 
 def _synthesize(query: str, signals: dict[str, str], engines: list[dict], answered: list[str],
-                full_mode: bool, prior_wisdom: str, write_fn: Callable[[str], None]) -> str:
+                full_mode: bool, prior_wisdom: str, write_fn: Callable[[str], None], grounding: str = "") -> str:
     """Cursiv's synthesizing agents combine the seats. Runs on local Ollama when
     it's available (private, local-first), otherwise the best engine that
     answered, falling back through the rest."""
@@ -367,6 +421,9 @@ def _synthesize(query: str, signals: dict[str, str], engines: list[dict], answer
         "next steps, Balance makes sure nothing is pushed too far in one direction.\n\n"
         "Answer the user directly and usefully, in Cursiv's voice. Don't list the seats or "
         "describe the process. " + ("Be thorough." if full_mode else "Aim for a focused answer of a few paragraphs.")
+        + " Use only claims the seats or the ground truth below support; if they disagree with the ground truth, "
+          "the ground truth wins. Never invent features or facts about Cursiv or the user."
+        + ("\n\nGround truth:\n" + grounding if grounding else "")
     )
     user = f"The user asked:\n{query}\n\nCouncil seats:\n\n{seats_blk}{wisdom}"
     messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
@@ -399,6 +456,37 @@ def _synthesize(query: str, signals: dict[str, str], engines: list[dict], answer
     msg = f"[Synthesis unavailable -- no engine could write it. The seats' answers are above.]"
     write_fn(f"  {_RED}{msg}{_R}")
     return msg
+
+
+def _anchor_check(query: str, synthesis: str, signals: dict[str, str], grounding: str,
+                  engines: list[dict], write_fn: Callable[[str], None]) -> None:
+    """Anchor's grounding check on the final answer: list claims that neither a
+    seat nor the ground truth supports. Shown under the answer; never rewrites it."""
+    seats = "\n\n".join(f"[{n}]\n{t[:1500]}" for n, t in signals.items())
+    messages = [
+        {"role": "system", "content":
+            "You are Anchor, Cursiv's grounding check. Compare a final answer against its sources. "
+            "List only specific factual claims in the answer that are NOT supported by the sources "
+            "(especially invented features, history, numbers or details about Cursiv or the user). "
+            "Opinions, advice and suggestions are fine -- don't list those. "
+            "Reply with exactly 'GROUNDED' if nothing is unsupported; otherwise reply with up to 4 lines, "
+            "each starting with '- ', quoting the unsupported claim briefly."},
+        {"role": "user", "content": f"Question: {query}\n\nSources -- ground truth:\n{grounding}\n\n"
+                                    f"Sources -- council seats:\n{seats}\n\nFinal answer to check:\n{synthesis}"},
+    ]
+    order = [e for e in engines if e.get("local")] + [e for e in engines if not e.get("local")]
+    for engine in order:
+        text, err = _ask(engine, messages, 300)
+        if err is None:
+            verdict = text.strip()
+            if verdict.upper().startswith("GROUNDED"):
+                write_fn(f"\n  {_GRN}⬡ Anchor check: every claim is supported by the council or Cursiv's facts.{_R}\n")
+            else:
+                lines = [l.strip() for l in verdict.splitlines() if l.strip().startswith("-")][:4]
+                if lines:
+                    write_fn(f"\n  {_GLD}⬡ Anchor check — not supported by the sources, treat with care:{_R}\n"
+                             + "".join(f"  {_GLD}{l}{_R}\n" for l in lines))
+            return
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
@@ -463,8 +551,10 @@ def run_council(
     bad: set = set()
     try:
         # Round 1 -- every seat answers independently, in parallel.
+        grounding = _grounding(query)
+
         def round1(seat):
-            return [{"role": "system", "content": _seat_system(seat["agent"], full_mode)},
+            return [{"role": "system", "content": _seat_system(seat["agent"], full_mode, grounding)},
                     {"role": "user", "content": query}]
         results = _run_round(seats, engines, round1, max_tokens, _out, bad)
         scores = _score_seats(query, results, _out)
@@ -478,7 +568,7 @@ def run_council(
 
             def round2(seat):
                 others = "\n\n".join(f"[{n}]: {t[:600]}" for n, t in first.items() if n != seat["agent"].name)
-                return [{"role": "system", "content": _seat_system(seat["agent"], full_mode)},
+                return [{"role": "system", "content": _seat_system(seat["agent"], full_mode, grounding)},
                         {"role": "user", "content":
                             f"Question: {query}\n\nYour first answer from this seat:\n{first[seat['agent'].name][:900]}\n\n"
                             f"What the other seats said:\n\n{others}\n\nRefine your seat's position: agree briefly "
@@ -513,8 +603,10 @@ def run_council(
              f"  {_WHT}{_B}⬡ CURSIV{_R}  {_DIM}{'full deliberation' if full_mode else 'synthesis'}{_R}\n\n  {_WHT}")
         synthesis = _synthesize(query, signals, engines,
                                 list(dict.fromkeys(r["engine"]["id"] for r in answered)),
-                                full_mode, prior_wisdom, _out)
+                                full_mode, prior_wisdom, _out, grounding)
         _out(_R)
+        if synthesis and not synthesis.startswith("[Synthesis unavailable"):
+            _anchor_check(query, synthesis, signals, grounding, engines, _out)
 
         try:
             from cursiv_v215.council.council_memory import get_council_memory

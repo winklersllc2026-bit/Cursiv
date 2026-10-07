@@ -45,6 +45,18 @@
 -->
 # Changelog
 
+## v3.14-U41 — A council you can trust (2026-10-07)
+
+From a real offline council run where 4 of 7 seats timed out, the refinement round had no engines, and seats invented things about Cursiv ("brain-computer interfaces", "an American system"):
+
+- **Offline-aware:** the council checks the internet once; when offline it runs only on local Ollama instead of every seat failing on Gemini/Groq first.
+- **Local queue:** seats on local Ollama take turns (one model can only think about one thing at a time); fewer seats when only the local model is available. Temporary failures (timeouts, busy, 429/503) move a seat to another engine without blacklisting the first one; only hard failures (bad key, offline, refused) do. A seat that fails everywhere gets one more turn on the local model.
+- **Grounding:** every seat and the synthesis get `council/cursiv_facts.md` (what Cursiv really does — and what it doesn't) plus the user's best-matching saved notes, and are told to say "I don't know" rather than invent.
+- **Anchor check:** after the final answer, Anchor lists any factual claim neither a seat nor the facts support (shown under the answer; never rewrites it).
+- **Council memory:** past deliberations are injected only when the topic actually overlaps — recency alone used to clear the threshold, so unrelated recent deliberations leaked into answers.
+
+Tested offline, local-only, with the original question: 3 seats, no timeouts, no unanswered seats, no invented features.
+
 ## v3.14-U40 — Link the phone app to the computer (2026-10-07)
 
 A 📱 button in the title bar (and tray → Phone…) opens the Phone window (`launcher/phone_link.py`). Enter the 6-digit code from the phone app's Link button and the computer joins the same conversation: it shows every message and photo from the phone, checks for new ones every few seconds, and can send questions and photos (shrunk to 1600 px) that appear on the phone too. The link token is kept in `%USERPROFILE%\.cursiv\space.json`; Unlink removes it.

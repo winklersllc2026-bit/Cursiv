@@ -102,11 +102,15 @@ class CouncilMemory:
             self._entries = self._entries[-_MAX_ENTRIES:]
         self._save()
 
-    def find_similar(self, query: str, top_k: int = 2, min_score: float = 0.12) -> list[dict[str, Any]]:
+    def find_similar(self, query: str, top_k: int = 2, min_score: float = 0.12,
+                     min_similarity: float = 0.15) -> list[dict[str, Any]]:
         """Return up to top_k past deliberations most relevant to query.
 
         Score = 0.70 * jaccard_similarity + 0.30 * recency_decay.
-        Entries below min_score are excluded (avoids injecting noise).
+        Entries below min_score are excluded (avoids injecting noise), and so
+        are entries whose topic overlap alone is below min_similarity -- recency
+        by itself (up to 0.30) used to clear min_score, so any recent
+        deliberation was injected even when it had nothing to do with the query.
         """
         if not self._entries:
             return []
@@ -119,7 +123,7 @@ class CouncilMemory:
             sim   = _jaccard(q_tokens, e_tokens)
             decay = _decay(entry["timestamp"])
             score = 0.70 * sim + 0.30 * decay
-            if score >= min_score:
+            if score >= min_score and sim >= min_similarity:
                 scored.append((score, entry))
 
         scored.sort(key=lambda x: x[0], reverse=True)
