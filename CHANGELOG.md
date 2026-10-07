@@ -45,6 +45,10 @@
 -->
 # Changelog
 
+## v3.14-U40 — Link the phone app to the computer (2026-10-07)
+
+A 📱 button in the title bar (and tray → Phone…) opens the Phone window (`launcher/phone_link.py`). Enter the 6-digit code from the phone app's Link button and the computer joins the same conversation: it shows every message and photo from the phone, checks for new ones every few seconds, and can send questions and photos (shrunk to 1600 px) that appear on the phone too. The link token is kept in `%USERPROFILE%\.cursiv\space.json`; Unlink removes it.
+
 ## v3.14-U39 — No time limit on answers (2026-10-07)
 
 U38's 90-second time box stopped answers too early once the model's thinking time was counted. It's off by default now (`CURSIV_RESPONSE_SECONDS`, default 0); answers run until they finish. U38's higher length caps stay. Also: the phone page (cursiv.winklers-llc.com/app) — photo + chat Bible study, add to home screen.

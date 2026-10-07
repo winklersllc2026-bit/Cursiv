@@ -83,7 +83,7 @@ _WATCHDOG_MS     = 3_000         # ms between app-health checks
 _POLL_DEADLINE_S = 30            # seconds to wait for app to bind its port
 
 # ── Update checker ─────────────────────────────────────────────────────────────
-_CURRENT_VERSION   = "3.14-U39"
+_CURRENT_VERSION   = "3.14-U40"
 _GITHUB_API        = "https://api.github.com/repos/winklersllc2026-bit/Cursiv/releases/latest"
 _GITHUB_RELEASES   = "https://github.com/winklersllc2026-bit/Cursiv/releases"
 
@@ -1136,6 +1136,8 @@ class TitleBar(QWidget):
             row.addWidget(u)
 
         for symbol, tip, slot, col in [
+            ("📱", "Phone — link the phone app and see the shared conversation",
+             lambda: parent._open_phone() if hasattr(parent, "_open_phone") else None, GOLD),
             ("⚙", "Settings — AI keys, Cursiv Cloud, data folder",
              lambda: parent._open_settings() if hasattr(parent, "_open_settings") else None, GOLD),
             ("─", "Minimise", lambda: parent.showMinimized(), SILV2),
@@ -1966,6 +1968,13 @@ class CursivLauncher(QMainWindow):
         """Installing Ollama happens in the Setup window (real progress, no console)."""
         self._open_setup()
 
+    def _open_phone(self):
+        try:
+            from phone_link import PhoneDialog
+            PhoneDialog(self).exec()
+        except Exception as e:
+            self._set_status(f"Phone window failed to open: {e}")
+
     def _open_settings(self):
         try:
             from settings_dialog import SettingsDialog
@@ -2088,6 +2097,10 @@ class CursivLauncher(QMainWindow):
         gs_act = QAction("Getting Started", self)
         gs_act.triggered.connect(self._show_getting_started)
         menu.addAction(gs_act)
+
+        phone_act = QAction("Phone…", self)
+        phone_act.triggered.connect(lambda: self._open_phone())
+        menu.addAction(phone_act)
 
         setup_act = QAction("Setup…", self)
         setup_act.triggered.connect(self._open_setup)
