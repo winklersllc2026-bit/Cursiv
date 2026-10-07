@@ -45,6 +45,12 @@
 -->
 # Changelog
 
+## v3.14-U52 — Cursiv Forge: it grows new abilities (2026-10-07)
+- **`evolve <idea>`** — Cursiv writes itself a new ability as a plugin (e.g. `evolve a command that converts recipe amounts between cups and grams`). It's checked for safety (no running programs, no network, no deleting files), tested in a sandbox, and fixed automatically if the test fails. You read the code and a plain summary; nothing installs until you type `evolve approve`.
+- **Plugins** — `plugins` lists them; `plugin show/off/on/remove <name>`. Each approved plugin is fingerprinted: if its file changes, it won't load until you approve it again. A broken plugin is switched off, never crashes Cursiv. Every install is logged.
+- **Tools for every AI** — ask about your computer ("how much space is on my C drive?", "what's in my Downloads?", "read notes.txt and summarize it") and Cursiv looks before answering, with Groq, Gemini or a local model. Built-in tools are read-only and never read Cursiv's own data, keys or password stores. Plugins can add tools.
+- **Project memory** — Cursiv keeps a short running summary of each ongoing project you work on across chats and brings it back when it comes up. `projects` lists them; `project show/forget <name>`.
+
 ## v3.14-U51 — Learns from your corrections + tone (2026-10-07)
 - **Learns how you want it to talk.** Correct it once ("too formal", "stop using bullet points", "just give me the answer", "call me Josh") and it turns that into a standing rule it follows from then on — for each person separately. `style` shows your rules; `style add <rule>`, `style forget <words>` and `style clear` manage them.
 - **Tone switch.** `tone blunt`, `warm`, `brief`, `playful`, `legacy`, `teacher` or `normal` — kept until you change it.

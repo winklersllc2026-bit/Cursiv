@@ -3069,6 +3069,34 @@ You are in full autonomous coding mode. Follow this protocol exactly:
     except Exception:
         pass
 
+    # ── Project memory, plugin context, and tools (U52) ──────────────────────
+    if not (locals().get("_ph") and _ph.emergency):
+        try:
+            from cursiv_v215.memory import projects as _proj
+            from cursiv_v215.memory import semantic as _sem3
+            _pc = _proj.context(user_text, _sem3.current_person())
+            if _pc:
+                messages[0]["content"] += "\n\n" + _pc + "\n"
+        except Exception:
+            pass
+        try:
+            from cursiv_v215.core import plugins as _plugins
+            _hc = _plugins.message_context(user_text)
+            if _hc:
+                messages[0]["content"] += "\n\n## From your plugins\n" + _hc + "\n"
+        except Exception:
+            pass
+        try:
+            from cursiv_v215.core import tools as _tools
+            if _tools.might_need_tools(user_text):
+                _calls = _tools.plan(user_text, _router_llm)
+                if _calls:
+                    _results = _tools.run(_calls)
+                    messages[0]["content"] += "\n\n" + _tools.context_for(_results) + "\n"
+                    yield "*(Checked on this computer: " + "; ".join(l for l, _r in _results) + ")*\n\n"
+        except Exception:
+            pass
+
     # Codex Agent is invoked explicitly via the `codex <prompt>` command only.
     # Auto-intercept is disabled — Ollama handles coding Q&A directly with the
     # full system prompt injected, which produces better answers than Codex for
@@ -3351,6 +3379,11 @@ def _learn_later(message, reply: str) -> None:
             from cursiv_v215.memory import semantic as _sem
             if len(text.strip()) >= 20:
                 _sem.learn_from_exchange(text, reply, _quick_llm)
+            try:              # project memory: running summary of ongoing projects
+                from cursiv_v215.memory import projects as _proj
+                _proj.learn(text, reply, _quick_llm, _sem.current_person())
+            except Exception:
+                pass
             if coding:        # coding lessons: their setup, errors hit, fixes that worked
                 from cursiv_v215.coding import brain as _cb
                 _cb.learn_from_exchange(text, reply, _quick_llm, _sem.current_person())
@@ -3443,6 +3476,20 @@ def _friendly(sk, gen):
                 yield nice
                 continue
         yield chunk
+
+
+def _router_llm(messages: list[dict]) -> str:
+    """Fast, small decision calls during a chat (tool routing): free keys first, then the
+    local model directly -- not _quick_llm, which waits until no chat is running."""
+    for field, fn in (("groq_key", _call_groq_direct), ("gemini_key", _call_gemini_direct)):
+        key = _saved_key(field)
+        if key:
+            out = "".join(fn(messages, key, 300)).strip()
+            if out and not out.startswith(("[Groq error", "[Gemini error")):
+                return out
+    if _ollama_running() and _resolve_ollama_model():
+        return "".join(c for c in _call_ollama(messages, max_tokens=300) if c != RATE_SENTINEL).strip()
+    return ""
 
 
 def warm_up_local() -> None:

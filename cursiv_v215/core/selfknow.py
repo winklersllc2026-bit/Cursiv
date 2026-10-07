@@ -14,7 +14,7 @@ import re
 import time
 from pathlib import Path
 
-VERSION = "3.14-U51"
+VERSION = "3.14-U52"
 FACTS_FILE = Path(__file__).parent.parent / "council" / "cursiv_facts.md"
 RECENT_ERRORS: collections.deque = collections.deque(maxlen=8)
 
@@ -109,6 +109,13 @@ def live_report() -> str:
         pass
     try:
         conv_dir = Path.home() / ".cursiv" / "conversations"
+        from cursiv_v215.core import plugins as _plugins
+        _plugins.load_all()
+        _ok = [n for n, s in _plugins._status.items() if s.get("loaded")]
+        lines.append(f"Plugins: {', '.join(_ok) if _ok else 'none'}" +
+                     (f" ({len(_plugins._status) - len(_ok)} switched off/broken)" if len(_plugins._status) > len(_ok) else ""))
+        from cursiv_v215.memory import projects as _projects
+        lines.append(f"Projects tracked: {', '.join(_projects.load(person)) or 'none'}")
         from cursiv_v215.core import style as _style
         _st = _style.load(person)
         lines.append(f"Tone: {_st.get('tone', 'normal')}; style rules learned from corrections: {len(_st.get('rules', []))}")
@@ -153,6 +160,9 @@ small GPU, etc.) and be concrete about how to do it in Cursiv (which window or c
 - "What I remember" window (Settings or tray): search, add, forget memories; learning on/off.
 - Tray menu: What I remember…, Phone…, Setup…, Send problem report…, Quit.
 - Chat commands: remember <fact>, forget <words>, what do you remember, memory learn on/off, free keys, cloud on/off/status, council <question>, codex <request> (codex help, codex keep, codex project <folder>, codex lessons, codex learn <lesson>), phases, help.
+- Cursiv Forge: evolve <idea> (writes a plugin, safety-checks it, tests it in a sandbox; installs only after evolve approve), plugins, plugin show/off/on/remove/approve <name>. Plugins live in .cursiv/plugins.
+- Tools: when a message is about this computer (files, folders, disk space, RAM), Cursiv reads it with read-only tools (system_info, list_folder, read_file, find_files) plus any plugin tools; private places are never read.
+- Project memory: projects, project show/forget <name> -- running summaries of ongoing projects, brought back automatically when a project comes up.
 - Tone and style: tone blunt/warm/brief/playful/legacy/teacher/normal; style (show rules learned from corrections), style add <rule>, style forget <words>, style clear.
 - Custom agents: agents (list), agent new <name>: <job>, @name <message>, agent teach <name> <fact>, agent show/edit/delete <name>, agent council <question>.
 - There is no setting for context length or for choosing the chat model by hand; Cursiv picks models by graphics card. To change models, download a different one in Setup.
