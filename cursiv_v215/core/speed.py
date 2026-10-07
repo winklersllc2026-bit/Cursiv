@@ -19,6 +19,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import threading
 import time
 import urllib.request
@@ -45,6 +46,22 @@ def gpu_vram_mb() -> int:
         best = max([int(x) for x in out.split() if x.isdigit()] or [0])
     except Exception:
         pass
+    if sys.platform.startswith("linux") and not best:
+        # AMD (and some Intel) cards report VRAM through sysfs
+        try:
+            for f in Path("/sys/class/drm").glob("card*/device/mem_info_vram_total"):
+                best = max(best, int(f.read_text().strip()) // (1024 * 1024))
+        except Exception:
+            pass
+    if sys.platform == "darwin" and not best:
+        # Apple chips share memory with the GPU; Metal can use roughly two-thirds of it
+        try:
+            out = subprocess.run(["sysctl", "-n", "hw.memsize"], capture_output=True, text=True, timeout=5).stdout
+            arm = subprocess.run(["uname", "-m"], capture_output=True, text=True, timeout=5).stdout.strip() == "arm64"
+            if arm:
+                best = int(int(out.strip()) * 0.66) // (1024 * 1024)
+        except Exception:
+            pass
     if os.name == "nt":
         try:
             import winreg

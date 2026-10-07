@@ -101,10 +101,8 @@ def _iter_cancellable(gen, cancel_event: threading.Event):
 
 
 def _is_ollama_installed() -> bool:
-    import os
-    import shutil
-    exe = Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Ollama" / "ollama.exe"
-    return bool(shutil.which("ollama")) or exe.exists()
+    import platform_util
+    return platform_util.ollama_exe() is not None
 
 
 class _ChatSignals(QObject):

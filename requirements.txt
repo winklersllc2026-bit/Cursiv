@@ -53,7 +53,7 @@ Pillow>=10.3.0
 
 # ── System utilities ─────────────────────────────────────────
 psutil>=5.9.8
-pywin32>=306
+pywin32>=306; platform_system == "Windows"
 
 # ── Data / science ───────────────────────────────────────────
 numpy>=1.26.0

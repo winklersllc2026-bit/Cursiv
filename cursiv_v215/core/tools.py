@@ -68,7 +68,20 @@ def system_info() -> str:
         lines.append(f"RAM: {m.ullTotalPhys / 2**30:.1f} GB total, {m.ullAvailPhys / 2**30:.1f} GB free ({m.dwMemoryLoad}% in use)")
     except Exception:
         pass
-    for letter in "CDEFGH":
+    if os.name != "nt":
+        try:
+            if os.path.exists("/proc/meminfo"):
+                mi = {l.split(":")[0]: int(l.split()[1]) for l in open("/proc/meminfo") if l.split()[1:2]}
+                lines.append(f"RAM: {mi['MemTotal'] / 2**20:.1f} GB total, {mi.get('MemAvailable', 0) / 2**20:.1f} GB free")
+            else:
+                import subprocess
+                total = int(subprocess.run(["sysctl", "-n", "hw.memsize"], capture_output=True, text=True).stdout.strip())
+                lines.append(f"RAM: {total / 2**30:.1f} GB total")
+            u = shutil.disk_usage(str(Path.home()))
+            lines.append(f"Disk (home): {u.free / 2**30:.0f} GB free of {u.total / 2**30:.0f} GB")
+        except Exception:
+            pass
+    for letter in ("CDEFGH" if os.name == "nt" else ""):
         root = f"{letter}:\\"
         if os.path.exists(root):
             try:
@@ -192,7 +205,26 @@ Reply with JSON only: {{"calls": [{{"tool": "<name>", "args": {{...}}}}]}} with 
 Use Windows paths. Home folder: {home}. Don't guess file names you weren't told -- list or search first."""
 
 
+_SYS_Q = re.compile(r"\b(disk|drive|storage|space|ram|memory usage|how much memory|specs?|cpu|processor|gpu|"
+                    r"graphics card|vram|system info|my (computer|pc|laptop)'?s? (specs|info))\b", re.I)
+_FOLDER_Q = re.compile(r"\b(what'?s|what is|list|show)\b.{0,20}\b(in )?(my )?(downloads|desktop|documents|pictures)\b", re.I)
+
+
+def quick_plan(text: str) -> list[dict]:
+    """Obvious questions get their tool directly -- no AI needed to decide."""
+    calls = []
+    m = _FOLDER_Q.search(text or "")
+    if m:
+        calls.append({"tool": "list_folder", "args": {"path": m.group(3).lower()}})
+    if _SYS_Q.search(text or "") and not re.search(r"\b(remember|memories)\b", text or "", re.I):
+        calls.append({"tool": "system_info", "args": {}})
+    return calls
+
+
 def plan(text: str, ask: Callable[[list[dict]], str]) -> list[dict]:
+    quick = quick_plan(text)
+    if quick and not re.search(r"\b(read|open|file|find|search for)\b|[A-Za-z]:[\\/]|\.\w{2,4}\b", text or "", re.I):
+        return quick
     tools = all_tools()
     desc = "\n".join(f"- {n}: {t['description']}" for n, t in tools.items())
     try:
@@ -201,8 +233,9 @@ def plan(text: str, ask: Callable[[list[dict]], str]) -> list[dict]:
         m = re.search(r"\{.*\}", raw, re.S)
         calls = json.loads(m.group(0)).get("calls", []) if m else []
     except Exception:
-        return []
-    return [c for c in calls[:3] if isinstance(c, dict) and c.get("tool") in tools]
+        return quick
+    calls = [c for c in calls[:3] if isinstance(c, dict) and c.get("tool") in tools]
+    return calls or quick
 
 
 def run(calls: list[dict]) -> list[tuple[str, str]]:

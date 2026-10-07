@@ -39,6 +39,8 @@ import subprocess
 import sys
 import tempfile
 import threading
+import shlex
+import shutil
 import time
 import urllib.error
 import urllib.request
@@ -96,16 +98,17 @@ _MACHINE_ID   = hashlib.sha256(
 ).hexdigest()[:24]
 
 # ── Ollama ────────────────────────────────────────────────────────────────────
-_OLLAMA_INSTALLER_URL = "https://ollama.com/download/OllamaSetup.exe"
+import platform_util as _pu
+
+_OLLAMA_INSTALLER_URL = _pu.OLLAMA_DOWNLOAD
 _OLLAMA_EXE_PATH      = (
     Path(os.environ.get("LOCALAPPDATA", ""))
     / "Programs" / "Ollama" / "ollama.exe"
-)
+) if _pu.IS_WIN else (_pu.ollama_exe() or Path("/usr/local/bin/ollama"))
 
 
 def _is_ollama_installed() -> bool:
-    import shutil
-    return bool(shutil.which("ollama")) or _OLLAMA_EXE_PATH.exists()
+    return _pu.ollama_exe() is not None
 
 
 def _ollama_ps_invocation() -> str:
@@ -258,15 +261,12 @@ def _secrets_env() -> dict:
 
 
 def _launch_hidden(cmd: list[str], cwd: Optional[str] = None) -> subprocess.Popen:
-    si = subprocess.STARTUPINFO()
-    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-    si.wShowWindow = 0
     return subprocess.Popen(
         cmd,
         cwd=cwd or str(_ROOT),
         env=_secrets_env(),
-        startupinfo=si,
-        creationflags=subprocess.CREATE_NO_WINDOW,
+        startupinfo=_pu.hidden_startupinfo(),
+        creationflags=_pu.NO_WINDOW,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
@@ -280,6 +280,8 @@ def _find_python() -> str:
 
 
 def _find_wt() -> Optional[str]:
+    if not _pu.IS_WIN:
+        return None
     try:
         r = subprocess.run(["where", "wt"], capture_output=True, text=True)
         if r.returncode == 0:
@@ -372,10 +374,13 @@ class UpdateChecker:
                 data = json.loads(resp.read().decode("utf-8"))
             tag  = data.get("tag_name", "").lstrip("v")
             body = data.get("body", "")
-            exes = [a for a in data.get("assets", []) if a.get("name", "").lower().endswith(".exe")]
-            # Prefer the stable "-latest" name, then any setup exe.
-            exes.sort(key=lambda a: 0 if a["name"].lower() == "cursiv-setup-latest.exe" else 1)
-            asset = exes[0] if exes else None
+            # The download for this system: setup .exe (Windows), AppImage (Linux), app zip (macOS).
+            wanted = [n.lower() for n in _pu.update_asset_names()]
+            assets = [a for a in data.get("assets", []) if a.get("name", "").lower() in wanted]
+            assets.sort(key=lambda a: wanted.index(a["name"].lower()))
+            if not assets and _pu.IS_WIN:
+                assets = [a for a in data.get("assets", []) if a.get("name", "").lower().endswith(".exe")]
+            asset = assets[0] if assets else None
             self._signals.result.emit({
                 "ok":       True,
                 "tag":      tag,
@@ -399,10 +404,37 @@ def _run_installer_and_quit(installer: str) -> None:
     12-step first-time setup is skipped (its [Run] entry is skipifsilent).
     /UPDATE=1 makes the installer reopen Cursiv when it finishes.
     """
-    subprocess.Popen(
-        [installer, "/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS", "/UPDATE=1"],
-        close_fds=True,
-    )
+    if _pu.IS_WIN:
+        subprocess.Popen(
+            [installer, "/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS", "/UPDATE=1"],
+            close_fds=True,
+        )
+    elif _pu.IS_LINUX:
+        # AppImage: swap the file in place, then start the new one.
+        target = os.environ.get("APPIMAGE")
+        if not target:
+            raise RuntimeError("this copy wasn't started from an AppImage -- download the new one from the website")
+        staged = target + ".new"
+        shutil.copyfile(installer, staged)
+        os.chmod(staged, 0o755)
+        os.replace(staged, target)
+        subprocess.Popen([target], close_fds=True, start_new_session=True)
+    else:
+        # macOS: unzip the new Cursiv.app, and once this process has exited, swap it in and reopen.
+        exe = Path(sys.executable).resolve()
+        app = next((p for p in exe.parents if p.suffix == ".app"), None)
+        if app is None:
+            raise RuntimeError("couldn't find the Cursiv.app bundle -- download the new one from the website")
+        stage = Path(tempfile.mkdtemp(prefix="cursiv_update_"))
+        subprocess.run(["ditto", "-x", "-k", installer, str(stage)], check=True)
+        new_app = next(stage.glob("*.app"))
+        script = stage / "swap.sh"
+        script.write_text(
+            f"#!/bin/sh\nwhile kill -0 {os.getpid()} 2>/dev/null; do sleep 1; done\n"
+            f"rm -rf {shlex.quote(str(app))}\nmv {shlex.quote(str(new_app))} {shlex.quote(str(app))}\n"
+            f"xattr -dr com.apple.quarantine {shlex.quote(str(app))} 2>/dev/null\nopen {shlex.quote(str(app))}\n")
+        os.chmod(script, 0o755)
+        subprocess.Popen(["/bin/sh", str(script)], close_fds=True, start_new_session=True)
     # Give the installer a moment to start, then shut down cleanly (aboutToQuit
     # -> _cleanup stops our process, services, and the instance lock).
     QTimer.singleShot(1500, QApplication.quit)
@@ -503,7 +535,7 @@ class UpdateDialog(QDialog):
     def _do_download(self, url: str):
         """Background thread -- talks to the UI only through self._signals."""
         try:
-            dest = Path(tempfile.gettempdir()) / f"Cursiv-Setup-{self._tag}.exe"
+            dest = Path(tempfile.gettempdir()) / (url.rsplit("/", 1)[-1] or f"Cursiv-update-{self._tag}")
             req = urllib.request.Request(url, headers={"User-Agent": "Cursiv-Launcher"})
             with urllib.request.urlopen(req, timeout=30) as resp, open(dest, "wb") as out:
                 total = int(resp.headers.get("Content-Length") or self._expected_size or 0)

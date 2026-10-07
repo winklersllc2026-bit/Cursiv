@@ -11,6 +11,7 @@ from __future__ import annotations
 import collections
 import json
 import re
+import sys
 import time
 from pathlib import Path
 
@@ -76,7 +77,9 @@ def _safe(fn, default="unknown"):
 def live_report() -> str:
     from cursiv_v215.ui import chat_app as ca
     from cursiv_v215.core import speed
-    lines = [f"Version: Cursiv {VERSION} (Windows desktop app, PyQt window; phone app at cursiv.winklers-llc.com/app)"]
+    import platform as _platform
+    _os = {"win32": "Windows", "darwin": "macOS"}.get(sys.platform, "Linux")
+    lines = [f"Version: Cursiv {VERSION} ({_os} desktop app, {_platform.machine()}; phone app at cursiv.winklers-llc.com/app)"]
 
     keys = [label for label, f in (("Groq (free)", "groq_key"), ("Gemini (free)", "gemini_key"), ("Claude", "anthropic_key"),
                                    ("xAI Grok", "api_key"), ("OpenAI", "openai_key")) if _safe(lambda f=f: ca._saved_key(f), "")]

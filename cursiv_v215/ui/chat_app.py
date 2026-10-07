@@ -3489,6 +3489,10 @@ def _router_llm(messages: list[dict]) -> str:
                 return out
     if _ollama_running() and _resolve_ollama_model():
         return "".join(c for c in _call_ollama(messages, max_tokens=300) if c != RATE_SENTINEL).strip()
+    if cloud_enabled():
+        out = "".join(_call_cursiv_cloud(messages, max_tokens=300)).strip()
+        if out and not out.startswith("[Cursiv Cloud error"):
+            return out
     return ""
 
 

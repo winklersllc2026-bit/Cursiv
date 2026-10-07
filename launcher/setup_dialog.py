@@ -34,7 +34,9 @@ BG, BG2, BORDER = "#0b0b12", "#13131e", "#2a2a3f"
 GOLD, SILVER, SILV2 = "#FFD700", "#C8C8D4", "#666680"
 GREEN, RED, AMBER = "#3ecf6e", "#FF4455", "#e8a020"
 
-OLLAMA_INSTALLER_URL = "https://ollama.com/download/OllamaSetup.exe"
+import platform_util as _pu
+
+OLLAMA_INSTALLER_URL = _pu.OLLAMA_DOWNLOAD
 OLLAMA_EXE = Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Ollama" / "ollama.exe"
 OLLAMA_API = "http://127.0.0.1:11434"
 
@@ -66,7 +68,7 @@ _NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 # ── Checks (plain functions, safe to call from any thread) ───────────────────
 
 def ollama_installed() -> bool:
-    return bool(shutil.which("ollama")) or OLLAMA_EXE.exists()
+    return _pu.ollama_exe() is not None
 
 
 def ollama_running() -> bool:
@@ -90,7 +92,14 @@ def start_ollama() -> bool:
     """Start the Ollama server in the background if it isn't running."""
     if ollama_running():
         return True
-    exe = shutil.which("ollama") or (str(OLLAMA_EXE) if OLLAMA_EXE.exists() else None)
+    if _pu.IS_MAC and Path("/Applications/Ollama.app").exists():
+        _pu.start_ollama_app()                 # the Mac app runs its own server
+        for _ in range(30):
+            time.sleep(1)
+            if ollama_running():
+                return True
+        return False
+    exe = str(_pu.ollama_exe()) if _pu.ollama_exe() else None
     if not exe:
         return False
     try:
@@ -112,9 +121,10 @@ def start_ollama() -> bool:
 
 def restart_ollama() -> bool:
     """Quit and restart Ollama (fixes it not seeing downloaded models)."""
-    for name in ("ollama app.exe", "ollama.exe"):
-        subprocess.run(["taskkill", "/F", "/IM", name], capture_output=True, creationflags=_NO_WINDOW)
+    _pu.stop_ollama()
     time.sleep(2)
+    if not _pu.IS_WIN:
+        return start_ollama()
     app = OLLAMA_EXE.with_name("ollama app.exe")
     try:
         if app.exists():
@@ -313,7 +323,7 @@ class SetupDialog(QDialog):
         running = installed and ollama_running()   # check only -- never block the window
         models = installed_models() if running else []
         if not installed:
-            self._set_status(self._s1, False, "Not installed yet. Install is free (about 1 GB) and needs no admin rights.")
+            self._set_status(self._s1, False, "Not installed yet. Install is free (about 1 GB)" + (" — it asks for your password once." if _pu.IS_LINUX else " and needs no admin rights."))
         elif not running:
             self._set_status(self._s1, False, "Installed, but it isn't running. Click Start.")
         else:
@@ -360,7 +370,9 @@ class SetupDialog(QDialog):
 
     def _do_install(self):
         try:
-            if not ollama_installed():
+            if not ollama_installed() and not _pu.IS_WIN:
+                self._install_ollama_unix()
+            elif not ollama_installed():
                 dest = Path(tempfile.gettempdir()) / "OllamaSetup.exe"
                 req = urllib.request.Request(OLLAMA_INSTALLER_URL, headers={"User-Agent": "Cursiv-Setup"})
                 with urllib.request.urlopen(req, timeout=60) as r, open(dest, "wb") as out:
@@ -382,6 +394,38 @@ class SetupDialog(QDialog):
             self._sig.done.emit("s1", True, "Ollama is installed and running.")
         except Exception as exc:
             self._sig.done.emit("s1", False, f"Couldn't install Ollama: {exc}")
+
+    def _install_ollama_unix(self):
+        """Linux: Ollama's official installer, with a graphical password prompt.
+        macOS: download the app, unpack it into Applications, open it."""
+        if _pu.IS_LINUX:
+            cmd = _pu.linux_install_ollama_command()
+            if not cmd:
+                raise RuntimeError("install it from a terminal with:  curl -fsSL https://ollama.com/install.sh | sh  "
+                                   "-- then click Check again")
+            self._sig.progress.emit("s1", -1, "Installing Ollama — enter your password in the window that appears…")
+            rc = subprocess.run(cmd).returncode
+            if rc != 0 or not ollama_installed():
+                raise RuntimeError(f"the Ollama installer stopped (code {rc}). You can also run: "
+                                   "curl -fsSL https://ollama.com/install.sh | sh")
+            return
+        # macOS
+        zip_url = "https://ollama.com/download/Ollama-darwin.zip"
+        dest = Path(tempfile.gettempdir()) / "Ollama-darwin.zip"
+        req = urllib.request.Request(zip_url, headers={"User-Agent": "Cursiv-Setup"})
+        with urllib.request.urlopen(req, timeout=60) as r, open(dest, "wb") as out:
+            total = int(r.headers.get("Content-Length") or 0)
+            got = 0
+            while chunk := r.read(1 << 20):
+                out.write(chunk)
+                got += len(chunk)
+                self._sig.progress.emit("s1", int(got * 100 / total) if total else -1,
+                                        f"Downloading Ollama… {got >> 20} MB" + (f" of {total >> 20} MB" if total else ""))
+        self._sig.progress.emit("s1", -1, "Installing Ollama into Applications…")
+        rc = subprocess.run(["ditto", "-x", "-k", str(dest), "/Applications"]).returncode
+        if rc != 0 or not Path("/Applications/Ollama.app").exists():
+            raise RuntimeError("couldn't put Ollama in Applications. " + _pu.ollama_install_steps())
+        _pu.start_ollama_app()
 
     def _restart_ollama(self):
         self._busy = True

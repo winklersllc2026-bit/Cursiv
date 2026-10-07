@@ -194,7 +194,28 @@ if sys.platform == "win32":
             pass
 
 
+def _selftest() -> int:
+    """`Cursiv --selftest`: load the core and build the window offscreen, then exit.
+    Used by the Linux/macOS build machines to prove each build actually starts."""
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    from PyQt6.QtWidgets import QApplication
+    app = QApplication(sys.argv)
+    import platform_util
+    from cursiv_v215.ui import chat_app            # the whole chat core
+    from cursiv_v215.core import speed, tools, selfknow, plugins, style  # noqa: F401
+    from cursiv_launcher import CursivLauncher
+    w = CursivLauncher(username="selftest")
+    print(f"CURSIV SELFTEST OK on {platform_util.OS_NAME}: window {w.width()}x{w.height()}, "
+          f"gpu {speed.gpu_vram_mb()} MB, ollama {'found' if platform_util.ollama_exe() else 'not installed'}", flush=True)
+    w.close()
+    app.quit()
+    return 0
+
+
 def main():
+    if "--selftest" in sys.argv:
+        sys.exit(_selftest())
+
     # ── Terminal mode: explicit flag OR auto-detected console parent ─────
     # Use 'cursiv --gui' to force the launcher window from a terminal.
     if "--gui" not in sys.argv and (
@@ -224,6 +245,11 @@ def main():
     app.setApplicationVersion("3.0.0")
     app.setOrganizationName("Joshua Winkler")
     app.setQuitOnLastWindowClosed(False)
+    try:
+        import platform_util
+        platform_util.ensure_emoji_font()
+    except Exception:
+        pass
 
     # ── Single-instance enforcement ───────────────────────────────────────
     try:

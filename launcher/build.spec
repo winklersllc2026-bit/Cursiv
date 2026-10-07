@@ -121,14 +121,6 @@ hiddenimports = [
     "cursiv_v215.substrate.activator",
     "cursiv_v215.substrate.ruw",
     "cursiv_v215.substrate.curs_lang",
-    # Windows / system
-    "win32api",
-    "win32con",
-    "win32gui",
-    "win32event",
-    "win32serviceutil",
-    "win32service",
-    "servicemanager",
     "psutil",
     "anthropic",
     "openai",
@@ -138,6 +130,18 @@ hiddenimports = [
     "gradio_client",
     "safehttpx",
 ]
+
+if sys.platform == "win32":
+    hiddenimports += ["win32api", "win32con", "win32gui", "win32event",
+                      "win32serviceutil", "win32service", "servicemanager"]
+
+# Linux: bundle an emoji font for systems that have none (Raspberry Pi OS, WSL);
+# CI puts NotoColorEmoji.ttf (SIL Open Font License) in launcher/resources/fonts.
+_fonts = LAUNCHER / "resources" / "fonts"
+if _fonts.exists():
+    _extra_datas.append((str(_fonts), "launcher/resources/fonts"))
+
+_ICON = {"win32": "cursiv.ico", "darwin": "cursiv_256.png"}.get(sys.platform, "cursiv_256.png")
 
 a = Analysis(
     [str(LAUNCHER / "main.py")],
@@ -187,7 +191,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=str(LAUNCHER / "resources" / "icons" / "cursiv.ico"),
+    icon=str(LAUNCHER / "resources" / "icons" / _ICON),
 )
 
 coll = COLLECT(
@@ -200,3 +204,18 @@ coll = COLLECT(
     upx_exclude=[],
     name="Cursiv",                          # output: dist\Cursiv\
 )
+
+if sys.platform == "darwin":
+    app = BUNDLE(
+        coll,
+        name="Cursiv.app",
+        icon=str(LAUNCHER / "resources" / "icons" / "cursiv_256.png"),
+        bundle_identifier="com.winklersllc.cursiv",
+        info_plist={
+            "CFBundleName": "Cursiv",
+            "CFBundleDisplayName": "Cursiv",
+            "NSHighResolutionCapable": True,
+            "NSMicrophoneUsageDescription": "Cursiv uses the microphone only when you press the voice button.",
+            "LSMinimumSystemVersion": "12.0",
+        },
+    )

@@ -165,7 +165,7 @@ class SettingsDialog(QDialog):
         mem_btn.clicked.connect(self._open_memory)
         data_row.addWidget(mem_btn)
         open_btn = QPushButton("Open folder"); open_btn.setObjectName("ghost")
-        open_btn.clicked.connect(lambda: os.startfile(str(data_dir)) if data_dir.exists() else None)
+        open_btn.clicked.connect(lambda: __import__("platform_util").open_path(data_dir) if data_dir.exists() else None)
         data_row.addWidget(open_btn)
         done = QPushButton("Done")
         done.clicked.connect(self.accept)
