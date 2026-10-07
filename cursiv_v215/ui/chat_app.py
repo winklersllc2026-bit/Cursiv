@@ -1991,8 +1991,16 @@ def _call_ollama_code_council(
     Falls back to llama3.1 if neither coding model is pulled.
     """
     available    = _ollama_pulled_models()
-    has_qwen     = OLLAMA_CODE_PRIMARY   in available or "qwen2.5-coder" in available
-    has_deepseek = OLLAMA_CODE_SECONDARY in available or "deepseek-coder-v2" in available
+    # Use the exact tags that are installed (e.g. qwen2.5-coder:7b), not only the
+    # 14b/16b defaults -- asking Ollama for a tag that isn't pulled just fails.
+    def _installed(preferred: str, family: str) -> str | None:
+        if preferred in available:
+            return preferred
+        tags = sorted(t for t in available if t.startswith(family + ":"))
+        return tags[-1] if tags else None
+    qwen_tag     = _installed(OLLAMA_CODE_PRIMARY, "qwen2.5-coder")
+    deepseek_tag = _installed(OLLAMA_CODE_SECONDARY, "deepseek-coder-v2")
+    has_qwen, has_deepseek = qwen_tag is not None, deepseek_tag is not None
 
     if not has_qwen and not has_deepseek:
         yield from _call_ollama(messages, max_tokens)
@@ -2009,8 +2017,8 @@ def _call_ollama_code_council(
         if m.get("role") in ("user", "assistant") and isinstance(m.get("content"), str)
     )
 
-    primary_model   = OLLAMA_CODE_PRIMARY   if has_qwen     else OLLAMA_CODE_SECONDARY
-    secondary_model = OLLAMA_CODE_SECONDARY if has_deepseek and has_qwen else None
+    primary_model   = qwen_tag if has_qwen else deepseek_tag
+    secondary_model = deepseek_tag if has_deepseek and has_qwen else None
 
     # ── Phase 1: Primary coder writes solution ───────────────────────────
     if secondary_model:

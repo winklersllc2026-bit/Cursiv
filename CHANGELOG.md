@@ -45,6 +45,12 @@
 -->
 # Changelog
 
+## v3.14-U45 — Coding models in the Setup window; no console windows (2026-10-07)
+
+- **Setup → Coding model (optional):** download qwen2.5-coder 7B (recommended for most PCs, 4.7 GB) or 14B inside Cursiv with a progress bar. The launcher's coding-model buttons open Setup instead of a PowerShell console.
+- **The installer never opens PowerShell:** the optional 12-step bootstrap checkbox is gone (the script is still installed for running from source).
+- **Code council uses whatever coding models are installed** (e.g. qwen2.5-coder:7b) instead of requiring the exact 14b/16b tags — with only the 7B installed it used to detect qwen, then fail asking Ollama for the 14B.
+
 ## v3.14-U44 — The 8 phases are real code (2026-10-07)
 
 Until now the 8 phases were a description in Cursiv's instructions, and the model presented them as if they ran. `cursiv_v215/core/phases.py` now runs them on every message before the AI answers — plain, inspectable rules:

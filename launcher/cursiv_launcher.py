@@ -83,7 +83,7 @@ _WATCHDOG_MS     = 3_000         # ms between app-health checks
 _POLL_DEADLINE_S = 30            # seconds to wait for app to bind its port
 
 # ── Update checker ─────────────────────────────────────────────────────────────
-_CURRENT_VERSION   = "3.14-U44"
+_CURRENT_VERSION   = "3.14-U45"
 _GITHUB_API        = "https://api.github.com/repos/winklersllc2026-bit/Cursiv/releases/latest"
 _GITHUB_RELEASES   = "https://github.com/winklersllc2026-bit/Cursiv/releases"
 
@@ -1513,7 +1513,9 @@ class CursivLauncher(QMainWindow):
         vlay.setContentsMargins(_ResizeRoot._M, 0, _ResizeRoot._M, _ResizeRoot._M)   # edge strips for resizing
         vlay.setSpacing(0)
 
-        vlay.addWidget(TitleBar(self, self._username))
+        _title = TitleBar(self, self._username)
+        _title.setCursor(Qt.CursorShape.ArrowCursor)    # don't inherit the edge-resize cursor
+        vlay.addWidget(_title)
 
         # ── Sidebar: no longer shown -- "Getting Started" and "Open in
         # Terminal" moved into the tray menu instead. Still built (not
@@ -1547,8 +1549,13 @@ class CursivLauncher(QMainWindow):
         body.addWidget(self._conv_sidebar)
         body.addWidget(chat_col, 1)
 
+        # The window's edge strips show resize arrows; everything inside gets the
+        # normal cursor explicitly -- otherwise it inherits the root's last arrow.
+        chat_wrap.setCursor(Qt.CursorShape.ArrowCursor)
         vlay.addWidget(chat_wrap, 1)
-        vlay.addWidget(self._build_footer())
+        _footer = self._build_footer()
+        _footer.setCursor(Qt.CursorShape.ArrowCursor)
+        vlay.addWidget(_footer)
 
     def _build_center(self) -> QVBoxLayout:
         col = QVBoxLayout()
@@ -1961,87 +1968,8 @@ class CursivLauncher(QMainWindow):
     # ── Winkler-Codex model download ─────────────────────────────────────
 
     def _download_codex_models(self):
-        if not _is_ollama_installed():
-            reply = QMessageBox.question(
-                self, "Ollama Required",
-                "Winkler-Codex models run inside Ollama, which isn't installed yet.\n\n"
-                "Install Ollama first?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            )
-            if reply == QMessageBox.StandardButton.Yes:
-                self._install_ollama()
-            return
-
-        msg = QMessageBox(self)
-        msg.setWindowTitle("Winkler-Codex Download")
-        msg.setIcon(QMessageBox.Icon.Warning)
-        msg.setText(
-            "<b>Download Winkler-Codex offline models?</b>"
-        )
-        msg.setInformativeText(
-            "This will download two specialist coding models to your machine:\n\n"
-            "  • qwen2.5-coder:14b  — primary coder  (~8.7 GB)\n"
-            "  • deepseek-coder-v2:16b — code review  (~9.1 GB)\n\n"
-            "Total download: ~18 GB\n"
-            "Requires Ollama to be running and ~20 GB of free disk space.\n\n"
-            "Once installed, Cursiv automatically routes coding questions through "
-            "both models — they review each other's work before you see the answer.\n\n"
-            "This runs in a terminal window. You can minimise it and continue using Cursiv."
-        )
-        msg.setStandardButtons(
-            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
-        )
-        msg.button(QMessageBox.StandardButton.Ok).setText("Download (~18 GB)")
-        msg.button(QMessageBox.StandardButton.Cancel).setText("Not Now")
-        msg.setStyleSheet(QSS)
-
-        if msg.exec() != QMessageBox.StandardButton.Ok:
-            return
-
-        self._codex_dl_btn.setEnabled(False)
-        self._codex_dl_btn.setText("Downloading…")
-        self._set_status("Launching Winkler-Codex download — see terminal window…")
-
-        _ollama = _ollama_ps_invocation()
-        script = (
-            "Write-Host '' ;"
-            "Write-Host '  Winkler-Codex — Offline Code Council' -ForegroundColor DarkYellow ;"
-            "Write-Host '' ;"
-            "foreach ($m in @('qwen2.5-coder:14b','deepseek-coder-v2:16b')) {"
-            "  Write-Host \"  Pulling $m...\" -ForegroundColor Cyan ;"
-            f"  {_ollama} pull $m ;"
-            "  if ($LASTEXITCODE -eq 0) { Write-Host \"  [OK] $m ready.\" -ForegroundColor Green }"
-            "  else { Write-Host \"  [!] $m pull failed — run: ollama pull $m\" -ForegroundColor Yellow }"
-            "} ;"
-            "Write-Host '' ;"
-            "Write-Host '  Winkler-Codex models installed. Cursiv will use them automatically.' -ForegroundColor Green ;"
-            "Write-Host '' ;"
-            "Write-Host '  Press Enter to close...' -NoNewline ;"
-            "Read-Host"
-        )
-        try:
-            subprocess.Popen(
-                ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
-                 "-Command", script],
-                creationflags=subprocess.CREATE_NEW_CONSOLE,
-                cwd=str(_ROOT),
-            )
-        except Exception as exc:
-            self._set_status(f"Could not launch download: {exc}")
-            self._codex_dl_btn.setEnabled(True)
-            self._codex_dl_btn.setText("Winkler-Codex Download")
-            return
-
-        # The new console window steals focus on open -- bring Cursiv's own
-        # window back afterward so starting a download doesn't feel like it
-        # kicked the user out of the app.
-        QTimer.singleShot(400, lambda: (self.raise_(), self.activateWindow()))
-
-        # Re-enable after a short delay so user can re-run if needed
-        QTimer.singleShot(8000, lambda: (
-            self._codex_dl_btn.setEnabled(True),
-            self._codex_dl_btn.setText("Winkler-Codex Download"),
-        ))
+        """Coding models download in the Setup window (progress bar, no console)."""
+        self._open_setup()
 
     # ── Ollama installer ──────────────────────────────────────────────────
 

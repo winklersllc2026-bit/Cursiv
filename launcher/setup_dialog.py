@@ -38,6 +38,12 @@ OLLAMA_INSTALLER_URL = "https://ollama.com/download/OllamaSetup.exe"
 OLLAMA_EXE = Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Ollama" / "ollama.exe"
 OLLAMA_API = "http://localhost:11434"
 
+# Coding models for Cursiv's offline code council: (label, tag)
+CODE_MODELS = [
+    ("qwen2.5-coder 7B — recommended for most PCs (4.7 GB)", "qwen2.5-coder:7b"),
+    ("qwen2.5-coder 14B — smarter, needs a strong PC (9 GB)", "qwen2.5-coder:14b"),
+]
+
 # (label, model tag, approximate download size)
 MODELS = [
     ("llama3.1 — best answers (4.9 GB)", "llama3.1", "4.9 GB"),
@@ -164,8 +170,19 @@ class SetupDialog(QDialog):
         self._s2_cancel.setVisible(False)
         self._s2["row"].addWidget(self._s2_cancel)
 
-        # Step 3 — cloud + free keys
-        self._s3 = self._card(lay, "3  ·  While you wait (optional)")
+        # Step 3 — coding model (optional)
+        self._s4 = self._card(lay, "3  ·  Coding model (optional)")
+        self._s4["detail"].setText("A model trained for programming makes Cursiv much better at writing and fixing code offline.")
+        self._code_box = QComboBox()
+        for label, tag in CODE_MODELS:
+            self._code_box.addItem(label, tag)
+        self._s4["row"].addWidget(self._code_box, 1)
+        self._s4_btn = QPushButton("Download")
+        self._s4_btn.clicked.connect(self._pull_code_model)
+        self._s4["row"].addWidget(self._s4_btn)
+
+        # Step 4 — cloud + free keys
+        self._s3 = self._card(lay, "4  ·  While you wait (optional)")
         self._s3_intro = ("Downloading a model can take a while. Until it's done, Cursiv can answer through "
                           "Cursiv Cloud (free, sent to cursiv.winklers-llc.com) or your own free AI key.")
         self._s3["detail"].setText(self._s3_intro)
@@ -268,6 +285,16 @@ class SetupDialog(QDialog):
         self._s2_btn.setEnabled(running and not self._busy)
         self._model_box.setEnabled(running and not self._busy)
 
+        coders = [m for m in models if "coder" in m]
+        if coders:
+            self._set_status(self._s4, True, "Installed: " + ", ".join(coders))
+            self._s4_btn.setText("Download another")
+        else:
+            self._set_status(self._s4, None, "Optional. " + ("Pick one and click Download." if running else "Waiting for step 1."))
+            self._s4_btn.setText("Download")
+        self._s4_btn.setEnabled(running and not self._busy)
+        self._code_box.setEnabled(running and not self._busy)
+
         ready = running and bool(models)
         self._set_status(self._s3, True if ready else None,
                          "All set — Cursiv runs fully on this computer." if ready else self._s3_intro)
@@ -315,16 +342,25 @@ class SetupDialog(QDialog):
         self._s2_cancel.setVisible(True)
         self._s2["bar"].setVisible(True)
         tag = self._model_box.currentData()
-        threading.Thread(target=self._do_pull, args=(tag,), daemon=True).start()
+        threading.Thread(target=self._do_pull, args=(tag, "s2"), daemon=True).start()
 
-    def _do_pull(self, tag: str):
+    def _pull_code_model(self):
+        self._busy = True
+        self._cancel_pull.clear()
+        self._s4_btn.setEnabled(False)
+        self._code_box.setEnabled(False)
+        self._s4["bar"].setVisible(True)
+        tag = self._code_box.currentData()
+        threading.Thread(target=self._do_pull, args=(tag, "s4"), daemon=True).start()
+
+    def _do_pull(self, tag: str, step: str = "s2"):
         try:
             req = urllib.request.Request(f"{OLLAMA_API}/api/pull", data=json.dumps({"name": tag, "stream": True}).encode(),
                                          headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=3600) as r:
                 for line in r:
                     if self._cancel_pull.is_set():
-                        self._sig.done.emit("s2", False, "Download paused. Click Download to continue where it left off.")
+                        self._sig.done.emit(step, False, "Download paused. Click Download to continue where it left off.")
                         return
                     try:
                         st = json.loads(line.decode())
@@ -334,16 +370,16 @@ class SetupDialog(QDialog):
                         raise RuntimeError(st["error"])
                     total, done = st.get("total") or 0, st.get("completed") or 0
                     if total and done:
-                        self._sig.progress.emit("s2", int(done * 100 / total),
+                        self._sig.progress.emit(step, int(done * 100 / total),
                                                 f"Downloading {tag}… {done / 1e9:.2f} of {total / 1e9:.2f} GB")
                     elif st.get("status"):
-                        self._sig.progress.emit("s2", -1, f"{tag}: {st['status']}")
+                        self._sig.progress.emit(step, -1, f"{tag}: {st['status']}")
                     if st.get("status") == "success":
-                        self._sig.done.emit("s2", True, f"{tag} is ready.")
+                        self._sig.done.emit(step, True, f"{tag} is ready.")
                         return
             raise RuntimeError("the download ended early — click Download to resume")
         except Exception as exc:
-            self._sig.done.emit("s2", False, f"Model download stopped: {exc}")
+            self._sig.done.emit(step, False, f"Model download stopped: {exc}")
 
     # ── Step 3 ───────────────────────────────────────────────────────────
     def _toggle_cloud(self, on: bool):
@@ -372,7 +408,7 @@ class SetupDialog(QDialog):
 
     # ── Signal handlers (main thread) ────────────────────────────────────
     def _step(self, name: str) -> dict:
-        return {"s1": self._s1, "s2": self._s2, "s3": self._s3}[name]
+        return {"s1": self._s1, "s2": self._s2, "s3": self._s3, "s4": self._s4}[name]
 
     def _on_progress(self, name: str, pct: int, text: str):
         step = self._step(name)
