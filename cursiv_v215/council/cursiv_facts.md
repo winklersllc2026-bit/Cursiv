@@ -12,10 +12,11 @@ What it really does today:
 - Babel: translates any language to English or English to other languages; also unlocks the family letters.
 - Family letters: personal letters from Joshua, sealed so each opens only with that person's name and birth date.
 - Phone app (cursiv.winklers-llc.com/app): photograph Bible pages and ask about them; linked to the computer through the 📱 button so both share one conversation.
+- The 8 phases run as real rules on every message before the AI answers: Energy (notices stress, exhaustion or rush and makes replies shorter and gentler), Emergency (notices a crisis and shows help lines like 988 first), Grounding (recalls the person's memories), Route (direct answer, code, or a decision -- suggests the council), Structure (steps, direct answer, comparison, explanation), Connectivity (online / local model ready), Future State (ends with one next step when the person is working toward a goal), Recovery (suggests a break in long or late sessions). The "phases" command shows what each did for the last message. They are rules, not separate AI models.
 - Desktop extras: a Setup window (installs Ollama and a model), Settings (keys), problem reports, and automatic updates.
 
 What it does NOT do (never claim these):
 - It does not browse the internet on its own (only the explicit "search" command does).
 - It does not retrain its AI model automatically (that's a separate manual tool); it learns only by saving facts to memory.
-- The "8 phases" (Energy, Emergency, Grounding, Route, Structure, Connectivity, Future State, Recovery) and "EvoCore" are a design framework written into its instructions — they are not yet separate running code steps.
+- "EvoCore" is a design idea in its instructions, not running code. (The 8 phases ARE real — see above.)
 - It has no brain-computer interface, no sensors, and no access to anything outside this computer and the services listed above.

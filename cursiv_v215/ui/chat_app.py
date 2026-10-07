@@ -2844,15 +2844,36 @@ You are in full autonomous coding mode. Follow this protocol exactly:
             + _web_ctx + "\n"
         )
 
-    # Strand memory injection — relevant prior exchanges from the personal archive
-    if len(user_text.strip()) >= 10:
-        _strand_ctx = _build_strand_context(user_text)
-        if _strand_ctx:
-            messages[0]["content"] += (
-                "\n\n## Personal Strand Memory\n"
-                "*(Retrieved from your Strand archive — prior exchanges and anchored insights)*\n\n"
-                + _strand_ctx + "\n"
+    # ── Cursiv's 8 phases (core/phases.py): Energy, Emergency, Grounding (memory),
+    # Route, Structure, Connectivity, Future State, Recovery -- real rules run on
+    # every message; their instructions go into the system prompt.
+    global _PHASE_AFTER
+    _PHASE_AFTER = ""
+    try:
+        from cursiv_v215.core import phases as _phases
+        _ph = _phases.run(user_text, memory_fn=_build_strand_context, online_fn=_is_online,
+                          local_fn=lambda: _ollama_running() and _resolve_ollama_model() is not None)
+        _addendum = _ph.system_addendum()
+        if _ph.emergency:
+            # A crisis gets a short, focused prompt -- buried at the end of Cursiv's long
+            # instructions, the care guidance lost out to the model's canned refusal style.
+            messages[0]["content"] = (
+                "You are Cursiv, a caring personal assistant built by Joshua Winkler for his family. The person "
+                "talking to you may be in crisis or danger right now. Speak like a calm, kind friend: short, warm, "
+                "plain sentences. Acknowledge what they said and that it matters. Ask if they're safe right now. "
+                "Gently encourage them to reach out to the help line shown above and to someone they trust, and "
+                "say you're here to keep talking. Never lecture, never refuse, never say you can't help, and don't "
+                "list many resources -- the help lines are already shown.\n\n" + (_ph.memory or "")
             )
+        elif _addendum:
+            messages[0]["content"] += "\n\n" + _addendum + "\n"
+        _PHASE_AFTER = _ph.after_reply
+        if _ph.before_reply:
+            yield _ph.before_reply
+    except Exception:
+        _strand_ctx = _build_strand_context(user_text) if len(user_text.strip()) >= 10 else ""
+        if _strand_ctx:
+            messages[0]["content"] += "\n\n## Personal Memory\n" + _strand_ctx + "\n"
 
     # Codex Agent is invoked explicitly via the `codex <prompt>` command only.
     # Auto-intercept is disabled — Ollama handles coding Q&A directly with the
@@ -3126,6 +3147,8 @@ def _learn_later(message, reply: str) -> None:
     threading.Thread(target=work, daemon=True).start()
 
 
+_PHASE_AFTER = ""   # end-of-reply note from core/phases.py for the current message
+
 _SENTENCE_END = (".", "!", "?", "\n", ":", ";")
 
 
@@ -3174,11 +3197,15 @@ def chat(
 ) -> Generator[str, None, None]:
     """Cursiv's main chat entry point: _chat_inner, time-boxed (see _time_boxed);
     afterwards, lasting facts from the exchange are learned in the background."""
+    global _PHASE_AFTER
+    _PHASE_AFTER = ""                # set by the phases for this message only
     reply: list[str] = []
     for chunk in _time_boxed(_chat_inner(message=message, history=history, api_key=api_key, files=files, file_access=file_access, root_path=root_path, openai_key=openai_key, confirm_writes=confirm_writes, anthropic_key=anthropic_key, force_provider=force_provider)):
         if isinstance(chunk, str) and chunk not in (RATE_SENTINEL,) and not chunk.startswith(WRITE_SENTINEL):
             reply.append(chunk)
         yield chunk
+    if _PHASE_AFTER:                 # Route / Recovery notes from the phases
+        yield _PHASE_AFTER
     _learn_later(message, "".join(reply))
 
 # ── Status bar ────────────────────────────────────────────────────────────

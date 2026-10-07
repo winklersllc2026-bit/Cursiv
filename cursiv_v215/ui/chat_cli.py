@@ -3948,6 +3948,11 @@ def main() -> None:
             print(f"  {LGOLD}{_mem_reply}{RESET}")
             continue
 
+        elif cmd in ("phases", "phase"):
+            from cursiv_v215.core.phases import last_trace_text
+            print(f"  {LGOLD}{last_trace_text()}{RESET}")
+            continue
+
         elif cmd.startswith("openai "):
             new_key = raw[7:].strip()
             if new_key.startswith("xai-"):

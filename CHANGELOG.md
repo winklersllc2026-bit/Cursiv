@@ -45,6 +45,21 @@
 -->
 # Changelog
 
+## v3.14-U44 — The 8 phases are real code (2026-10-07)
+
+Until now the 8 phases were a description in Cursiv's instructions, and the model presented them as if they ran. `cursiv_v215/core/phases.py` now runs them on every message before the AI answers — plain, inspectable rules:
+
+- **Energy:** stress, exhaustion, rush, shouting or the middle of the night → shorter, gentler, answer-first replies.
+- **Emergency:** crisis, medical emergency or danger wording → help lines (988, 741741, 911, DV hotline) shown before the reply, and a short care-first prompt replaces Cursiv's long instructions (the care guidance used to lose out to the local model's canned refusal; now it answers warmly, and ~8× faster). Tested against false alarms ("end my subscription", "an overdose of homework", "kill this process").
+- **Grounding:** the person's memories (U42).
+- **Route:** code → working code; decisions → a recommendation plus the strongest counter-argument, with a one-time suggestion to try the council.
+- **Structure:** how-to → numbered steps; comparisons → side by side; yes/no → answer first; "why/what is" → short plain explanation.
+- **Connectivity:** online / local model ready (checked at most once a minute).
+- **Future State:** goal wording → ends with one concrete next step.
+- **Recovery:** after 30 messages, 2 hours, or late at night → one gentle break suggestion per session.
+
+The `phases` command shows what each phase did for the last message. Cursiv's fact sheet now describes the phases accurately.
+
 ## v3.14-U43 — Saved conversations, resizable window (2026-10-07)
 
 - **Saved conversations** (`launcher/conversations.py`, `launcher/conversation_sidebar.py`): a left sidebar with + New chat, 💾 Save, and the person's saved conversations (newest first; right-click to rename or delete). Nothing is saved unless the user chooses; once saved, a conversation keeps itself up to date after every reply. Each file keeps the messages (so Cursiv continues with full context) and the on-screen transcript. Stored per person in `%USERPROFILE%\.cursiv\conversations\`.

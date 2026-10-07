@@ -599,6 +599,9 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
         _mem_reply = None
     if _mem_reply is not None:
         return TextResult(_mem_reply)
+    if cmd in ("phases", "phase", "why that answer", "how did you decide"):
+        from cursiv_v215.core.phases import last_trace_text
+        return TextResult(last_trace_text())
 
     # ── API keys ─────────────────────────────────────────────────────────
     if cmd.startswith("key "):
