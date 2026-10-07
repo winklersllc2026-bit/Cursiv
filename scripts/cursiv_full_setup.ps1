@@ -53,7 +53,7 @@ function Write-Banner {
 function Refresh-PATH {
     $machinePath = [System.Environment]::GetEnvironmentVariable("PATH", "Machine")
     $userPath    = [System.Environment]::GetEnvironmentVariable("PATH", "User")
-    $env:PATH    = "$machinePath;$userPath"
+    $env:PATH    = "$machinePath;$userPath;$env:LOCALAPPDATA\Microsoft\WindowsApps"
 }
 
 function Test-Command { param([string]$Name); return [bool](Get-Command $Name -ErrorAction SilentlyContinue) }
@@ -94,6 +94,11 @@ function Open-StepWindow {
 
     $wrapped = @"
 `$ErrorActionPreference = 'Continue'
+# PowerShell 5.1's download progress bar slows Invoke-WebRequest ~10x
+`$ProgressPreference = 'SilentlyContinue'
+# winget lives in WindowsApps; make sure it's reachable even if the user PATH lost it
+`$__wa = Join-Path `$env:LOCALAPPDATA 'Microsoft\WindowsApps'
+if ((`$env:PATH -split ';') -notcontains `$__wa) { `$env:PATH += ";`$__wa" }
 `$__transcript = [System.IO.Path]::GetTempFileName()
 Start-Transcript -Path `$__transcript -Force | Out-Null
 try {
@@ -179,6 +184,15 @@ Write-Host "  STEP 1 of 12 — Windows Package Manager (winget)" -ForegroundColo
 Write-Host "=" * 60 -ForegroundColor Cyan
 Write-Host ""
 
+# Older Cursiv uninstallers deleted the whole user PATH, taking winget's folder with it.
+$wa = Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps"
+$userPath = [System.Environment]::GetEnvironmentVariable("PATH","User")
+if ((Test-Path (Join-Path $wa "winget.exe")) -and (($userPath -split ";") -notcontains $wa)) {
+    $newPath = if ($userPath) { "$userPath;$wa" } else { $wa }
+    [System.Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
+    Write-Host "[OK] Restored winget's folder to your PATH (it had been removed)." -ForegroundColor Green
+}
+
 if (Get-Command winget -ErrorAction SilentlyContinue) {
     Write-Host "[OK] winget is already installed." -ForegroundColor Green
     winget --version
@@ -217,7 +231,7 @@ Write-Host ""
 
 $machinePath = [System.Environment]::GetEnvironmentVariable("PATH","Machine")
 $userPath    = [System.Environment]::GetEnvironmentVariable("PATH","User")
-$env:PATH    = "$machinePath;$userPath"
+$env:PATH    = "$machinePath;$userPath;$env:LOCALAPPDATA\Microsoft\WindowsApps"
 
 if (Get-Command git -ErrorAction SilentlyContinue) {
     Write-Host "[OK] Git is already installed: $(git --version)" -ForegroundColor Green
@@ -225,7 +239,7 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
     Write-Host "Installing Git for Windows via winget..." -ForegroundColor Cyan
     try {
         winget install --id Git.Git --accept-package-agreements --accept-source-agreements --silent
-        $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+        $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User") + ";$env:LOCALAPPDATA\Microsoft\WindowsApps"
         if (Get-Command git -ErrorAction SilentlyContinue) {
             Write-Host "[OK] Git installed: $(git --version)" -ForegroundColor Green
         } else {
@@ -256,7 +270,7 @@ Write-Host ""
 
 $machinePath = [System.Environment]::GetEnvironmentVariable("PATH","Machine")
 $userPath    = [System.Environment]::GetEnvironmentVariable("PATH","User")
-$env:PATH    = "$machinePath;$userPath"
+$env:PATH    = "$machinePath;$userPath;$env:LOCALAPPDATA\Microsoft\WindowsApps"
 
 $pyOk = $false
 foreach ($cmd in @("python3.11","py -3.11","python")) {
@@ -270,7 +284,7 @@ if (-not $pyOk) {
     Write-Host "Installing Python 3.11 via winget..." -ForegroundColor Cyan
     try {
         winget install --id Python.Python.3.11 --accept-package-agreements --accept-source-agreements --silent
-        $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+        $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User") + ";$env:LOCALAPPDATA\Microsoft\WindowsApps"
         $ver = python --version 2>&1
         Write-Host "[OK] $ver" -ForegroundColor Green
     } catch {
@@ -336,7 +350,7 @@ Write-Host ""
 
 $machinePath = [System.Environment]::GetEnvironmentVariable("PATH","Machine")
 $userPath    = [System.Environment]::GetEnvironmentVariable("PATH","User")
-$env:PATH    = "$machinePath;$userPath"
+$env:PATH    = "$machinePath;$userPath;$env:LOCALAPPDATA\Microsoft\WindowsApps"
 
 if (Get-Command ollama -ErrorAction SilentlyContinue) {
     Write-Host "[OK] Ollama already installed: $(ollama --version 2>&1)" -ForegroundColor Green
@@ -345,7 +359,7 @@ if (Get-Command ollama -ErrorAction SilentlyContinue) {
     $installed = $false
     try {
         winget install --id Ollama.Ollama --accept-package-agreements --accept-source-agreements --silent
-        $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+        $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User") + ";$env:LOCALAPPDATA\Microsoft\WindowsApps"
         if (Get-Command ollama -ErrorAction SilentlyContinue) {
             $installed = $true
             Write-Host "[OK] Ollama installed: $(ollama --version 2>&1)" -ForegroundColor Green
@@ -361,7 +375,7 @@ if (Get-Command ollama -ErrorAction SilentlyContinue) {
             Invoke-WebRequest -Uri $url -OutFile $out -UseBasicParsing
             Write-Host "Running Ollama installer..." -ForegroundColor Cyan
             Start-Process $out -ArgumentList "/S" -Wait
-            $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
+            $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User") + ";$env:LOCALAPPDATA\Microsoft\WindowsApps"
             if (Get-Command ollama -ErrorAction SilentlyContinue) {
                 Write-Host "[OK] Ollama installed." -ForegroundColor Green
             } else {
@@ -393,7 +407,7 @@ Write-Host ""
 
 $machinePath = [System.Environment]::GetEnvironmentVariable("PATH","Machine")
 $userPath    = [System.Environment]::GetEnvironmentVariable("PATH","User")
-$env:PATH    = "$machinePath;$userPath"
+$env:PATH    = "$machinePath;$userPath;$env:LOCALAPPDATA\Microsoft\WindowsApps"
 
 # Check if already running
 try {
@@ -445,7 +459,7 @@ Write-Host ""
 
 $machinePath = [System.Environment]::GetEnvironmentVariable("PATH","Machine")
 $userPath    = [System.Environment]::GetEnvironmentVariable("PATH","User")
-$env:PATH    = "$machinePath;$userPath"
+$env:PATH    = "$machinePath;$userPath;$env:LOCALAPPDATA\Microsoft\WindowsApps"
 
 # Check if model already present
 $models = ollama list 2>&1
@@ -548,7 +562,7 @@ Write-Host ""
 
 $machinePath = [System.Environment]::GetEnvironmentVariable("PATH","Machine")
 $userPath    = [System.Environment]::GetEnvironmentVariable("PATH","User")
-$env:PATH    = "$machinePath;$userPath"
+$env:PATH    = "$machinePath;$userPath;$env:LOCALAPPDATA\Microsoft\WindowsApps"
 
 # Upgrade pip first
 Write-Host "Upgrading pip..." -ForegroundColor Cyan
@@ -655,7 +669,7 @@ Write-Host ""
 
 $machinePath = [System.Environment]::GetEnvironmentVariable("PATH","Machine")
 $userPath    = [System.Environment]::GetEnvironmentVariable("PATH","User")
-$env:PATH    = "$machinePath;$userPath"
+$env:PATH    = "$machinePath;$userPath;$env:LOCALAPPDATA\Microsoft\WindowsApps"
 
 $checks = @{
     "git"    = "Git"
@@ -707,7 +721,7 @@ Write-Host ""
 
 `$machinePath = [System.Environment]::GetEnvironmentVariable("PATH","Machine")
 `$userPath    = [System.Environment]::GetEnvironmentVariable("PATH","User")
-`$env:PATH    = "`$machinePath;`$userPath"
+`$env:PATH    = "`$machinePath;`$userPath;`$env:LOCALAPPDATA\Microsoft\WindowsApps"
 
 `$cursivExe = "$($cursivExe -replace "'","''")"
 

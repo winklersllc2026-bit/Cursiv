@@ -109,7 +109,10 @@ Root: HKCU; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; \
 ; Add install dir to user PATH so 'cursiv' works from any terminal
 Root: HKCU; Subkey: "Environment"; ValueType: expandsz; ValueName: "Path"; \
   ValueData: "{olddata};{app}"; Check: NeedsAddPath(ExpandConstant('{app}')); \
-  Flags: preservestringtype uninsdeletevalue
+  Flags: preservestringtype
+; No uninsdeletevalue here: that flag deletes the WHOLE user Path value on
+; uninstall (it wiped winget and everything else from users' PATH). The
+; uninstaller removes just this one entry instead -- see RemoveFromUserPath.
 
 [Run]
 ; ── Full one-click bootstrap ─────────────────────────────────────────────────
@@ -147,4 +150,36 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   // PATH is registered; new terminals will pick it up automatically
+end;
+
+// Removes only Param from the user PATH, leaving every other entry alone.
+procedure RemoveFromUserPath(Param: string);
+var
+  OrigPath, Rest, Entry, NewPath: string;
+  P: Integer;
+begin
+  if not RegQueryStringValue(HKCU, 'Environment', 'Path', OrigPath) then
+    exit;
+  Rest := OrigPath + ';';
+  NewPath := '';
+  while Rest <> '' do
+  begin
+    P := Pos(';', Rest);
+    Entry := Copy(Rest, 1, P - 1);
+    Delete(Rest, 1, P);
+    if (Entry <> '') and (CompareText(RemoveBackslashUnlessRoot(Entry), RemoveBackslashUnlessRoot(Param)) <> 0) then
+    begin
+      if NewPath <> '' then
+        NewPath := NewPath + ';';
+      NewPath := NewPath + Entry;
+    end;
+  end;
+  if NewPath <> OrigPath then
+    RegWriteExpandStringValue(HKCU, 'Environment', 'Path', NewPath);
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usPostUninstall then
+    RemoveFromUserPath(ExpandConstant('{app}'));
 end;

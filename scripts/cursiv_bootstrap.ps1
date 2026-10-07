@@ -51,6 +51,10 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Continue"   # keep going even if a step fails
+$ProgressPreference = 'SilentlyContinue'   # PS 5.1's progress bar slows downloads ~10x
+$__wa = Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps'
+if (($env:PATH -split ';') -notcontains $__wa) { $env:PATH += ";$__wa" }   # winget
+
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
