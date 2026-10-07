@@ -258,6 +258,14 @@ class ChatPanel(QWidget):
 
     # ── UI ────────────────────────────────────────────────────────────────
 
+    def reload_keys(self) -> None:
+        """Pick up keys changed in Settings without restarting."""
+        if not getattr(self, "_cfg", None):
+            return
+        keys = _load_saved_keys()
+        for field in ("api_key", "openai_key", "anthropic_key"):
+            self._cfg[field] = keys.get(field, "")
+
     def _build_ui(self) -> None:
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)

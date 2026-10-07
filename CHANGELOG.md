@@ -45,6 +45,10 @@
 -->
 # Changelog
 
+## v3.14-U36 — Settings window (2026-10-07)
+
+A gear button in the top-right of the main window (next to minimize) opens Settings (`launcher/settings_dialog.py`): every AI key in one place — xAI, OpenAI, Claude, and the free Gemini and Groq — each masked with Show, Save (tests the key first; only a working key is saved), Remove, a status line and a "Get a key" link. Also the Cursiv Cloud on/off switch and the data folder with an Open folder button. Saved keys take effect in the chat right away (`ChatPanel.reload_keys`).
+
 ## v3.14-U35 — Data in one safe place, one-screen setup, problem reports (2026-10-07)
 
 **User data lives in `%USERPROFILE%\.cursiv`.** The installed app used to keep memory, strands, sessions, settings and keys inside the program folder (`_internal\.cursiv`, plus `{app}\.cursiv` for modules that resolve paths from the working directory), where reinstalls and updates could wipe them. On startup the installed app now copies anything missing into the home folder (never overwriting what's there — home's login files are the real ones), keeps the old folders as `.cursiv.moved-<date>` backups, and replaces them with directory junctions to the home folder, so every module reads and writes the same place (`launcher/data_home.py`). Source checkouts keep using the repo's `.cursiv`.

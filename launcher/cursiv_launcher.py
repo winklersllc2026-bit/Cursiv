@@ -83,7 +83,7 @@ _WATCHDOG_MS     = 3_000         # ms between app-health checks
 _POLL_DEADLINE_S = 30            # seconds to wait for app to bind its port
 
 # ── Update checker ─────────────────────────────────────────────────────────────
-_CURRENT_VERSION   = "3.14-U35"
+_CURRENT_VERSION   = "3.14-U36"
 _GITHUB_API        = "https://api.github.com/repos/winklersllc2026-bit/Cursiv/releases/latest"
 _GITHUB_RELEASES   = "https://github.com/winklersllc2026-bit/Cursiv/releases"
 
@@ -1136,6 +1136,8 @@ class TitleBar(QWidget):
             row.addWidget(u)
 
         for symbol, tip, slot, col in [
+            ("⚙", "Settings — AI keys, Cursiv Cloud, data folder",
+             lambda: parent._open_settings() if hasattr(parent, "_open_settings") else None, GOLD),
             ("─", "Minimise", lambda: parent.showMinimized(), SILV2),
             ("✕", "Quit",     QApplication.quit,              RED),
         ]:
@@ -1963,6 +1965,17 @@ class CursivLauncher(QMainWindow):
     def _install_ollama(self):
         """Installing Ollama happens in the Setup window (real progress, no console)."""
         self._open_setup()
+
+    def _open_settings(self):
+        try:
+            from settings_dialog import SettingsDialog
+            dlg = SettingsDialog(self)
+            panel = getattr(self, "_chat_panel", None)
+            if panel is not None and hasattr(panel, "reload_keys"):
+                dlg.keys_changed.connect(panel.reload_keys)
+            dlg.exec()
+        except Exception as e:
+            self._set_status(f"Settings failed to open: {e}")
 
     def _send_problem_report(self, context: str = ""):
         from problem_report import open_report
