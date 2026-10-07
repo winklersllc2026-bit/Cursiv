@@ -3050,6 +3050,25 @@ You are in full autonomous coding mode. Follow this protocol exactly:
     except Exception:
         pass
 
+    # ── How this person wants Cursiv to talk (core/style.py): tone + rules learned
+    # from their corrections. Added to every kind of reply; corrections are learned
+    # in the background from this message and the reply it's correcting.
+    try:
+        if not (locals().get("_ph") and _ph.emergency):
+            from cursiv_v215.core import style as _style
+            from cursiv_v215.memory import semantic as _sem2
+            _who = _sem2.current_person()
+            _add = _style.prompt_addendum(_who)
+            if _add:
+                messages[0]["content"] += "\n\n" + _add + "\n"
+            if _style.looks_like_correction(user_text):
+                _prev = next((m.get("content", "") for m in reversed(history or [])
+                              if m.get("role") == "assistant" and isinstance(m.get("content"), str)), "")
+                threading.Thread(target=_style.learn_correction, args=(_who, user_text, _prev, _quick_llm),
+                                 daemon=True).start()
+    except Exception:
+        pass
+
     # Codex Agent is invoked explicitly via the `codex <prompt>` command only.
     # Auto-intercept is disabled — Ollama handles coding Q&A directly with the
     # full system prompt injected, which produces better answers than Codex for

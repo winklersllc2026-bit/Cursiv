@@ -14,7 +14,7 @@ import re
 import time
 from pathlib import Path
 
-VERSION = "3.14-U50"
+VERSION = "3.14-U51"
 FACTS_FILE = Path(__file__).parent.parent / "council" / "cursiv_facts.md"
 RECENT_ERRORS: collections.deque = collections.deque(maxlen=8)
 
@@ -109,6 +109,9 @@ def live_report() -> str:
         pass
     try:
         conv_dir = Path.home() / ".cursiv" / "conversations"
+        from cursiv_v215.core import style as _style
+        _st = _style.load(person)
+        lines.append(f"Tone: {_st.get('tone', 'normal')}; style rules learned from corrections: {len(_st.get('rules', []))}")
         from cursiv_v215.agents import custom as _custom
         lines.append("Custom agents: " + (", ".join("@" + a["name"] for a in _custom.all_agents()) or "none"))
     except Exception:
@@ -150,6 +153,7 @@ small GPU, etc.) and be concrete about how to do it in Cursiv (which window or c
 - "What I remember" window (Settings or tray): search, add, forget memories; learning on/off.
 - Tray menu: What I remember…, Phone…, Setup…, Send problem report…, Quit.
 - Chat commands: remember <fact>, forget <words>, what do you remember, memory learn on/off, free keys, cloud on/off/status, council <question>, codex <request> (codex help, codex keep, codex project <folder>, codex lessons, codex learn <lesson>), phases, help.
+- Tone and style: tone blunt/warm/brief/playful/legacy/teacher/normal; style (show rules learned from corrections), style add <rule>, style forget <words>, style clear.
 - Custom agents: agents (list), agent new <name>: <job>, @name <message>, agent teach <name> <fact>, agent show/edit/delete <name>, agent council <question>.
 - There is no setting for context length or for choosing the chat model by hand; Cursiv picks models by graphics card. To change models, download a different one in Setup.
 

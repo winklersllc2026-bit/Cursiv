@@ -603,6 +603,8 @@ KEYS & ACCESS
   mode                      toggle write mode  (auto <-> confirm)
 
 CODEX AGENT (offline code specialist)
+  tone <blunt|warm|brief|playful|legacy|teacher|normal>   how Cursiv talks to you
+  style                     your tone + the rules Cursiv learned from your corrections
   agents                    your custom agents (agent new <name>: <job>, then @name <message>)
   agent council <question>  ask all your agents, then combine their views
   codex <prompt>            coding help with every step listed (codex help for more)
@@ -835,6 +837,16 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
         return TextResult(f"Claude: {'connected' if _probe_claude(new_key) else 'unreachable'}")
 
     # ── Codex / Hermes / Reference Brain ────────────────────────────────
+    if cmd in ("tone", "style", "my style", "style show", "style clear") or cmd.startswith(("tone ", "style ")):
+        try:
+            from cursiv_v215.core import style as _style
+            from cursiv_v215.memory import semantic as _sem
+            _reply = _style.command(text, _sem.current_person())
+            if _reply is not None:
+                return TextResult(_reply)
+        except Exception as exc:
+            return TextResult(f"Couldn't change the style: {exc}")
+
     if cmd in ("agents", "agent", "agent list") or cmd.startswith(("agent ", "@")):
         res = _agent_command(text, cfg, history)
         if res is not None:

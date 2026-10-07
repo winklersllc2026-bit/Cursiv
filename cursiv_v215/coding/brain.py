@@ -378,6 +378,13 @@ def system_prompt(text: str, history: list[dict] | None, person: str) -> str:
     observe(text, person)
     name = person.title() if person and person != "family" else "the user"
     ctx = context_block(text, history, person)
+    try:
+        from cursiv_v215.core import style
+        add = style.prompt_addendum(person)
+        if add:
+            ctx = (ctx + "\n\n" if ctx else "") + add
+    except Exception:
+        pass
     return CODING_SYSTEM.format(name=name) + ("\n\n" + ctx if ctx else "")
 
 

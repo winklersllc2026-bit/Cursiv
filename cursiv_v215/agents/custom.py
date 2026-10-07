@@ -136,8 +136,29 @@ def system_prompt(agent: dict, person_memory: str = "") -> str:
     )
 
 
+def _extras(text: str) -> str:
+    """Fact sheet when the question is about Cursiv itself (agents guessed otherwise),
+    plus the person's tone and style rules."""
+    out = []
+    try:
+        if re.search(r"\bcursiv\b", text or "", re.I):
+            from cursiv_v215.core import selfknow
+            facts = re.sub(r"<!--.*?-->", "", selfknow.FACTS_FILE.read_text(encoding="utf-8"), flags=re.S).strip()
+            out.append("## Facts about Cursiv (use these; never guess about Cursiv)\n" + facts)
+    except Exception:
+        pass
+    try:
+        from cursiv_v215.core import style
+        add = style.prompt_addendum(_person())
+        if add:
+            out.append(add)
+    except Exception:
+        pass
+    return ("\n\n" + "\n\n".join(out)) if out else ""
+
+
 def messages_for(agent: dict, text: str, history: list[dict], person_memory: str = "") -> list[dict]:
-    msgs = [{"role": "system", "content": system_prompt(agent, person_memory)}]
+    msgs = [{"role": "system", "content": system_prompt(agent, person_memory) + _extras(text)}]
     msgs += [{"role": m["role"], "content": m["content"]} for m in (history or [])[-6:]
              if m.get("role") in ("user", "assistant") and isinstance(m.get("content"), str)]
     msgs.append({"role": "user", "content": text})

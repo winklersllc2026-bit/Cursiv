@@ -45,6 +45,13 @@
 -->
 # Changelog
 
+## v3.14-U51 — Learns from your corrections + tone (2026-10-07)
+- **Learns how you want it to talk.** Correct it once ("too formal", "stop using bullet points", "just give me the answer", "call me Josh") and it turns that into a standing rule it follows from then on — for each person separately. `style` shows your rules; `style add <rule>`, `style forget <words>` and `style clear` manage them.
+- **Tone switch.** `tone blunt`, `warm`, `brief`, `playful`, `legacy`, `teacher` or `normal` — kept until you change it.
+- Style rules and tone apply everywhere: normal chat, `codex`, questions about Cursiv, and your custom agents.
+- Custom agents now get Cursiv's fact sheet when the question is about Cursiv, so they stop guessing about it.
+- Fact sheet corrected: exact model names, the 8k limit is for local models only, what the phone app really does (it doesn't open letters), free keys are enough (no pushing paid keys), custom agents vs. the built-in council.
+
 ## v3.14-U50 — Custom agents + real self-knowledge (2026-10-07)
 - **Custom agents.** Make your own specialists in plain words: `agent new chef: plans healthy family meals on a budget`. Talk to one with `@chef <message>`, teach it lasting facts with `agent teach chef <fact>`, and ask all of them at once with `agent council <question>` — each answers from its specialty, then Cursiv combines their views. `agents` lists yours; `agent show/edit/delete <name>` manages them. Each person has their own agents.
 - Ask Cursiv about itself ("how are you running?", "analyze your system", "what can you do?") and it answers from a live report of its real state — version, which AI keys are saved, graphics card, installed and loaded models, memory and coding-lesson counts, phone link, recent errors — plus its fact sheet. It no longer invents running agents, hashes or problems from its persona prompt.
