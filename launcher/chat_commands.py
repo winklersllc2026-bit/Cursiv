@@ -508,6 +508,87 @@ CODEX — Cursiv's coding helper
   codex learn <lesson>       teach it something (e.g. "my venv is ~/robot")
   codex forget <words>       remove a lesson"""
 
+
+# ── Custom agents (cursiv_v215/agents/custom.py) ───────────────────────────
+def _agent_command(text: str, cfg: dict, history: list[dict]):
+    import re as _re
+    from cursiv_v215.agents import custom
+    t = text.strip()
+    low = t.lower()
+    if low in ("agents", "agent", "agent list", "agent help"):
+        return TextResult(custom.listing())
+
+    m = _re.match(r"(?is)^agent\s+(new|create|make)\s+@?([\w-]+)\s*[:\-]?\s*(.*)$", t)
+    if m:
+        return TextResult(custom.create(m.group(2), m.group(3)))
+    m = _re.match(r"(?is)^agent\s+edit\s+@?([\w-]+)\s*[:\-]?\s*(.*)$", t)
+    if m:
+        return TextResult(custom.edit(m.group(1), m.group(2)))
+    m = _re.match(r"(?is)^agent\s+teach\s+@?([\w-]+)\s*[:\-]?\s*(.*)$", t)
+    if m:
+        return TextResult(custom.teach(m.group(1), m.group(2)))
+    m = _re.match(r"(?is)^agent\s+(delete|remove)\s+@?([\w-]+)\s*$", t)
+    if m:
+        return TextResult(custom.delete(m.group(2)))
+    m = _re.match(r"(?is)^agent\s+(show|info)\s+@?([\w-]+)\s*$", t)
+    if m:
+        return TextResult(custom.describe(m.group(2)))
+
+    try:
+        from cursiv_v215.ui.chat_app import _build_strand_context
+    except Exception:
+        _build_strand_context = lambda q: ""
+
+    def _memory(q):
+        try:
+            return _build_strand_context(q) if len(q) >= 10 else ""
+        except Exception:
+            return ""
+
+    m = _re.match(r"(?is)^agent\s+council\s+(.+)$", t)
+    if m:
+        question = m.group(1).strip()
+        agents = custom.all_agents()
+        if not agents:
+            return TextResult(custom.listing())
+        mem = _memory(question)
+
+        def stream():
+            views = []
+            for a in agents[:6]:
+                yield f"\n**@{a['name']}**\n"
+                gen, _u = _cascade_stream(custom.messages_for(a, question + "\n\n(Answer in under 150 words, "
+                                          "from your specialty.)", [], mem), cfg, max_tokens=500)
+                parts = []
+                for c in gen:
+                    parts.append(c)
+                    yield c
+                views.append(f"{a['name']}: {''.join(parts).strip()[:1500]}")
+                custom.note_use(a)
+            yield "\n\n---\n**Together**\n"
+            synth = [{"role": "system", "content": "You are Cursiv. Several specialist agents answered the same question. "
+                      "Combine them into one clear recommendation: where they agree, where they differ, and the best "
+                      "next step. Be brief. Don't invent facts."},
+                     {"role": "user", "content": f"Question: {question}\n\n" + "\n\n".join(views)}]
+            gen, _u = _cascade_stream(synth, cfg, max_tokens=700)
+            yield from gen
+        return StreamResult(f"⬡ Agent council — {len(agents[:6])} agents", stream(), None)
+
+    m = _re.match(r"(?is)^(?:@|agent\s+(?:ask\s+)?@?)([\w-]+)[\s,:]+(.+)$", t)
+    if m:
+        a = custom.load(m.group(1))
+        if not a:
+            names = ", ".join("@" + x["name"] for x in custom.all_agents()) or "none yet"
+            return TextResult(f"There's no agent called {custom.clean_name(m.group(1))}. Your agents: {names}.\n"
+                              f"Make one: agent new {custom.clean_name(m.group(1)) or 'name'}: <what it should do>")
+        q = m.group(2).strip()
+        gen, _u = _cascade_stream(custom.messages_for(a, q, history, _memory(q)), cfg, max_tokens=3000)
+        custom.note_use(a)
+        return StreamResult(f"⬡ @{a['name']}", gen, None)
+    if t.startswith("@"):
+        return None            # a lone "@something" -- let normal chat handle it
+    return TextResult(custom.listing())
+
 _HELP_TEXT = """\
 KEYS & ACCESS
   key <xai-key>            set xAI Grok API key       (starts with xai-)
@@ -522,6 +603,8 @@ KEYS & ACCESS
   mode                      toggle write mode  (auto <-> confirm)
 
 CODEX AGENT (offline code specialist)
+  agents                    your custom agents (agent new <name>: <job>, then @name <message>)
+  agent council <question>  ask all your agents, then combine their views
   codex <prompt>            coding help with every step listed (codex help for more)
                             code questions in normal chat use the same coding brain
 
@@ -752,6 +835,11 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
         return TextResult(f"Claude: {'connected' if _probe_claude(new_key) else 'unreachable'}")
 
     # ── Codex / Hermes / Reference Brain ────────────────────────────────
+    if cmd in ("agents", "agent", "agent list") or cmd.startswith(("agent ", "@")):
+        res = _agent_command(text, cfg, history)
+        if res is not None:
+            return res
+
     if cmd == "codex" or cmd.startswith("codex "):
         return _codex_command(text[6:].strip(), cfg, history)
 

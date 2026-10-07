@@ -3015,9 +3015,22 @@ You are in full autonomous coding mode. Follow this protocol exactly:
     # (cursiv_v215/coding): a focused coding prompt + playbooks + error diagnosis +
     # their environment + learned lessons + project files. The full persona prompt
     # made coding models echo councils/owner notes and skip the real setup steps.
+    # ── Questions about Cursiv itself: answer from a live report of its real state
+    # (core/selfknow.py), not from the persona prompt -- which made it invent internals.
+    _self_turn = False
+    try:
+        from cursiv_v215.core import selfknow as _sk
+        if not (locals().get("_ph") and _ph.emergency) and _sk.is_self_question(user_text):
+            messages[0]["content"] = _sk.system_prompt()
+            _self_turn = True
+    except Exception:
+        pass
+
     global _CODING_TURN
     _CODING_TURN = False
     try:
+        if _self_turn:
+            raise RuntimeError("self question")      # skip the coding brain
         from cursiv_v215.coding import brain as _cb
         _emergency = bool(locals().get("_ph") and _ph.emergency)
         if not _emergency and (_classify_message(user_text) == "code" or _cb.looks_like_terminal(user_text)):
@@ -3395,9 +3408,21 @@ def chat(
 
 def _chat_stream(message, history, api_key, files, file_access, root_path, openai_key,
                  confirm_writes, anthropic_key, force_provider, reply: list[str]):
-    for chunk in _time_boxed(_chat_inner(message=message, history=history, api_key=api_key, files=files, file_access=file_access, root_path=root_path, openai_key=openai_key, confirm_writes=confirm_writes, anthropic_key=anthropic_key, force_provider=force_provider)):
+    from cursiv_v215.core import selfknow as _sk
+    for chunk in _friendly(_sk, _time_boxed(_chat_inner(message=message, history=history, api_key=api_key, files=files, file_access=file_access, root_path=root_path, openai_key=openai_key, confirm_writes=confirm_writes, anthropic_key=anthropic_key, force_provider=force_provider))):
         if isinstance(chunk, str) and chunk not in (RATE_SENTINEL,) and not chunk.startswith(WRITE_SENTINEL):
             reply.append(chunk)
+        yield chunk
+
+
+def _friendly(sk, gen):
+    """Swap raw provider errors ("[Groq error 413: {...}]") for a plain sentence."""
+    for chunk in gen:
+        if isinstance(chunk, str) and "[" in chunk[:4]:
+            nice = sk.friendly_error(chunk)
+            if nice:
+                yield nice
+                continue
         yield chunk
 
 

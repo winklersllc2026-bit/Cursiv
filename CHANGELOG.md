@@ -45,6 +45,12 @@
 -->
 # Changelog
 
+## v3.14-U50 — Custom agents + real self-knowledge (2026-10-07)
+- **Custom agents.** Make your own specialists in plain words: `agent new chef: plans healthy family meals on a budget`. Talk to one with `@chef <message>`, teach it lasting facts with `agent teach chef <fact>`, and ask all of them at once with `agent council <question>` — each answers from its specialty, then Cursiv combines their views. `agents` lists yours; `agent show/edit/delete <name>` manages them. Each person has their own agents.
+- Ask Cursiv about itself ("how are you running?", "analyze your system", "what can you do?") and it answers from a live report of its real state — version, which AI keys are saved, graphics card, installed and loaded models, memory and coding-lesson counts, phone link, recent errors — plus its fact sheet. It no longer invents running agents, hashes or problems from its persona prompt.
+- Improvement ideas are based on what that report actually shows.
+- Raw provider errors like "[Groq error 413: …]" are now plain sentences ("that message was too long for Groq's free tier"), and recent ones are included in the self-report.
+
 ## v3.14-U49 — Speed + automatic conversation titles (2026-10-07)
 **Speed**
 - Free Groq/Gemini keys actually answer now. Groq rejected every normal chat as "too large" (Cursiv sent its full 27,000-character prompt); free providers and local models now get a compact version of Cursiv's core identity (~3,400 characters) plus your memory and the current context.
