@@ -246,28 +246,17 @@ def main():
         )
 
     # ── Family member welcome ─────────────────────────────────────────────
-    # If the username matches a family member's first name, show their letter
-    # and activation instructions before the main launcher opens.
+    # If the username matches a family member's first name, point them at
+    # the babel activation before the main launcher opens. The letter itself
+    # is sealed (cursiv_v215/family/sealed_letters.json) and only opens with
+    # their name + birth date -- a username alone must never reveal it.
     try:
-        _FAMILY_FIRST = {
-            "keiarra": ("Keiarra Tanyae-Simone", "keiarra"),
-            "kain":    ("Allan Kain",             "kain"),
-            "allan":   ("Allan Kain",             "kain"),
-            "elijah":  ("Elijah James",           "eli"),
-            "eli":     ("Elijah James",           "eli"),
-            "naylie":  ("Naylie Rae",             "naylie"),
-            "adaline": ("Adaline Marie",          "adaline"),
-            "tina":    ("Tina Marie",             "tina"),
-        }
+        _FAMILY_FIRST = ("keiarra", "kain", "allan", "elijah", "eli", "naylie", "adaline", "tina")
         _lname = username.lower().strip()
-        for _fn, (_disp, _key) in _FAMILY_FIRST.items():
+        for _fn in _FAMILY_FIRST:
             if _lname == _fn or _lname.startswith(_fn + " ") or _lname.startswith(_fn + "_"):
-                from cursiv_v215.family.family_profiles import get_letter, get_jw_header
                 from login_dialog import FamilyWelcomeDialog
-                _fam_dlg = FamilyWelcomeDialog(
-                    _disp, _key, get_jw_header(), get_letter(_key)
-                )
-                _fam_dlg.exec()
+                FamilyWelcomeDialog(_fn.title()).exec()
                 break
     except Exception:
         pass

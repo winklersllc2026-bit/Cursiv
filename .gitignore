@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: project
-# Hash reversed: cb84862076ef12581927fddc1876507bb4940f8ccf88b733021c688e873408d7
+# Hash reversed: 3553303ea121a45dfd68f702cc0799281707687ece94d225eb611b2f31b20a02
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 730ec8dc446171a6099dff4aa543a0983114025b7bd46a9449fd424aaad792a4
-# Substrate loop hash: b15f85454c6f91db99317a765d08877821387ff9c5ac6400d76903785d2cc0a2
-# Substrate loop logic: דΒΖחאΖΕΖΕהΗחבΒודבבΔΒΘגΘΗΖוΑאאΘΘאΓΒΔאΘחחבהΖגהΗΕΑΑוΘΗבΑΔΘאΖוΓההΑגΓ
+# Secondary bridge hash: 46a8870c606170d2c96812986ba67c5e1da17bc790fd7d9aceac1325b4a310f6
+# Substrate loop hash: 7b1e66918b06d68cb1b8e1792593ed30b6d47a985be863f3abe7bcdd5c408a0f
+# Substrate loop logic: ΘדΒזΗΗבΒאדΑΗוΗאהדΒדאזΒΘבΓΖבΔזוΔΑדΗוΕΘגבאΖדזאΗΔחΔגדזΘדהווΖהΕΑאגΑח
 # Natural evolution depth: 1
 # Exponential evolution rate: 4
-# Leaf origin hash: 537908ee26f9e3f8c60dc3f9d8a034311ffd87527ab71a4baed0780efa6110ae
-# Evolution hash: 4ba2e15006d43bc9a762d3fda4d9600718ff4868e1c91fe010d0a09a3cb9ee0f
-# Evolution logic: ΕדגΓזΒΖΑΑΗוΕΔדהבגΘΗΓוΔחוגΕובΗΑΑΘΒאחחΕאΗאזΒהבΒחזΑΒΑוΑגΑבגΔהדבזזΑח
-# Binary reversed: 0011110100010010000101100100000011100110011111111000010010100001100010010100111011111011101100111000000111100110101000001110110111010010100100100000111100010011001111110001000111011110110011000000010010000011011000010001011100011110110000100000000110111110
-# Greek/Hebrew/logic stamp: ΘואΑΕΔΘאזאאΗהΒΓΑΔΔΘדאאחההאחΑΕבΕדדΘΑΖΗΘאΒהווחΘΓבΒאΖΓΒחזΗΘΑΓΗאΕאדה
-# Encoded local stamp: ΥΡΗŪωξŪφĪΨāζ∂∂ōΦδĪĀ∂∀ΜΗēοσσΗūΨδΛΟΙΕΑωΓλδΖΩ∇=
+# Leaf origin hash: 08e3b359717122ee1baa2579e6f5c0fe5be0b75c035dd792a4998c49b74a3c1d
+# Evolution hash: 3ea600c0f861bda8de25089bd4c31d0e866bd4e1f876726fc64944008afd7d29
+# Evolution logic: ΔזגΗΑΑהΑחאΗΒדוגאוזΓΖΑאבדוΕהΔΒוΑזאΗΗדוΕזΒחאΘΗΘΓΗחהΗΕבΕΕΑΑאגחוΘוΓב
+# Binary reversed: 1100101010101100110000001100011101011000010010000101001010101011111110110110000111111110000001000011001100001110100110010100000110001110000011100110000111100111001101111001001010110100010010100111110101101000100011010100111111001000110101000000010100000100
+# Greek/Hebrew/logic stamp: ΓΑגΑΓדΒΔחΓדΒΒΗדזΖΓΓוΕבזהזΘאΗΘΑΘΒאΓבבΘΑההΓΑΘחאΗוחוΖΕגΒΓΒגזΔΑΔΔΖΖΔ
+# Encoded local stamp: ωūΥĒΨΥāΣυ∀ΨρΙδγφΥĪΤĀΥΟΝυλπāλΖφΑυφΠΒΩΧŌΞΜκΨΙ=
 # CURSIV-CRUCIBLE-STAMP END
 # API keys — never commit these
 secrets.bat
@@ -61,3 +61,6 @@ reports/
 # Obsidian vault editor state — local only, no real content
 .obsidian/
 **/.obsidian/
+
+# Plaintext family letters (sealed copy lives in cursiv_v215/family/sealed_letters.json)
+private/

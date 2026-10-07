@@ -61,6 +61,7 @@ from cursiv_v215.ui.chat_app import (
     _call_openai_direct,
     _call_provider_council,
     _web_search,
+    cascade_stream as _cascade_stream,
 )
 
 try:
@@ -393,15 +394,13 @@ _LANG_NAMES = {
 
 
 def _cascade_gen(cfg: dict, messages: list[dict], max_tokens: int = 900):
-    """Same provider-preference order the CLI's grow/babel-outbound commands use."""
-    ant, xai, oai = cfg.get("anthropic_key", ""), cfg.get("api_key", ""), cfg.get("openai_key", "")
-    if ant:
-        return _call_claude_direct(messages, ant), "Claude"
-    if xai:
-        return _call_xai_stream(messages, xai, False), "xAI"
-    if oai:
-        return _call_openai_direct(messages, oai), "OpenAI"
-    return _call_ollama(messages, max_tokens=max_tokens), "Ollama"
+    """Claude -> xAI -> OpenAI -> local Ollama, falling through to the next one
+    whenever a provider fails, so one-shot tools (babel, grow) work with no keys
+    or with dead ones. Returns (generator, label for the header)."""
+    gen, _used = _cascade_stream(messages, cfg, max_tokens=max_tokens)
+    order = [name for name, field in (("Claude", "anthropic_key"), ("xAI", "api_key"), ("OpenAI", "openai_key"))
+             if cfg.get(field)]
+    return gen, " → ".join(order + ["Ollama"])
 
 
 _HELP_TEXT = """\

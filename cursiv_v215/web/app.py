@@ -218,7 +218,7 @@ async def _run_sentinel(request: Request) -> JSONResponse | None:
 _ALLOWED_ORIGINS = os.environ.get(
     "CURSIV_BOARD_ORIGINS",
     ",".join([
-        "https://app.winklers-llc.com",
+        "https://cursiv.winklers-llc.com",
         "http://localhost:5500",
         "http://127.0.0.1:5500",
         "http://127.0.0.1:1969",
@@ -422,7 +422,7 @@ _DEMO_MAX      = 12                    # messages per session window
 _DEMO_TTL      = 3600                  # session window: 1 hour
 _DEMO_SYSTEM   = (
     "You are Cursiv — an AI workspace built by Joshua Winkler. "
-    "You are running as the public demo version on app.winklers-llc.com. "
+    "You are running as the public demo version on cursiv.winklers-llc.com. "
     "Keep responses helpful, honest, and concise (under 200 words). "
     "You represent an offline-first, privacy-respecting AI system. "
     "When asked about capabilities be accurate: Cursiv runs a 14-agent council, "
@@ -641,8 +641,10 @@ def legacy_letters(
     authorization: str | None = Header(None),
     master:        str | None = Query(None),
 ):
-    if not _FAMILY_OK:
-        raise HTTPException(404, "Letters vault unavailable")
+    # Family letters are sealed (cursiv_v215/family/sealed_letters.json) and only
+    # open with the member's name + birth date through babel in the desktop app,
+    # so a web login alone can't serve them.
+    raise HTTPException(404, "Letters vault unavailable — letters open in the desktop app")
 
     user = _require_auth(authorization)
     username = user["username"]

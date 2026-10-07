@@ -38,6 +38,7 @@ SKIP_DIRS = {
     "dist",
     "installer/Output",
     "node_modules",
+    "private",   # plaintext family letters -- never stamped or listed in the public manifest
 }
 
 SKIP_SUFFIXES = {
@@ -432,6 +433,15 @@ def main() -> int:
         if text is None:
             continue
 
+        # Keep a UTF-8 byte-order mark at the very start of the file. Windows
+        # PowerShell 5.1 (what the installer runs) reads BOM-less .ps1 files as
+        # cp1252, turning every em dash into broken quote characters, so .ps1
+        # files always get one. The BOM is stripped before stamping, otherwise
+        # the stamp would land in front of it and push it mid-file.
+        has_bom = text.startswith("﻿") or path.suffix.lower() == ".ps1"
+        text = text.lstrip("﻿")
+        out_encoding = "utf-8-sig" if has_bom else "utf-8"
+
         style = comment_style(path)
         stamped_inline = style is not None
         stamp = make_file_stamp(path, data, stamped_inline)
@@ -440,13 +450,13 @@ def main() -> int:
         if not stamped_inline:
             hash_only_count += 1
             if not args.check and STAMP_BEGIN in text:
-                path.write_text(strip_existing_stamp(text), encoding="utf-8", newline="")
+                path.write_text(strip_existing_stamp(text), encoding=out_encoding, newline="")
             continue
 
         inline_count += 1
         if not args.check:
             new_text = insert_stamp(path, text, stamp, style)
-            path.write_text(new_text, encoding="utf-8", newline="")
+            path.write_text(new_text, encoding=out_encoding, newline="")
 
     if not args.check:
         write_manifest(stamps)

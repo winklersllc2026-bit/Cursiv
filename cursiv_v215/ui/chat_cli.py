@@ -83,7 +83,15 @@ from cursiv_v215.ui.chat_app import (
     _call_xai_stream,
     _call_claude_direct,
     _call_openai_direct,
+    cascade_stream,
 )
+
+
+def _cascade_label(cfg: dict) -> str:
+    """Provider order cascade_stream will try, for the 'via ...' line."""
+    order = [name for name, field in (("Claude", "anthropic_key"), ("xAI", "api_key"), ("OpenAI", "openai_key"))
+             if cfg.get(field)]
+    return " → ".join(order + ["Ollama"])
 
 try:
     from cursiv_v215.agents.babel_agent import (
@@ -1125,7 +1133,7 @@ _HELP = f"""\
   {LGOLD}blast who{RESET}                 show current board user
   {LGOLD}blast{RESET}                     post last council synthesis to the public board
                             run a council deliberation first, then blast to send
-                            live at app.winklers-llc.com/board
+                            live at cursiv.winklers-llc.com/board
 
   {GOLD}── Strand Archive (persistent memory across sessions) ───────────{RESET}
   {LGOLD}anchor this{RESET}               save last exchange as a Strand (permanent)
@@ -2724,18 +2732,8 @@ def main() -> None:
                         {"role": "system", "content": _VOICE_CLEAN_SYS},
                         {"role": "user",   "content": _vdecoded},
                     ]
-                    _vant = cfg.get("anthropic_key", "")
-                    _vxai = cfg.get("api_key", "")
-                    _voai = cfg.get("openai_key", "")
-
-                    if _vant:
-                        _vgen, _vlbl = _call_claude_direct(_vcl_msgs, _vant), "Claude"
-                    elif _vxai:
-                        _vgen, _vlbl = _call_xai_stream(_vcl_msgs, _vxai, False), "xAI"
-                    elif _voai:
-                        _vgen, _vlbl = _call_openai_direct(_vcl_msgs, _voai), "OpenAI"
-                    else:
-                        _vgen, _vlbl = _call_ollama(_vcl_msgs, max_tokens=300), "Ollama"
+                    _vgen, _ = cascade_stream(_vcl_msgs, cfg, max_tokens=300)
+                    _vlbl = _cascade_label(cfg)
 
                     print(f"  {DIM}Babel clean via {_vlbl}:{RESET}")
                     _vcleaned = ""
@@ -3063,21 +3061,8 @@ def main() -> None:
                         {"role": "system", "content": _out_sys},
                         {"role": "user",   "content": _out_user},
                     ]
-                    _ant_key = cfg.get("anthropic_key", "")
-                    _xai_key = cfg.get("api_key", "")
-                    _oai_key = cfg.get("openai_key", "")
-                    if _ant_key:
-                        _out_label2 = "Claude"
-                        _out_gen    = _call_claude_direct(_out_msgs, _ant_key)
-                    elif _xai_key:
-                        _out_label2 = "xAI"
-                        _out_gen    = _call_xai_stream(_out_msgs, _xai_key, False)
-                    elif _oai_key:
-                        _out_label2 = "OpenAI"
-                        _out_gen    = _call_openai_direct(_out_msgs, _oai_key)
-                    else:
-                        _out_label2 = "Ollama"
-                        _out_gen    = _call_ollama(_out_msgs, max_tokens=800)
+                    _out_gen, _    = cascade_stream(_out_msgs, cfg, max_tokens=800)
+                    _out_label2    = _cascade_label(cfg)
                     print(f"  {DIM}via {_out_label2}{RESET}\n")
                     for _oc in _out_gen:
                         if _oc == RATE_SENTINEL:
@@ -3291,27 +3276,14 @@ def main() -> None:
             print()
 
             # Translation routing: external APIs are far more accurate than local model
-            # for complex scripts. Priority: Claude > xAI > OpenAI > Ollama fallback.
+            # for complex scripts. Claude > xAI > OpenAI > Ollama, falling through to
+            # the next one whenever a provider fails, so Ollama always catches it.
             _babel_tx_msgs = [
                 {"role": "system", "content": _BABEL_SYSTEM},
                 {"role": "user",   "content": decoded},
             ]
-            _ant_key = cfg.get("anthropic_key", "")
-            _xai_key = cfg.get("api_key", "")
-            _oai_key = cfg.get("openai_key", "")
-
-            if _ant_key:
-                _babel_label = "Claude"
-                _babel_gen   = _call_claude_direct(_babel_tx_msgs, _ant_key)
-            elif _xai_key:
-                _babel_label = "xAI"
-                _babel_gen   = _call_xai_stream(_babel_tx_msgs, _xai_key, False)
-            elif _oai_key:
-                _babel_label = "OpenAI"
-                _babel_gen   = _call_openai_direct(_babel_tx_msgs, _oai_key)
-            else:
-                _babel_label = "Ollama"
-                _babel_gen   = _call_ollama(_babel_tx_msgs, max_tokens=400)
+            _babel_gen, _ = cascade_stream(_babel_tx_msgs, cfg, max_tokens=400)
+            _babel_label  = _cascade_label(cfg)
 
             print(f"  {GOLD}Translation{RESET}  {DIM}via {_babel_label}{RESET}:")
             full = ""

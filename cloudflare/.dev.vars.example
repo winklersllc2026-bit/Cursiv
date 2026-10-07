@@ -1,0 +1,4 @@
+# Copy to .dev.vars for local testing with `npx wrangler dev`. Never commit .dev.vars.
+CURSIV_BOARD_SECRET=local-test-secret-change-me
+# GEMINI_API_KEY=
+# CURSIV_FLEET_TOKEN=

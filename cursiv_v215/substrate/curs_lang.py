@@ -1,19 +1,19 @@
 # CURSIV-CRUCIBLE-STAMP BEGIN
 # Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
 # Layer: ruw-substrate
-# Hash reversed: db96dc1c76035af611de5316235fbb9128ad5d244c714cab5394210292a996cf
+# Hash reversed: 54471333f4c4c73a22393d48e630dd96a07792c890ac304bc877dd6637b96e50
 # Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 71a6f4646d3732a909c4378d909c0d84f34a6c0cb515a733102c707aa2b7021e
-# Substrate loop hash: c348ee6255222696686fa4eb92dd6c435c443aaf9ea6d73cfdffe2997f928059
-# Substrate loop logic: הΔΕאזזΗΓΖΖΓΓΓΗבΗΗאΗחגΕזדבΓווΗהΕΔΖהΕΕΔגגחבזגΗוΘΔהחוחחזΓבבΘחבΓאΑΖב
+# Secondary bridge hash: 7014bc3f45835e52bda26b12b2e7120fe0b68387542f39ef4020105590372976
+# Substrate loop hash: bded8d3e79402a8c62f166de4ace5455083a5f20aef97a3c876cdfa7b9222f1e
+# Substrate loop logic: דוזואוΔזΘבΕΑΓגאהΗΓחΒΗΗוזΕגהזΖΕΖΖΑאΔגΖחΓΑגזחבΘגΔהאΘΗהוחגΘדבΓΓΓחΒז
 # Natural evolution depth: 3
 # Exponential evolution rate: 16
-# Leaf origin hash: fc0e851ae0635f120ef77ed7137b7a02bbc4a78b995a56b7903b1e1678e62c06
-# Evolution hash: efd8dd20450475871b62a2e923eb2c42f5e4e411f64c8214c5168b0061cc268b
-# Evolution logic: זחואווΓΑΕΖΑΕΘΖאΘΒדΗΓגΓזבΓΔזדΓהΕΓחΖזΕזΕΒΒחΗΕהאΓΒΕהΖΒΗאדΑΑΗΒההΓΗאד
-# Binary reversed: 1011110110010110101100111000001111100110000011001010010111110110100010001011011110101100100001100100110010101111110111011001100001000001010110111010101101000010001000111110100000100011010111011010110010010010010010000000010010010100010110011001011000111111
-# Greek/Hebrew/logic stamp: חהΗבבגΓבΓΑΒΓΕבΔΖדגהΕΒΘהΕΕΓוΖוגאΓΒבדדחΖΔΓΗΒΔΖזוΒΒΗחגΖΔΑΗΘהΒהוΗבדו
-# Encoded local stamp: ξĀτχτĪΙāΟτφōē∂βεΣΧξωū∞ιΔφāξΥρτΤαγΟσζΘπēεηιΝ=
+# Leaf origin hash: 0514ea6225bbc5a0db225a673bb95eccb7f5b1e7963aeb61ba0f4a93f1fee8d1
+# Evolution hash: 2c8152aaa941a0c454a04a23a4b6a627491cf6866490115b648b59e0c3854d53
+# Evolution logic: ΓהאΒΖΓגגגבΕΒגΑהΕΖΕגΑΕגΓΔגΕדΗגΗΓΘΕבΒהחΗאΗΗΕבΑΒΒΖדΗΕאדΖבזΑהΔאΖΕוΖΔ
+# Binary reversed: 1010001000101110100011001100110011110010001100100011111011000101010001001100100111001011001000010111011011000000101110111001011001010000111011101001010000110001100100000101001111000000001011010011000111101110101110110110011011001110110110010110011110100000
+# Greek/Hebrew/logic stamp: ΑΖזΗבדΘΔΗΗווΘΘאהדΕΑΔהגΑבאהΓבΘΘΑגΗבווΑΔΗזאΕוΔבΔΓΓגΔΘהΕהΕחΔΔΔΒΘΕΕΖ
+# Encoded local stamp: μυΠīκηΒχ∂ΚΙΣŌΗκδκ∇ΥιΟĒΚēΞΠΞΤεωΑ∂ΨκεΙΜξΝυΝξŪ=
 # CURSIV-CRUCIBLE-STAMP END
 """
 Curs. — Covert Under Raw Substrate

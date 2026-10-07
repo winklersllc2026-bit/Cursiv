@@ -41,7 +41,7 @@ import urllib.error
 import urllib.request
 from datetime import datetime
 from pathlib import Path
-from typing import Generator
+from typing import Callable, Generator
 
 try:
     import gradio as gr
@@ -1384,8 +1384,20 @@ def _call_ollama_raw(messages: list[dict], max_tokens: int = 1200) -> Generator[
         if m.get("role") in ("user", "assistant") and isinstance(m.get("content"), str)
     )
 
+    if not _ensure_ollama():
+        yield "\n[Ollama not found. Install from https://ollama.com then run: ollama pull llama3.1]"
+        return
+    model = _resolve_ollama_model()
+    if model is None:
+        # Ollama is running but has no models at all -- download the default
+        # once (progress shown in the reply) instead of failing with a 404.
+        yield from _pull_ollama_model(OLLAMA_MODEL)
+        model = _resolve_ollama_model()
+        if model is None:
+            yield f"\n[No local model available. Run: ollama pull {OLLAMA_MODEL}]"
+            return
     payload = json.dumps({
-        "model": OLLAMA_MODEL,
+        "model": model,
         "system": system_str,
         "prompt": turns,
         "stream": True,
@@ -1394,9 +1406,6 @@ def _call_ollama_raw(messages: list[dict], max_tokens: int = 1200) -> Generator[
             "num_ctx": 6144,
         },
     }).encode()
-    if not _ensure_ollama():
-        yield "\n[Ollama not found. Install from https://ollama.com then run: ollama pull llama3.1]"
-        return
     try:
         req = urllib.request.Request(OLLAMA_URL, data=payload,
                                      headers={"Content-Type": "application/json"})
@@ -1467,6 +1476,139 @@ def _ollama_pulled_models() -> set[str]:
         return names
     except Exception:
         return set()
+
+
+# Preference order when OLLAMA_MODEL isn't pulled: the owner's own fine-tuned
+# model first (training/ollama_merge.py), then its base, then anything else.
+_OLLAMA_FALLBACK_MODELS = ("cursiv-tuned", "qwen2.5:1.5b", "qwen2.5")
+
+
+def _resolve_ollama_model() -> str | None:
+    """Pick an installed Ollama model for general chat, or None if none are pulled."""
+    try:
+        req = urllib.request.Request(OLLAMA_TAGS_URL)
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            tags = [m.get("name", "") for m in json.loads(resp.read().decode()).get("models", [])]
+    except Exception:
+        return None
+    available = set(tags) | {t.split(":")[0] for t in tags}
+    for name in (OLLAMA_MODEL, *_OLLAMA_FALLBACK_MODELS):
+        if name in available:
+            return name
+    # Anything else that isn't an embedding-only model
+    for tag in tags:
+        if tag and "embed" not in tag.lower():
+            return tag
+    return None
+
+
+def _pull_ollama_model(model: str) -> Generator[str, None, None]:
+    """Download a model through Ollama's API, yielding short progress lines."""
+    yield f"\n[No local model installed yet -- downloading {model} (one-time setup, a few GB)...]\n"
+    last_pct = -10
+    try:
+        req = urllib.request.Request(
+            OLLAMA_URL.replace("/api/generate", "/api/pull"),
+            data=json.dumps({"name": model, "stream": True}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=3600) as resp:
+            for line in resp:
+                try:
+                    status = json.loads(line.decode())
+                except Exception:
+                    continue
+                if status.get("error"):
+                    yield f"[Download failed: {status['error']}]\n"
+                    return
+                total, done = status.get("total"), status.get("completed")
+                if total and done:
+                    pct = int(done * 100 / total)
+                    if pct >= last_pct + 10:
+                        last_pct = pct
+                        yield f"[{model}: {pct}%]\n"
+                if status.get("status") == "success":
+                    yield f"[{model} ready.]\n\n"
+                    return
+    except Exception as e:
+        yield f"[Download failed: {e}]\n"
+
+
+# Error/placeholder chunks the cloud callers yield instead of raising.
+_PROVIDER_ERROR_PREFIXES = ("[xAI auth error", "[Claude error", "[OpenAI error", "[Ollama unavailable", "[Ollama not found")
+
+
+def cascade_stream(
+    messages: list[dict],
+    keys: dict,
+    max_tokens: int = 900,
+) -> tuple[Generator[str, None, None], list[str]]:
+    """
+    Stream a one-shot reply (Babel, grow, ...) through every configured provider
+    in order -- Claude, xAI, OpenAI, then local Ollama -- moving to the next one
+    whenever a provider fails (bad/expired key, out of credits, offline, empty
+    reply). Ollama is always the last stop, so this works with no keys at all.
+
+    Returns (generator, used) where `used` is filled in with the label of the
+    provider that actually answered once the generator starts producing text.
+    """
+    attempts: list[tuple[str, Callable[[], Generator[str, None, None]]]] = []
+    if keys.get("anthropic_key"):
+        attempts.append(("Claude", lambda: _call_claude_direct(messages, keys["anthropic_key"])))
+    if keys.get("api_key"):
+        attempts.append(("xAI", lambda: _call_xai_stream(messages, keys["api_key"], False, max_tokens)))
+    if keys.get("openai_key"):
+        attempts.append(("OpenAI", lambda: _call_openai_direct(messages, keys["openai_key"])))
+    attempts.append(("Ollama", lambda: _call_ollama(messages, max_tokens=max_tokens)))
+
+    used: list[str] = []
+
+    def _gen() -> Generator[str, None, None]:
+        failures: list[str] = []
+        for label, start in attempts:
+            if label == "Ollama":
+                # Last stop -- nothing left to fall back to, so stream everything
+                # (including first-time download progress) straight through.
+                used.append(label)
+                if failures:
+                    yield f"[{'; '.join(failures)} -- using local Ollama]\n\n"
+                for chunk in start():
+                    if chunk != RATE_SENTINEL:
+                        yield chunk
+                return
+
+            stream = start()
+            held: list[str] = []      # rate-gate notes seen before real text
+            failed = None
+            try:
+                for chunk in stream:
+                    if chunk == RATE_SENTINEL:
+                        failed = "busy or unreachable"
+                        break
+                    text = chunk.strip()
+                    if not text:
+                        continue
+                    if text.startswith(_PROVIDER_ERROR_PREFIXES):
+                        failed = text.strip("[]")[:160]
+                        break
+                    if text.startswith("*[Rate gate"):
+                        held.append(chunk)
+                        continue
+                    # Real text: this provider answers. Stream the rest straight through.
+                    used.append(label)
+                    if failures:
+                        yield f"[{'; '.join(failures)} -- answered by {label}]\n\n"
+                    yield from held
+                    yield chunk
+                    for rest in stream:
+                        if rest != RATE_SENTINEL:
+                            yield rest
+                    return
+            except Exception as e:
+                failed = str(e)[:160]
+            failures.append(f"{label}: {failed or 'empty reply'}")
+
+    return _gen(), used
 
 
 try:

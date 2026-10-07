@@ -821,7 +821,10 @@ class ChatPanel(QWidget):
         """
         if not cc._LEGACY_OK:
             return False
-        parsed = cc._fam_parse_iam(text)
+        # parse_iam_command expects "i am ...", so drop the "babel"/"babel:"
+        # prefix first, the way the CLI does -- passing the whole message made
+        # every activation look like a non-match and fall through to translation.
+        parsed = cc._fam_parse_iam(cc._babel_input(text) or text)
         if parsed is None:
             return False
         name, dob_text, inline_pin = parsed
