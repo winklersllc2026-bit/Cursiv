@@ -1,25 +1,21 @@
 """
-One home for Cursiv's data in the installed app: %USERPROFILE%\\.cursiv
+Undo U35's directory junctions for Cursiv's data folders (installed app only).
 
-Modules work out their data folder three different ways -- next to the code
-({app}\\_internal\\.cursiv), relative to the working directory ({app}\\.cursiv),
-or the user's home (%USERPROFILE%\\.cursiv). In the installed app the first two
-live inside the program folder, where reinstalls and updates can wipe them.
+U35 replaced the program-folder data folders ({app}\\_internal\\.cursiv and
+{app}\\.cursiv) with junctions to %USERPROFILE%\\.cursiv. Some Windows 11
+setups refuse to let an app traverse such links ("WinError 448: untrusted
+mount point"), which broke reading and writing data there.
 
-link_data_folders() runs once at startup of the frozen app:
-  1. copies anything from the program-folder .cursiv folders into the home one
-     that isn't already there (home is never overwritten -- e.g. the login files
-     in runtime\\ are read from home, so home's copies are the real ones),
-  2. renames each old folder to .cursiv.moved-<date> (a backup, never deleted),
-  3. replaces it with a directory junction to the home folder,
-so every module reads and writes %USERPROFILE%\\.cursiv no matter how it finds it.
-Source checkouts are left alone (their repo .cursiv is the developer's data).
+settle_data_folders() runs at startup of the frozen app: any of those folders
+that is a junction is removed (only the link -- the data lives in the home
+folder) and replaced by a real folder filled with a copy of the home folder's
+files. Real folders are left alone. The installer never deletes these folders
+(it only replaces its own program files), so updates keep the data safe.
 """
 from __future__ import annotations
 
 import os
 import shutil
-import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -29,20 +25,12 @@ HOME_DATA = Path(os.environ.get("CURSIV_DATA_DIR") or (Path.home() / ".cursiv"))
 
 def _is_link(p: Path) -> bool:
     try:
-        return p.is_symlink() or p.is_junction()
+        return p.is_junction() or p.is_symlink()
     except Exception:
         return False
 
 
-def _points_home(p: Path) -> bool:
-    try:
-        return _is_link(p) and Path(os.path.realpath(p)).resolve() == HOME_DATA.resolve()
-    except Exception:
-        return False
-
-
-def merge_missing(src: Path, dest: Path) -> int:
-    """Copy files from src into dest that dest doesn't have yet. Returns the count."""
+def copy_all(src: Path, dest: Path) -> int:
     copied = 0
     for f in src.rglob("*"):
         if not f.is_file():
@@ -56,51 +44,27 @@ def merge_missing(src: Path, dest: Path) -> int:
     return copied
 
 
-def _make_junction(link: Path, target: Path) -> bool:
-    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-    r = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(target)],
-                       capture_output=True, creationflags=flags)
-    return r.returncode == 0 and _is_link(link)
-
-
-def link_one(old: Path, log: list[str]) -> None:
-    """Merge one program-folder .cursiv into home and replace it with a junction."""
-    if _points_home(old):
+def unlink_one(folder: Path, log: list[str]) -> None:
+    if not _is_link(folder):
         return
-    if _is_link(old):                 # a link somewhere else -- leave it alone
-        log.append(f"skip {old}: already a link elsewhere")
-        return
-    if old.exists():
-        n = merge_missing(old, HOME_DATA)
-        backup = old.with_name(f".cursiv.moved-{datetime.now():%Y%m%d-%H%M%S}")
-        old.rename(backup)
-        if not _make_junction(old, HOME_DATA):
-            backup.rename(old)        # put it back exactly as it was
-            log.append(f"could not link {old}; left in place")
-            return
-        log.append(f"moved {n} file(s) from {old} -> {HOME_DATA} (backup: {backup.name})")
-    else:
-        old.parent.mkdir(parents=True, exist_ok=True)
-        if _make_junction(old, HOME_DATA):
-            log.append(f"linked {old} -> {HOME_DATA}")
+    os.rmdir(folder)          # removes the junction itself, never what it points to
+    folder.mkdir(parents=True, exist_ok=True)
+    n = copy_all(HOME_DATA, folder) if HOME_DATA.is_dir() else 0
+    log.append(f"replaced junction {folder} with a real folder ({n} file(s) copied from {HOME_DATA})")
 
 
-def link_data_folders() -> list[str]:
+def settle_data_folders() -> list[str]:
     """Frozen (installed) app only. Safe to call on every startup."""
     log: list[str] = []
     if not getattr(sys, "frozen", False) or sys.platform != "win32":
         return log
-    try:
-        HOME_DATA.mkdir(parents=True, exist_ok=True)
-        app_dir = Path(sys.executable).resolve().parent
-        internal = Path(getattr(sys, "_MEIPASS", app_dir / "_internal"))
-        for old in (internal / ".cursiv", app_dir / ".cursiv"):
-            try:
-                link_one(old, log)
-            except Exception as exc:
-                log.append(f"error for {old}: {exc}")
-    except Exception as exc:
-        log.append(f"error: {exc}")
+    app_dir = Path(sys.executable).resolve().parent
+    internal = Path(getattr(sys, "_MEIPASS", app_dir / "_internal"))
+    for folder in (internal / ".cursiv", app_dir / ".cursiv"):
+        try:
+            unlink_one(folder, log)
+        except Exception as exc:
+            log.append(f"error for {folder}: {exc}")
     if log:
         try:
             (HOME_DATA / "logs").mkdir(parents=True, exist_ok=True)
@@ -110,3 +74,7 @@ def link_data_folders() -> list[str]:
         except Exception:
             pass
     return log
+
+
+# Kept for any caller still using the U35 name.
+link_data_folders = settle_data_folders

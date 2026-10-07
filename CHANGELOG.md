@@ -45,6 +45,11 @@
 -->
 # Changelog
 
+## v3.14-U37 — Fix data-folder links and key checks (2026-10-07)
+
+- U35's directory junctions for the program-folder data folders fail on some Windows 11 setups ("WinError 448: untrusted mount point"). On startup the installed app now replaces any such junction with a real folder filled from the home copy (`launcher/data_home.py`); no data is lost.
+- Gemini/Groq key checks list the provider's models instead of asking for an 8-token reply (newer Gemini models could spend that on thinking and return nothing, so valid keys were rejected). Gemini calls also retry with `?key=` when the header is refused.
+
 ## v3.14-U36 — Settings window (2026-10-07)
 
 A gear button in the top-right of the main window (next to minimize) opens Settings (`launcher/settings_dialog.py`): every AI key in one place — xAI, OpenAI, Claude, and the free Gemini and Groq — each masked with Show, Save (tests the key first; only a working key is saved), Remove, a status line and a "Get a key" link. Also the Cursiv Cloud on/off switch and the data folder with an Open folder button. Saved keys take effect in the chat right away (`ChatPanel.reload_keys`).

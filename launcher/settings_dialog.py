@@ -48,11 +48,7 @@ def test_key(field: str, key: str) -> tuple[bool, str]:
     try:
         if field in ("gemini_key", "groq_key"):
             from cursiv_v215.ui import chat_app as ca
-            fn = ca._call_gemini_direct if field == "gemini_key" else ca._call_groq_direct
-            reply = "".join(fn([{"role": "user", "content": "Reply with just: OK"}], key, 8)).strip()
-            if reply.startswith(("[Gemini error", "[Groq error")):
-                return False, reply.strip("[]")[:200]
-            return True, "Working."
+            return ca.check_free_key(field, key)
         from cursiv_v215.ui import chat_cli as cli
         probe = {"api_key": cli._probe_xai, "openai_key": cli._probe_openai, "anthropic_key": cli._probe_claude}[field]
         ok = bool(probe(key))

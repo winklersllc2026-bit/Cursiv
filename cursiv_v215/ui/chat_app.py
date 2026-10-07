@@ -1607,20 +1607,62 @@ def _call_gemini_direct(messages: list[dict], key: str, max_tokens: int = 1200) 
         payload["systemInstruction"] = {"parts": [{"text": system}]}
     last_err = ""
     for model in GEMINI_MODELS:
-        try:
-            data = _post_json(GEMINI_URL.format(model=model), payload, {"x-goog-api-key": key}, 60)
-            text = "".join(p.get("text", "") for p in (data.get("candidates") or [{}])[0].get("content", {}).get("parts", []))
-            if text.strip():
-                yield _filter_identity(text)
-                return
-            last_err = "empty reply"
-        except urllib.error.HTTPError as e:
-            last_err = f"{e.code}: {e.read().decode(errors='ignore')[:160]}"
-            if e.code in (400, 401, 403):
-                break           # bad key or request -- another model won't help
-        except Exception as e:
-            last_err = str(e)
+        url = GEMINI_URL.format(model=model)
+        for use_query in (False, True):    # header first; some newer keys only work as ?key=
+            try:
+                if use_query:
+                    data = _post_json(f"{url}?key={urllib.parse.quote(key)}", payload, {}, 60)
+                else:
+                    data = _post_json(url, payload, {"x-goog-api-key": key}, 60)
+                cand = (data.get("candidates") or [{}])[0]
+                text = "".join(p.get("text", "") for p in cand.get("content", {}).get("parts", []))
+                if text.strip():
+                    yield _filter_identity(text)
+                    return
+                last_err = f"empty reply ({cand.get('finishReason', 'no text')})"
+                break
+            except urllib.error.HTTPError as e:
+                last_err = f"{e.code}: {e.read().decode(errors='ignore')[:200]}"
+                if e.code in (401, 403) and not use_query:
+                    continue        # try the same model with ?key=
+                break
+            except Exception as e:
+                last_err = str(e)
+                break
+        if last_err[:3] in ("400", "401", "403"):
+            break                   # bad key or request -- another model won't help
     yield f"\n[Gemini error {last_err}]"
+
+
+def check_free_key(field: str, key: str) -> tuple[bool, str]:
+    """Is this Gemini/Groq key valid? Lists the provider's models -- costs no
+    tokens, and doesn't depend on a model's reply (newer Gemini models can
+    spend a tiny test budget on thinking and return nothing)."""
+    def get(url: str, headers: dict) -> None:
+        req = urllib.request.Request(url, headers={"User-Agent": "Cursiv-Desktop/3.14", **headers})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            r.read(200)
+    try:
+        if field == "gemini_key":
+            base = "https://generativelanguage.googleapis.com/v1beta/models"
+            try:
+                get(base, {"x-goog-api-key": key})
+            except urllib.error.HTTPError as e:
+                if e.code not in (400, 401, 403):
+                    raise
+                get(f"{base}?key={urllib.parse.quote(key)}", {})
+        else:
+            get("https://api.groq.com/openai/v1/models", {"Authorization": f"Bearer {key}"})
+        return True, "Working."
+    except urllib.error.HTTPError as e:
+        try:
+            detail = json.loads(e.read().decode("utf-8", "ignore")).get("error", {})
+            detail = detail.get("message", "") if isinstance(detail, dict) else str(detail)
+        except Exception:
+            detail = ""
+        return False, f"{e.code}: {detail or 'rejected'}"[:220]
+    except Exception as e:
+        return False, f"couldn't reach the provider: {e}"[:220]
 
 
 def _call_groq_direct(messages: list[dict], key: str, max_tokens: int = 1200) -> Generator[str, None, None]:
@@ -1720,8 +1762,8 @@ def free_key_command(text: str) -> str | None:
                 return f"{name.title()} key removed."
             if len(key) < 20 or " " in key:
                 return f"That doesn't look like a whole {name.title()} key -- copy the full key and try again.\n\n" + FREE_KEY_HELP
-            reply = "".join(fn([{"role": "user", "content": "Reply with just: OK"}], key, 8))
-            if reply.lstrip().startswith(f"[{name.title()} error"):
+            ok, reply = check_free_key(field, key)
+            if not ok:
                 hint = "" if key.startswith(prefixes) else (
                     f"\n(Most {name.title()} keys start with {' or '.join(prefixes)} -- make sure you copied the API key itself.)")
                 return (f"{name.title()} key NOT saved -- the test call failed: {reply.strip()}\n"
