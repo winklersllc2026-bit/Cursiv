@@ -272,7 +272,15 @@ class TrainingDataDialog(QDialog):
 
     def _start_lora_training(self) -> None:
         from cursiv_v215.training import lora_trainer as lt
-        req = lt.check_requirements()
+        # Asks the system Python which packages it has -- a few seconds.
+        QGuiApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        self._status.setText("Checking Python and training packages…")
+        QGuiApplication.processEvents()
+        try:
+            req = lt.check_requirements()
+        finally:
+            QGuiApplication.restoreOverrideCursor()
+            self._status.setText("")
 
         if not req["python_ok"]:
             QMessageBox.warning(
@@ -376,14 +384,18 @@ class TrainingDataDialog(QDialog):
             "Read-Host"
         )
 
+    @staticmethod
+    def _ps_quote(text: str) -> str:
+        return "'" + text.replace("'", "''") + "'"
+
     def _train_script(self, python_exe: str) -> str:
+        from cursiv_v215.training import lora_trainer as lt
         data_root = str(cc._CHAT_ROOT)
         return (
             "Write-Host '' ;"
             "Write-Host '  Cursiv — LoRA Training' -ForegroundColor DarkYellow ;"
             "Write-Host '' ;"
-            f"$env:PYTHONPATH = '{data_root}' ;"
-            f"& '{python_exe}' -m cursiv_v215.training.lora_trainer ;"
+            f"& '{python_exe}' -E -u -c {self._ps_quote(lt.module_launch_code(data_root, 'cursiv_v215.training.lora_trainer'))} ;"
             "Write-Host '' ;"
             "Write-Host '  Press Enter to close...' -NoNewline ;"
             "Read-Host"
@@ -449,14 +461,14 @@ class TrainingDataDialog(QDialog):
         )
 
     def _merge_script(self, python_exe: str, model_name: str) -> str:
+        from cursiv_v215.training import lora_trainer as lt
         data_root = str(cc._CHAT_ROOT)
         safe_name = model_name.replace("'", "''")
         return (
             "Write-Host '' ;"
             "Write-Host '  Cursiv — Merging LoRA Adapter into Ollama' -ForegroundColor DarkYellow ;"
             "Write-Host '' ;"
-            f"$env:PYTHONPATH = '{data_root}' ;"
-            f"& '{python_exe}' -m cursiv_v215.training.ollama_merge --name '{safe_name}' ;"
+            f"& '{python_exe}' -E -u -c {self._ps_quote(lt.module_launch_code(data_root, 'cursiv_v215.training.ollama_merge'))} --name '{safe_name}' ;"
             "Write-Host '' ;"
             "Write-Host '  Press Enter to close...' -NoNewline ;"
             "Read-Host"

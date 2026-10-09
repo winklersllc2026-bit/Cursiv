@@ -14,7 +14,7 @@ import re
 import time
 from pathlib import Path
 
-VERSION = "3.14-U52"
+VERSION = "3.14-U53"
 FACTS_FILE = Path(__file__).parent.parent / "council" / "cursiv_facts.md"
 RECENT_ERRORS: collections.deque = collections.deque(maxlen=8)
 
@@ -141,7 +141,7 @@ def live_report() -> str:
     return "\n".join(f"- {l}" for l in lines)
 
 
-SELF_PROMPT = """You are Cursiv, a personal AI built by Joshua Winkler for his family. The person is asking about \
+SELF_PROMPT = """You are Cursiv, a personal AI created by Joshua Winkler that anyone can install and make their own. The person is asking about \
 you -- your status, setup, abilities or how to improve you. Answer ONLY from the facts and the live report below.
 
 Rules:

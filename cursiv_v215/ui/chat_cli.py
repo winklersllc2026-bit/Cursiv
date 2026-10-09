@@ -2889,8 +2889,10 @@ def main() -> None:
                 print(f"  {DIM}Example:  image a futuristic city at night, neon rain, cinematic{RESET}")
                 continue
             if not cfg.get("openai_key"):
-                print(f"  {RED}No OpenAI key — image generation requires DALL-E 3.{RESET}")
-                print(f"  {DIM}Set key:  openai sk-...{RESET}")
+                print(f"  {RED}Image generation needs an online key — it can't be done offline.{RESET}")
+                print(f"  {DIM}Offline models and free Gemini/Groq keys can describe images, not create them.{RESET}")
+                print(f"  {DIM}Free: Cloudflare Workers AI in the desktop chat  (type: cloudflare <account-id> <token>){RESET}")
+                print(f"  {DIM}Paid: OpenAI key  (type: openai sk-...){RESET}")
                 continue
             print(f"\n  {GOLD}⬡ Image Generation{RESET}  {DIM}DALL-E 3 · {prompt[:60]}{'...' if len(prompt)>60 else ''}{RESET}\n")
             try:

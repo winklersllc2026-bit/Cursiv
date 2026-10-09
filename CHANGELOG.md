@@ -45,6 +45,12 @@
 -->
 # Changelog
 
+## v3.14-U53 — LoRA training works, images in and out, Cursiv is for anyone (2026-10-09)
+- **LoRA training actually trains now.** Two bugs stopped it: the training terminal loaded Cursiv's own bundled Python 3.13 files ahead of your system Python, so PyTorch crashed on any other Python version and the trainer reported "missing packages"; and the button checked for PyTorch inside Cursiv.exe (where it never is), so it always offered to install instead of starting. The check now asks the Python that will do the training, and that Python is launched cleanly. "Merge into Ollama" had the same launch problem and is fixed too.
+- **Read images for free.** Pasted images (and image uploads in Training Data) are described by Claude or GPT-4o if you have those keys, then a free Gemini key, then a local vision model through Ollama — so it works offline with no key at all. The Setup window has a new step, **Image reading model**, that downloads Gemma 3 (3.3 GB) with one click.
+- **Make images.** `image <description>`, or just ask ("make me a picture of a lighthouse at dawn"). Uses a paid OpenAI key if you have one, or a free Cloudflare Workers AI account (`cloudflare <account-id> <token>`, about 100+ free images a day). Offline models can't make images — if no key is set, Cursiv says so and explains both options step by step.
+- **Cursiv is for anyone.** Cursiv now describes itself as created by Joshua Winkler and owned by whoever installs it — it no longer tells people it only works for Joshua and his family. The guardrails are unchanged; "the human has final authority" now means the person who owns that copy.
+
 ## v3.14-U52 — Cursiv Forge: it grows new abilities (2026-10-07)
 - **`evolve <idea>`** — Cursiv writes itself a new ability as a plugin (e.g. `evolve a command that converts recipe amounts between cups and grams`). It's checked for safety (no running programs, no network, no deleting files), tested in a sandbox, and fixed automatically if the test fails. You read the code and a plain summary; nothing installs until you type `evolve approve`.
 - **Plugins** — `plugins` lists them; `plugin show/off/on/remove <name>`. Each approved plugin is fingerprinted: if its file changes, it won't load until you approve it again. A broken plugin is switched off, never crashes Cursiv. Every install is logged.

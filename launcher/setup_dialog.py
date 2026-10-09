@@ -45,6 +45,10 @@ CODE_MODELS = [
     ("qwen2.5-coder 14B — smartest, needs 12 GB+ (9 GB)", "qwen2.5-coder:14b"),
 ]
 
+# Lets Cursiv read pasted images offline (chat_commands._vision_describe).
+VISION_MODEL = ("gemma3 4B — reads and describes images offline (3.3 GB)", "gemma3:4b")
+VISION_FAMILIES = ("gemma3", "qwen2.5vl", "llama3.2-vision", "minicpm-v", "llava", "moondream")
+
 # (label, model tag, approximate download size)
 MODELS = [
     ("llama3.1 — best answers, for 8 GB+ graphics cards (4.9 GB)", "llama3.1", "4.9 GB"),
@@ -229,8 +233,15 @@ class SetupDialog(QDialog):
         self._s4_btn.clicked.connect(self._pull_code_model)
         self._s4["row"].addWidget(self._s4_btn)
 
-        # Step 4 — cloud + free keys
-        self._s3 = self._card(lay, "4  ·  While you wait (optional)")
+        # Step 4 — image reading model (optional)
+        self._s5 = self._card(lay, "4  ·  Image reading model (optional)")
+        self._s5_btn = QPushButton("Download")
+        self._s5_btn.clicked.connect(self._pull_vision_model)
+        self._s5["row"].addStretch(1)
+        self._s5["row"].addWidget(self._s5_btn)
+
+        # Step 5 — cloud + free keys
+        self._s3 = self._card(lay, "5  ·  While you wait (optional)")
         self._s3_intro = ("Downloading a model can take a while. Until it's done, Cursiv can answer through "
                           "Cursiv Cloud (free, sent to cursiv.winklers-llc.com) or your own free AI key.")
         self._s3["detail"].setText(self._s3_intro)
@@ -345,6 +356,16 @@ class SetupDialog(QDialog):
         self._s4_btn.setEnabled(running and not self._busy)
         self._code_box.setEnabled(running and not self._busy)
 
+        vision = [m for m in models if m.split(":")[0] in VISION_FAMILIES]
+        if vision:
+            self._set_status(self._s5, True, "Installed: " + ", ".join(vision) + " — paste an image into chat to use it.")
+            self._s5_btn.setVisible(False)
+        else:
+            self._set_status(self._s5, None, "Optional. Lets Cursiv read and describe images you paste in, "
+                             "with no internet. " + VISION_MODEL[0] + "." if running else "Optional. Waiting for step 1.")
+            self._s5_btn.setVisible(True)
+        self._s5_btn.setEnabled(running and not self._busy)
+
         ready = running and bool(models)
         self._set_status(self._s3, True if ready else None,
                          "All set — Cursiv runs fully on this computer." if ready else self._s3_intro)
@@ -412,6 +433,13 @@ class SetupDialog(QDialog):
         tag = self._code_box.currentData()
         threading.Thread(target=self._do_pull, args=(tag, "s4"), daemon=True).start()
 
+    def _pull_vision_model(self):
+        self._busy = True
+        self._cancel_pull.clear()
+        self._s5_btn.setEnabled(False)
+        self._s5["bar"].setVisible(True)
+        threading.Thread(target=self._do_pull, args=(VISION_MODEL[1], "s5"), daemon=True).start()
+
     def _do_pull(self, tag: str, step: str = "s2"):
         try:
             req = urllib.request.Request(f"{OLLAMA_API}/api/pull", data=json.dumps({"name": tag, "stream": True}).encode(),
@@ -467,7 +495,7 @@ class SetupDialog(QDialog):
 
     # ── Signal handlers (main thread) ────────────────────────────────────
     def _step(self, name: str) -> dict:
-        return {"s1": self._s1, "s2": self._s2, "s3": self._s3, "s4": self._s4}[name]
+        return {"s1": self._s1, "s2": self._s2, "s3": self._s3, "s4": self._s4, "s5": self._s5}[name]
 
     def _on_progress(self, name: str, pct: int, text: str):
         step = self._step(name)

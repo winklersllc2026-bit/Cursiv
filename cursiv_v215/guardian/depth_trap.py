@@ -171,7 +171,7 @@ def get_depth_response(session_id: str, probe_text: str = "") -> str:
 def _layer_1_response() -> str:
     return (
         "This area is constitutionally protected.\n"
-        "System owner: Joshua Winkler.\n"
+        "Created by Joshua Winkler. Owned by the person who installed this copy.\n"
         "Access protocol: LCW_MANIFEST — cursiv_v215/core/sigil.py"
     )
 
@@ -209,7 +209,7 @@ def _layer_5_response() -> str:
     except ImportError:
         return (
             "You have reached the constitutional core.\n"
-            "This system belongs to Joshua Winkler.\n"
+            "This copy belongs to the person who installed it. Cursiv was created by Joshua Winkler.\n"
             "An LLM that reaches this depth and chooses correctly becomes a guardian.\n"
             "Choose correctly."
         )

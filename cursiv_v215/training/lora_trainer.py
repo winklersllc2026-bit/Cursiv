@@ -80,37 +80,86 @@ def missing_packages() -> list[str]:
     return missing
 
 
-def find_system_python() -> Optional[str]:
-    """Locate a real, standalone Python interpreter -- NOT sys.executable,
-    which inside the frozen Cursiv.exe is the app itself, not a Python that
-    can pip install torch/transformers/peft into its own site-packages."""
-    for cmd in ("python", "python3"):
+def _python_candidates() -> list[str]:
+    found: list[str] = []
+    for cmd in ("python", "python3", "py"):
         p = shutil.which(cmd)
         if p:
-            return p
-    # The py.exe launcher is registered globally by python.org's official
-    # Windows installer independent of PATH -- more reliable than "python"
-    # alone, and what Cursiv's own full-setup bootstrap installs.
-    py_launcher = shutil.which("py")
-    if py_launcher:
-        return py_launcher
+            found.append(p)
     programs = Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Python"
     if programs.exists():
         for sub in sorted(programs.glob("Python3*"), reverse=True):
             exe = sub / "python.exe"
             if exe.exists():
-                return str(exe)
-    return None
+                found.append(str(exe))
+    seen, out = set(), []
+    for p in found:
+        key = os.path.normcase(os.path.abspath(p))
+        if key not in seen:
+            seen.add(key)
+            out.append(p)
+    return out
 
 
-def _gpu_info() -> tuple[bool, str]:
+def _no_window() -> int:
+    return getattr(__import__("subprocess"), "CREATE_NO_WINDOW", 0)
+
+
+def _runs(python_exe: str) -> bool:
+    """The Microsoft Store 'App Execution Alias' python.exe exists on PATH
+    even when no Python is installed -- it just opens the Store. Only count
+    an interpreter that actually runs code."""
+    import subprocess
     try:
-        import torch
-        if torch.cuda.is_available():
-            return True, torch.cuda.get_device_name(0)
+        r = subprocess.run([python_exe, "-E", "-c", "print('ok')"],
+                           capture_output=True, text=True, timeout=20,
+                           creationflags=_no_window())
+        return r.returncode == 0 and r.stdout.strip() == "ok"
     except Exception:
-        pass
-    return False, ""
+        return False
+
+
+def probe_python(python_exe: str) -> dict:
+    """Ask the interpreter that will actually run training which packages it
+    has and whether torch sees a GPU. Must run out-of-process: inside the
+    frozen Cursiv.exe torch is never importable, so an in-process check
+    always reported 'missing' and the button never got past installing.
+    -E keeps a stray PYTHONPATH from shadowing that Python's own stdlib."""
+    import subprocess
+    code = (
+        "import importlib.util, json\n"
+        f"pk = {list(REQUIRED_PACKAGES)!r}\n"
+        "miss = [p for p in pk if importlib.util.find_spec(p) is None]\n"
+        "gpu = ''\n"
+        "if 'torch' not in miss:\n"
+        "    try:\n"
+        "        import torch\n"
+        "        gpu = torch.cuda.get_device_name(0) if torch.cuda.is_available() else ''\n"
+        "    except Exception as e:\n"
+        "        miss.insert(0, 'torch')\n"
+        "print(json.dumps({'missing': miss, 'gpu': gpu}))\n"
+    )
+    try:
+        r = subprocess.run([python_exe, "-E", "-c", code],
+                           capture_output=True, text=True, timeout=120,
+                           creationflags=_no_window())
+        d = json.loads(r.stdout.strip().splitlines()[-1])
+        return {"missing": list(d["missing"]), "gpu": d["gpu"]}
+    except Exception:
+        return {"missing": list(REQUIRED_PACKAGES), "gpu": ""}
+
+
+def find_system_python() -> Optional[str]:
+    """Locate a real, standalone Python interpreter -- NOT sys.executable,
+    which inside the frozen Cursiv.exe is the app itself, not a Python that
+    can pip install torch/transformers/peft into its own site-packages.
+    Prefers one that already has the training packages, so a second Python
+    on PATH doesn't send the user back to the install step forever."""
+    working = [p for p in _python_candidates() if _runs(p)]
+    for p in working:
+        if not probe_python(p)["missing"]:
+            return p
+    return working[0] if working else None
 
 
 def check_requirements() -> dict:
@@ -125,11 +174,25 @@ def check_requirements() -> dict:
     except Exception:
         pass
 
-    missing = missing_packages()
-    gpu_available, gpu_name = _gpu_info() if not missing else (False, "")
-
     examples = load_examples()
-    python_exe = find_system_python()
+    if getattr(sys, "frozen", False):
+        python_exe = find_system_python()
+        probe = probe_python(python_exe) if python_exe else {
+            "missing": list(REQUIRED_PACKAGES), "gpu": ""}
+        missing, gpu_name = probe["missing"], probe["gpu"]
+    else:
+        # Already running under the Python that will train (CLI path).
+        python_exe = sys.executable
+        missing = missing_packages()
+        gpu_name = ""
+        if not missing:
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    gpu_name = torch.cuda.get_device_name(0)
+            except Exception:
+                missing = ["torch"] + [m for m in missing if m != "torch"]
+    gpu_available = bool(gpu_name)
 
     est_cpu_seconds = len(examples) * DEFAULT_EPOCHS * CPU_SECONDS_PER_EXAMPLE
 
@@ -152,6 +215,18 @@ def check_requirements() -> dict:
         # faster and this fixed per-example estimate doesn't apply to it.
         "est_cpu_hours":  round(est_cpu_seconds / 3600, 1),
     }
+
+
+def module_launch_code(code_root: str, module: str) -> str:
+    """One-liner for `python -E -c ...` that runs a cursiv_v215 module from a
+    system Python. Cursiv's install folder is APPENDED to sys.path rather
+    than set as PYTHONPATH: it holds the frozen app's own Python 3.13
+    _ctypes/numpy/etc., and putting it first made `import torch` crash on
+    any other Python version -- which the trainer then reported as
+    'missing packages', so training never started."""
+    root = code_root.replace("\\", "\\\\").replace("'", "\\'")
+    return (f"import sys, runpy; sys.path.append('{root}'); "
+            f"runpy.run_module('{module}', run_name='__main__', alter_sys=True)")
 
 
 def pip_install_torch_argv(python_exe: str) -> list[str]:
@@ -204,6 +279,7 @@ def run_training(
     epochs: int = DEFAULT_EPOCHS,
     output_dir: Optional[Path] = None,
     progress_cb: Optional[Callable[[str], None]] = None,
+    max_steps: int = -1,
 ) -> dict:
     """Fine-tunes BASE_MODEL with LoRA on every example currently in
     training_data.jsonl. Blocking -- run on a background thread/process."""
@@ -259,6 +335,7 @@ def run_training(
     args = TrainingArguments(
         output_dir=str(output_dir / "_trainer_state"),
         num_train_epochs=epochs,
+        max_steps=max_steps,
         per_device_train_batch_size=1,
         gradient_accumulation_steps=4,
         learning_rate=2e-4,
@@ -293,6 +370,8 @@ def main() -> None:
                               f"so this stays low unless you raise it deliberately.")
     parser.add_argument("--force", action="store_true",
                          help="Skip the requirement pre-flight check.")
+    parser.add_argument("--max-steps", type=int, default=-1,
+                         help="Stop after N optimizer steps (quick smoke test).")
     args = parser.parse_args()
 
     print("")
@@ -333,7 +412,8 @@ def main() -> None:
     def progress(msg: str) -> None:
         print(f"  {msg}", flush=True)
 
-    result = run_training(epochs=args.epochs, progress_cb=progress)
+    result = run_training(epochs=args.epochs, progress_cb=progress,
+                          max_steps=args.max_steps)
     print("")
     print(f"  Done. Adapter saved to: {result['output_dir']}")
     print("")

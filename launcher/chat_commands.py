@@ -674,7 +674,7 @@ MODEL & TRUST
 
 OTHER
   rate good / bad / <1-5>    rate the last response
-  image <description>        generate an image (DALL-E 3)
+  image <description>        generate an image (needs paid OpenAI key)
   queue list / queue add <task>   offline task queue
   obsidian on/off/path/export/status
   clear                      wipe this conversation's on-screen history
@@ -824,6 +824,16 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
         cfg["openai_key"] = new_key
         _save_key("openai_key", new_key)
         return TextResult(f"OpenAI: {'connected' if _probe_openai(new_key) else 'unreachable'}")
+
+    # Free Cloudflare Workers AI account -- used for free image generation.
+    if cmd.startswith("cloudflare "):
+        parts = text.split()
+        if len(parts) != 3:
+            return TextResult("Usage: cloudflare <account-id> <api-token>\n\n" + IMAGE_GEN_CLOUDFLARE_HOWTO)
+        cfg["cf_account_id"], cfg["cf_api_token"] = parts[1], parts[2]
+        _save_key("cf_account_id", parts[1])
+        _save_key("cf_api_token", parts[2])
+        return TextResult("Cloudflare saved — free image generation is on. Try: image a lighthouse at dawn")
 
     if cmd.startswith("anthropic "):
         new_key = text[10:].strip()
@@ -1621,32 +1631,61 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
         out.append("Letters are now in the vault.")
         return TextResult("\n".join(out))
 
-    # ── Image generation (DALL-E 3) ─────────────────────────────────────
-    if cmd.startswith("image ") or cmd == "image":
-        prompt = text[6:].strip()
+    # ── Image generation (paid OpenAI key only) ─────────────────────────
+    # Offline/local models and the free keys can't generate images -- say so
+    # plainly instead of letting a text model pretend it drew something.
+    img_prompt = _image_request_prompt(text)
+    if img_prompt is not None:
+        prompt = img_prompt
         if not prompt:
             return TextResult("Usage: image <description>")
-        if not cfg.get("openai_key"):
-            return TextResult("No OpenAI key — image generation requires DALL-E 3. Set key: openai sk-...")
-        try:
-            import openai as _oai_img
+        from cursiv_v215.ui.chat_app import _saved_key
+        oai_key = cfg.get("openai_key", "")
+        cf_id = cfg.get("cf_account_id", "") or _saved_key("cf_account_id")
+        cf_tok = cfg.get("cf_api_token", "") or _saved_key("cf_api_token")
+        if not oai_key and not (cf_id and cf_tok):
+            return TextResult(IMAGE_GEN_NEEDS_KEY)
+        img_dir = Path(cfg.get("workspace", str(_CHAT_ROOT))) / ".cursiv" / "images"
+        img_dir.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        img_path = img_dir / f"image_{stamp}.png"
+        revised, used_model, errors = prompt, "", []
+        if oai_key:
+            import base64 as _img_b64
             import urllib.request as _img_req
-            from datetime import datetime as _ImgDt
-            img_client = _oai_img.OpenAI(api_key=cfg["openai_key"])
-            resp = img_client.images.generate(model="dall-e-3", prompt=prompt, size="1024x1024", quality="standard", n=1)
-            img_url = resp.data[0].url
-            revised = getattr(resp.data[0], "revised_prompt", prompt)
-            img_dir = Path(cfg.get("workspace", str(_CHAT_ROOT))) / ".cursiv" / "images"
-            img_dir.mkdir(parents=True, exist_ok=True)
-            img_path = img_dir / f"image_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
-            _img_req.urlretrieve(img_url, str(img_path))
-        except Exception as e:
-            return TextResult(f"Image generation failed: {e}")
+            try:
+                import openai as _oai_img
+                img_client = _oai_img.OpenAI(api_key=oai_key)
+                for model in IMAGE_GEN_MODELS:
+                    try:
+                        resp = img_client.images.generate(model=model, prompt=prompt, size="1024x1024", n=1)
+                    except Exception as e:
+                        errors.append(f"{model}: {e}")
+                        continue
+                    item = resp.data[0]
+                    if getattr(item, "b64_json", None):
+                        img_path.write_bytes(_img_b64.b64decode(item.b64_json))
+                    else:
+                        _img_req.urlretrieve(item.url, str(img_path))
+                    revised = getattr(item, "revised_prompt", None) or prompt
+                    used_model = model
+                    break
+            except Exception as e:
+                errors.append(f"OpenAI: {e}")
+        if not used_model and cf_id and cf_tok:
+            try:
+                img_path = img_dir / f"image_{stamp}.jpg"
+                img_path.write_bytes(_cloudflare_image(prompt, cf_id, cf_tok))
+                used_model = "FLUX.1-schnell (Cloudflare, free)"
+            except Exception as e:
+                errors.append(str(e))
+        if not used_model:
+            return TextResult("Image generation failed:\n" + "\n".join(errors[-3:]))
         if _STRAND_OK:
             _strand_save(f"image: {prompt[:200]}", f"Generated: {img_path}\nRevised prompt: {revised[:300]}",
-                         tags=["image", "dalle3"], score=0.70, territory_tag="creative", source="image", model="dall-e-3")
-        note = f"\n\nDALL-E revised the prompt to:\n{revised[:300]}" if revised != prompt else ""
-        return TextResult(f"⬡ Image generated  ({img_path.name}){note}", image_path=str(img_path))
+                         tags=["image", used_model], score=0.70, territory_tag="creative", source="image", model=used_model)
+        note = f"\n\nThe model revised the prompt to:\n{revised[:300]}" if revised != prompt else ""
+        return TextResult(f"⬡ Image generated with {used_model}  ({img_path.name}){note}", image_path=str(img_path))
 
     return None
 
@@ -1901,6 +1940,170 @@ def text_to_training_entry(notes: str, cfg: dict) -> tuple[bool, str, Optional[d
     return True, "Notes translated and added to training data.", entry
 
 
+# ── Image generation ────────────────────────────────────────────────────
+# Newest first; dall-e-3 kept as a fallback for older keys/accounts.
+IMAGE_GEN_MODELS = ("gpt-image-1", "dall-e-3")
+
+CF_IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell"
+
+IMAGE_GEN_CLOUDFLARE_HOWTO = (
+    "Free option — Cloudflare Workers AI (no card needed, about 100+ images a day):\n"
+    "  1. Sign up free at dash.cloudflare.com\n"
+    "  2. Copy your Account ID (right side of the Workers & Pages overview page)\n"
+    "  3. My Profile → API Tokens → Create Token → use the \"Workers AI\" template\n"
+    "  4. In Cursiv type:  cloudflare <account-id> <token>"
+)
+
+IMAGE_GEN_NEEDS_KEY = (
+    "Image generation needs an online key — it can't be done offline.\n\n"
+    "Cursiv's offline features (Ollama) and the free Gemini/Groq keys can read "
+    "and describe images you paste in, but they can't create new ones.\n\n"
+    + IMAGE_GEN_CLOUDFLARE_HOWTO + "\n\n"
+    "Paid option — OpenAI (about $0.01-0.04 per image, billed by OpenAI):\n"
+    "  Get a key at platform.openai.com/api-keys, then type:  openai sk-...\n\n"
+    "Then try your image again."
+)
+
+
+def _cloudflare_image(prompt: str, account_id: str, token: str) -> bytes:
+    import base64 as _b64cf
+    import urllib.request
+    url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{CF_IMAGE_MODEL}"
+    req = urllib.request.Request(
+        url, data=json.dumps({"prompt": prompt, "steps": 4}).encode(),
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            data = json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode(errors="ignore")[:200]
+        if e.code == 429 or "neuron" in detail.lower():
+            raise RuntimeError("Cloudflare's free daily image allowance is used up — it resets at midnight UTC.")
+        raise RuntimeError(f"Cloudflare {e.code}: {detail}")
+    img = (data.get("result") or {}).get("image")
+    if not img:
+        raise RuntimeError(f"Cloudflare returned no image: {str(data.get('errors'))[:200]}")
+    return _b64cf.b64decode(img)
+
+_IMAGE_ASK_RE = re.compile(
+    r"^(?:please\s+|can you\s+|could you\s+)?"
+    r"(?:generate|create|make|draw|paint|render|design)\s+(?:me\s+)?(?:an?\s+)?"
+    r"(?:image|picture|pic|photo|drawing|painting|illustration|logo)\s+(?:of|showing|with|for)\s+(.+)$",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def _image_request_prompt(text: str) -> Optional[str]:
+    """'image <prompt>' or a plain-English ask like 'make me a picture of a
+    dog' -> the prompt ('' if the command had none). None if not an image ask."""
+    t = text.strip()
+    if t.lower() == "image":
+        return ""
+    if t.lower().startswith("image "):
+        return t[6:].strip()
+    # Whole sentence, not just the tail: "a logo for my bakery" needs "logo".
+    return t.rstrip("?.!") if _IMAGE_ASK_RE.match(t) else None
+
+
+# ── Vision: one shared "describe this image" chain ───────────────────────
+# Paid keys first when the user set them (an opt-in upgrade), then the
+# free Gemini key, then a local Ollama vision model -- the floor that works
+# with no key and no internet, per the Ollama-first rule.
+
+OLLAMA_VISION_MODELS = ("gemma3", "qwen2.5vl", "llama3.2-vision", "minicpm-v", "llava", "moondream")
+OLLAMA_VISION_DEFAULT = "gemma3:4b"
+
+
+def _ollama_vision_model() -> str:
+    import urllib.request
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=3) as r:
+            names = [m.get("name", "") for m in json.loads(r.read()).get("models", [])]
+    except Exception:
+        return ""
+    for family in OLLAMA_VISION_MODELS:
+        for n in names:
+            if n.split(":")[0] == family:
+                return n
+    return ""
+
+
+def _vision_describe(img_b64: str, mime: str, prompt_text: str, cfg: dict) -> tuple[str, str]:
+    import urllib.request
+    from cursiv_v215.ui.chat_app import _saved_key, GEMINI_URL, GEMINI_MODELS
+    ant_key, oai_key = cfg.get("anthropic_key", ""), cfg.get("openai_key", "")
+    gem_key = cfg.get("gemini_key", "") or _saved_key("gemini_key")
+
+    if ant_key:
+        try:
+            import anthropic as _anth_v
+            resp = _anth_v.Anthropic(api_key=ant_key).messages.create(
+                model="claude-sonnet-4-6", max_tokens=600,
+                messages=[{"role": "user", "content": [
+                    {"type": "image", "source": {"type": "base64", "media_type": mime, "data": img_b64}},
+                    {"type": "text", "text": prompt_text},
+                ]}],
+            )
+            return resp.content[0].text, "Claude"
+        except Exception:
+            pass
+
+    if oai_key:
+        try:
+            import openai as _oai_v
+            resp2 = _oai_v.OpenAI(api_key=oai_key).chat.completions.create(
+                model="gpt-4o", max_tokens=600,
+                messages=[{"role": "user", "content": [
+                    {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{img_b64}"}},
+                    {"type": "text", "text": prompt_text},
+                ]}],
+            )
+            return resp2.choices[0].message.content, "GPT-4o"
+        except Exception:
+            pass
+
+    if gem_key:
+        body = json.dumps({"contents": [{"role": "user", "parts": [
+            {"inline_data": {"mime_type": mime, "data": img_b64}},
+            {"text": prompt_text},
+        ]}]}).encode()
+        for model in GEMINI_MODELS:
+            try:
+                req = urllib.request.Request(
+                    GEMINI_URL.format(model=model), data=body,
+                    headers={"Content-Type": "application/json", "x-goog-api-key": gem_key})
+                with urllib.request.urlopen(req, timeout=60) as r:
+                    data = json.loads(r.read())
+                cand = (data.get("candidates") or [{}])[0]
+                text = "".join(p.get("text", "") for p in cand.get("content", {}).get("parts", []))
+                if text.strip():
+                    return text, "Gemini"
+            except Exception:
+                continue
+
+    model = _ollama_vision_model()
+    if model:
+        try:
+            body = json.dumps({"model": model, "prompt": prompt_text,
+                               "images": [img_b64], "stream": False}).encode()
+            req = urllib.request.Request("http://127.0.0.1:11434/api/generate", data=body,
+                                         headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=600) as r:
+                text = json.loads(r.read()).get("response", "")
+            if text.strip():
+                return text, f"{model} (local)"
+        except Exception:
+            pass
+    return "", ""
+
+
+_NO_VISION_HELP = (
+    "No vision model available. Free options: install a local one with "
+    f"'ollama pull {OLLAMA_VISION_DEFAULT}' (works offline), or add a free Gemini "
+    "key (type 'gemini AIza...'). Anthropic/OpenAI keys also work."
+)
+
+
 def image_to_training_entry(image_bytes: bytes, cfg: dict, ext: str = "png") -> tuple[bool, str, Optional[dict]]:
     """Run vision analysis on an uploaded image and store the description
     as a JSON training example. Mirrors analyze_pasted_image's vision call
@@ -1917,41 +2120,9 @@ def image_to_training_entry(image_bytes: bytes, cfg: dict, ext: str = "png") -> 
     prompt_text = ("Describe this image in detail — objects, text, layout, and anything "
                    "notable — as a single clear paragraph suitable for training data.")
 
-    vision_result, vision_provider = "", ""
-    ant_key, oai_key = cfg.get("anthropic_key", ""), cfg.get("openai_key", "")
-
-    if ant_key:
-        try:
-            import anthropic as _anth_t
-            resp = _anth_t.Anthropic(api_key=ant_key).messages.create(
-                model="claude-sonnet-4-6", max_tokens=600,
-                messages=[{"role": "user", "content": [
-                    {"type": "image", "source": {"type": "base64", "media_type": mime, "data": img_b64}},
-                    {"type": "text", "text": prompt_text},
-                ]}],
-            )
-            vision_result, vision_provider = resp.content[0].text, "claude"
-        except Exception:
-            pass
-
-    if not vision_result and oai_key:
-        try:
-            import openai as _oai_t
-            resp2 = _oai_t.OpenAI(api_key=oai_key).chat.completions.create(
-                model="gpt-4o", max_tokens=600,
-                messages=[{"role": "user", "content": [
-                    {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{img_b64}"}},
-                    {"type": "text", "text": prompt_text},
-                ]}],
-            )
-            vision_result, vision_provider = resp2.choices[0].message.content, "gpt-4o"
-        except Exception:
-            pass
-
+    vision_result, vision_provider = _vision_describe(img_b64, mime, prompt_text, cfg)
     if not vision_result:
-        return False, ("No vision model available — set an Anthropic or OpenAI key "
-                        "(type 'anthropic sk-ant-...' or 'openai sk-...') to enable "
-                        "image-to-JSON."), None
+        return False, _NO_VISION_HELP, None
 
     entry = {
         "prompt":     prompt_text,
@@ -1980,39 +2151,11 @@ def analyze_pasted_image(png_bytes: bytes, cfg: dict, width: int, height: int) -
     img_path = img_dir / f"paste_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
     img_path.write_bytes(png_bytes)
 
-    vision_result, vision_provider = "", ""
     img_b64 = _b64img.b64encode(png_bytes).decode()
-    ant_key, oai_key = cfg.get("anthropic_key", ""), cfg.get("openai_key", "")
-
-    if ant_key:
-        try:
-            import anthropic as _anth_v
-            resp = _anth_v.Anthropic(api_key=ant_key).messages.create(
-                model="claude-sonnet-4-6", max_tokens=600,
-                messages=[{"role": "user", "content": [
-                    {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": img_b64}},
-                    {"type": "text", "text": "Describe what you see in this image. Be specific and useful. "
-                                              "Flag anything relevant to code, design, architecture, or ongoing work."},
-                ]}],
-            )
-            vision_result, vision_provider = resp.content[0].text, "Claude"
-        except Exception:
-            pass
-
-    if not vision_result and oai_key:
-        try:
-            import openai as _oai_v
-            resp2 = _oai_v.OpenAI(api_key=oai_key).chat.completions.create(
-                model="gpt-4o", max_tokens=600,
-                messages=[{"role": "user", "content": [
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img_b64}"}},
-                    {"type": "text", "text": "Describe what you see in this image. Be specific and useful. "
-                                              "Flag anything relevant to code, design, architecture, or ongoing work."},
-                ]}],
-            )
-            vision_result, vision_provider = resp2.choices[0].message.content, "GPT-4o"
-        except Exception:
-            pass
+    vision_result, vision_provider = _vision_describe(
+        img_b64, "image/png",
+        "Describe what you see in this image. Be specific and useful. "
+        "Flag anything relevant to code, design, architecture, or ongoing work.", cfg)
 
     if _STRAND_OK:
         body = vision_result or f"Image pasted: {img_path} ({width}x{height}px)"
@@ -2022,8 +2165,7 @@ def analyze_pasted_image(png_bytes: bytes, cfg: dict, width: int, height: int) -
     header = f"⬡ Image pasted — {width}×{height}px\n\n"
     if vision_result:
         return TextResult(f"{header}Vision analysis (via {vision_provider}):\n\n{vision_result}", image_path=str(img_path))
-    return TextResult(f"{header}No vision model available — image saved, no analysis. "
-                       f"Set an Anthropic or OpenAI key to enable analysis.", image_path=str(img_path))
+    return TextResult(f"{header}Image saved, no analysis. {_NO_VISION_HELP}", image_path=str(img_path))
 
 
 # ── Postal compose — caller (chat_panel.py) collects recipient/hint/body
