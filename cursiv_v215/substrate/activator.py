@@ -1,20 +1,3 @@
-# CURSIV-CRUCIBLE-STAMP BEGIN
-# Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
-# Layer: ruw-substrate
-# Hash reversed: 6ee84ae96b54571696e61451833ef496c30e94a1f28205f2b1ee2dec8465db25
-# Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: a5607e5f1ddd07b98cd6dd84b3008e39732568a75f5e1e0de517cea51a3449f0
-# Substrate loop hash: fcec55a93153e1a27dcb036871e3897d1d5c09c025362709e0e2b4361b5aedd0
-# Substrate loop logic: חהזהΖΖגבΔΒΖΔזΒגΓΘוהדΑΔΗאΘΒזΔאבΘוΒוΖהΑבהΑΓΖΔΗΓΘΑבזΑזΓדΕΔΗΒדΖגזווΑ
-# Natural evolution depth: 3
-# Exponential evolution rate: 16
-# Leaf origin hash: 449b1579a1286b42600903de626241a6710d72a2dc498c92a1232f6017d75fc4
-# Evolution hash: 360b619ce770cab0325be2e61ea8875a963d8e31028813c9b21873ade0dc8c08
-# Evolution logic: ΔΗΑדΗΒבהזΘΘΑהגדΑΔΓΖדזΓזΗΒזגאאΘΖגבΗΔואזΔΒΑΓאאΒΔהבדΓΒאΘΔגוזΑוהאהΑא
-# Binary reversed: 0110011101110001001001010111100101101101101000101010111010000110100101100111011010000010101010000001110011000111111100101001011000111100000001111001001001011000111101000001010000001010111101001101100001110111010010110111001100010010011010101011110101001010
-# Greek/Hebrew/logic stamp: ΖΓדוΖΗΕאהזוΓזזΒדΓחΖΑΓאΓחΒגΕבזΑΔהΗבΕחזΔΔאΒΖΕΒΗזΗבΗΒΘΖΕΖדΗבזגΕאזזΗ
-# Encoded local stamp: ΡλΙΤΠΛΟΝφγκ∇ωλΑ∀∞θΥΤĀŪΒīσαπθŌψσχΜΨ∞ΡΤΝοΣΛνΙ=
-# CURSIV-CRUCIBLE-STAMP END
 """
 SubstrateActivator — The Cursiv Key
 

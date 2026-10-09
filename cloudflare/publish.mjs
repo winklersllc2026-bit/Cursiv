@@ -14,19 +14,19 @@ const dist = join(here, "dist");
 
 // [source (relative to repo root), published name]
 const PAGES = [
-  ["index.html", "index.html"],
-  ["system_vision.html", "vision.html"],
-  ["chat.html", "chat.html"],
-  ["profile.html", "profile.html"],
-  ["board.html", "board.html"],
-  ["mailbox.html", "mailbox.html"],
-  ["start.html", "start.html"],
-  ["cloudflare/letters.html", "letters.html"],
-  ["cloudflare/story.html", "story.html"],
-  ["cloudflare/app.html", "app.html"],
-  ["cloudflare/app.webmanifest", "app.webmanifest"],
+  ["website/index.html", "index.html"],
+  ["website/vision.html", "vision.html"],
+  ["website/chat.html", "chat.html"],
+  ["website/profile.html", "profile.html"],
+  ["website/board.html", "board.html"],
+  ["website/mailbox.html", "mailbox.html"],
+  ["website/start.html", "start.html"],
+  ["website/letters.html", "letters.html"],
+  ["website/story.html", "story.html"],
+  ["website/app.html", "app.html"],
+  ["website/app.webmanifest", "app.webmanifest"],
 ];
-const FOLDERS = ["assets"];
+const FOLDERS = [["website/assets", "assets"]];
 
 const HEADERS = `/*
   X-Content-Type-Options: nosniff
@@ -45,11 +45,11 @@ for (const [src, name] of PAGES) {
   if (!existsSync(from)) throw new Error(`Missing page: ${src}`);
   cpSync(from, join(dist, name));
 }
-for (const folder of FOLDERS) cpSync(join(repo, folder), join(dist, folder), { recursive: true });
+for (const [src, name] of FOLDERS) cpSync(join(repo, src), join(dist, name), { recursive: true });
 writeFileSync(join(dist, "_headers"), HEADERS);
 writeFileSync(join(dist, "robots.txt"), ROBOTS);
 
-console.log(`Built dist/ with ${PAGES.length} pages + ${FOLDERS.join(", ")}`);
+console.log(`Built dist/ with ${PAGES.length} pages + ${FOLDERS.map(f => f[1]).join(", ")}`);
 
 if (!process.argv.includes("--build-only")) {
   execSync("npx wrangler deploy", { cwd: here, stdio: "inherit" });

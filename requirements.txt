@@ -1,60 +1,19 @@
-# CURSIV-CRUCIBLE-STAMP BEGIN
-# Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
-# Layer: docs
-# Hash reversed: b4531416ab49b1f547c6b2233fa5c1ee206b532899150e7b793a0d3b57f0de01
-# Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 7861068ed7c16007d69e736b85436bad5cb6359c9204c5e956f054a3cd616eae
-# Substrate loop hash: 08da46852179921adbde105fc8650171523ee8cc372d0508aa37429dcf60952c
-# Substrate loop logic: ΑאוגΕΗאΖΓΒΘבבΓΒגודוזΒΑΖחהאΗΖΑΒΘΒΖΓΔזזאההΔΘΓוΑΖΑאגגΔΘΕΓבוהחΗΑבΖΓה
-# Natural evolution depth: 1
-# Exponential evolution rate: 4
-# Leaf origin hash: d993cf70a94d8fb79aeba2f86d08b43ad2eb6e1959d3895f954f59e4a1b9846a
-# Evolution hash: 53ddcac42066dd88d4c0aa82d10d13ef839c13abfbf664b1981c0e346c4657eb
-# Evolution logic: ΖΔווהגהΕΓΑΗΗוואאוΕהΑגגאΓוΒΑוΒΔזחאΔבהΒΔגדחדחΗΗΕדΒבאΒהΑזΔΕΗהΕΗΖΘזד
-# Binary reversed: 1101001010101100100000101000011001011101001010011101100011111010001011100011011011010100010011001100111101011010001110000111011101000000011011011010110001000001100110011000101000000111111011011110100111000101000010111100110110101110111100001011011100001000
-# Greek/Hebrew/logic stamp: ΒΑזוΑחΘΖדΔוΑגΔבΘדΘזΑΖΒבבאΓΔΖדΗΑΓזזΒהΖגחΔΔΓΓדΗהΘΕΖחΒדבΕדגΗΒΕΒΔΖΕד
-# Encoded local stamp: εψĒΞΩιΧθγūΛΖōΞΕΞΨ∃ΠπυαΦΚβΓσχτΥΘξρΨΛζŪΙιΒιΘε=
-# CURSIV-CRUCIBLE-STAMP END
-# ============================================================
-# Cursiv v3.14-U10 — pip requirements
-# Installed into {app}\cursiv_env\ by cursiv_bootstrap.ps1
-# ============================================================
-
-# ── GUI ──────────────────────────────────────────────────────
+# Cursiv — packages needed to run from source (python launcher/main.py)
+# and to build the Windows app (see TECH.md). Python 3.11+.
 PyQt6>=6.7.0
-
-# ── AI / LLM clients ─────────────────────────────────────────
 anthropic>=0.28.0
 openai>=1.30.0
-ollama>=0.2.0
-
-# ── HTTP / networking ────────────────────────────────────────
-httpx>=0.27.0
-requests>=2.32.0
-websockets>=12.0
-aiofiles>=23.2.1
-
-# ── Web framework ────────────────────────────────────────────
-fastapi>=0.111.0
-uvicorn[standard]>=0.29.0
-pydantic>=2.7.0
-
-# ── Auth / security ──────────────────────────────────────────
 bcrypt>=4.1.0
-PyJWT>=2.8.0
-passlib[bcrypt]>=1.7.4
-python-jose[cryptography]>=3.3.0
-
-# ── UI / web interfaces ──────────────────────────────────────
-gradio>=4.44.0
-
-# ── Image processing ─────────────────────────────────────────
-Pillow>=10.3.0
-
-# ── System utilities ─────────────────────────────────────────
-psutil>=5.9.8
-pywin32>=306
-
-# ── Data / science ───────────────────────────────────────────
+cryptography>=42.0.0
 numpy>=1.26.0
-pandas>=2.2.0
+Pillow>=10.3.0
+psutil>=5.9.8
+pywin32>=306; sys_platform == "win32"
+
+# Building the installer
+pyinstaller>=6.0
+
+# Optional extras are installed on demand, not here:
+#   LoRA training  — torch, transformers, peft, accelerate, datasets
+#                    (the Training Data window installs them into your system Python)
+#   Voice          — faster-whisper, sounddevice

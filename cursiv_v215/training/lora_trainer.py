@@ -1,8 +1,7 @@
 """
 LoRA training — fine-tunes a small local base model on your own collected
-training data (.cursiv/training_data.jsonl, the same file watcher.py fills
-automatically and the Training Data dialog's image/notes/manual-JSON entries
-all feed into).
+training data (.cursiv/training_data.jsonl -- what "Save to Training" and the
+Training Data dialog's image/notes/manual-JSON entries all feed into).
 
 Deliberately scoped small: Qwen2.5-1.5B-Instruct, LoRA r=8 alpha=16 (mirrors
 the checkpoint convention already referenced in
@@ -31,12 +30,7 @@ import time
 from pathlib import Path
 from typing import Callable, Optional
 
-try:
-    from cursiv_v215.core.sigil import LCW_MANIFEST_ZWC as _LCW_SIGIL  # noqa: F401
-except ImportError:
-    _LCW_SIGIL = ""
-
-from cursiv_v215.training.watcher import TRAINING_JSONL, CURSIV_DIR
+from cursiv_v215.training.paths import TRAINING_JSONL, CURSIV_DIR
 
 BASE_MODEL   = "Qwen/Qwen2.5-1.5B-Instruct"
 LORA_R       = 8

@@ -1,53 +1,28 @@
-# CURSIV-CRUCIBLE-STAMP BEGIN
-# Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
-# Layer: project
-# Hash reversed: 9cf029743615214e975c17415b706ad70f49f50ee61b95d9b05516408b247251
-# Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 86e93ca45f9acd9e0eaba07fe9de9bdb526afe43e9be4b35f78959ba1ca97f35
-# Substrate loop hash: 4a8fbe5f23b9ea536abf8c01fe26aa3c66315f126719ecadfcb5df1f0019abd7
-# Substrate loop logic: ΕגאחדזΖחΓΔדבזגΖΔΗגדחאהΑΒחזΓΗגגΔהΗΗΔΒΖחΒΓΗΘΒבזהגוחהדΖוחΒחΑΑΒבגדוΘ
-# Natural evolution depth: 1
-# Exponential evolution rate: 4
-# Leaf origin hash: c8aaac81ff3c27d31ea2f1b8780fcd3ea52b5fc0ebdcb751708385c4a7542225
-# Evolution hash: e47219dbc3a343c9d26445cf718573413ad2d6c137a4f7e151e9e9e66b106c8d
-# Evolution logic: זΕΘΓΒבודהΔגΔΕΔהבוΓΗΕΕΖהחΘΒאΖΘΔΕΒΔגוΓוΗהΒΔΘגΕחΘזΒΖΒזבזבזΗΗדΒΑΗהאו
-# Binary reversed: 1001001111110000010010011110001011000110100010100100100000100111100111101010001110001110001010001010110111100000011001011011111000001111001010011111101000000111011101101000110110011010101110011101000010101010100001100010000000011101010000101110010010101000
-# Greek/Hebrew/logic stamp: ΒΖΓΘΕΓדאΑΕΗΒΖΖΑדבוΖבדΒΗזזΑΖחבΕחΑΘוגΗΑΘדΖΒΕΘΒהΖΘבזΕΒΓΖΒΗΔΕΘבΓΑחהב
-# Encoded local stamp: ĀΡΝζφαīΘΦΟτλριιΘūΖŌΑπΕΓΒΩιōμΥΖΩĒΘΩζΞσΝēΣīΓŪ=
-# CURSIV-CRUCIBLE-STAMP END
 [build-system]
 requires = ["setuptools>=70", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "cursiv"
-version = "2.1.5"
-description = "The Sovereign Agent Temple — local-first AI agent operating system"
-authors = [{name = "Joshua Winkler", email = "joshua.1993.winkler@gmail.com"}]
+version = "3.14"
+description = "Cursiv — a private, local-first AI companion for Windows (Ollama first, free keys optional)"
+authors = [{name = "Joshua Winkler"}]
 license = {text = "MIT"}
 requires-python = ">=3.11"
 dependencies = [
-    "streamlit>=1.32.0",
-    "gradio>=4.44.0",
-    "prompt_toolkit>=3.0.0",
+    "PyQt6>=6.7.0",
+    "anthropic>=0.28.0",
+    "openai>=1.30.0",
+    "bcrypt>=4.1.0",
+    "cryptography>=42.0.0",
+    "numpy>=1.26.0",
+    "Pillow>=10.3.0",
+    "psutil>=5.9.8",
+    "pywin32>=306; sys_platform == 'win32'",
 ]
 
 [project.optional-dependencies]
-dev     = ["pytest>=8.0", "ruff>=0.4"]
-ollama  = []  # No extra deps — uses urllib only
-xai     = []  # No extra deps — uses urllib only
-openai  = []  # No extra deps — uses urllib only
-# GUI launcher + substrate browser — install together so versions stay in sync
-launcher = [
-    "PyQt6>=6.7.0",
-    "PyQt6-WebEngine>=6.7.0",
-    "bcrypt>=4.0",
-    "PyJWT>=2.8",
-]
-
-[project.scripts]
-cursiv       = "cursiv_v215.ui.chat_cli:main"
-cursiv-forge = "cursiv_v215.forge.factory:main"
+dev = ["pytest>=8.0", "ruff>=0.4", "pyinstaller>=6.0"]
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -1,10 +1,8 @@
 """
 Cursiv — Training Data dialog.
 
-A storage box for cursiv_v215/training/watcher.py's TRAINING_JSONL --
-the same file the background watcher already fills automatically from
-high-quality conversations, and the file "the next LoRA training pass"
-reads from. This dialog gives three more ways to add to it:
+A storage box for cursiv_v215/training/paths.py's TRAINING_JSONL -- the
+file LoRA training reads from. This dialog gives three ways to add to it:
 
   - Upload an image: run vision analysis on it and store the description
     as a {prompt, response} example.
@@ -63,10 +61,9 @@ class TrainingDataDialog(QDialog):
         header.setStyleSheet(f'color: {GOLD}; font-size: 18px; font-weight: 700; font-family: "Segoe UI", "Segoe UI Historic";')
         lay.addWidget(header)
         lay.addWidget(self._note_label(
-            "Every example here feeds the same file the background watcher fills "
-            "automatically from good conversations -- what the next LoRA training "
-            "pass reads from. Notes typed in chat convert too: try \"translate my "
-            "notes into JSON for training\"."
+            "These are the examples LoRA training learns from. Add them here, or "
+            "convert notes in chat: try \"translate my notes into JSON for "
+            "training\"."
         ))
 
         self._count_label = self._section_label("")

@@ -1324,8 +1324,8 @@ def handle_command(raw: str, cfg: dict, history: list[dict]) -> Optional[TextRes
             return TextResult("Board session cleared.")
         if sub.startswith(("login ", "register ")):
             return TextResult(
-                "Board login/register needs a password prompt — use the terminal "
-                "(Open in Terminal) for this one, or ask me to add a login dialog here."
+                "Signing in to the public board isn't available in the desktop "
+                "app yet — it needs a password window that hasn't been built."
             )
         synth = cfg.get("_last_council_synthesis", "")
         if not synth:
@@ -1768,15 +1768,12 @@ def voice_turn(cfg: dict, duration_s: float = 5.0, raw_mode: bool = False,
 
 
 # ── Training data manager ────────────────────────────────────────────────
-# Images and free-form notes both feed the same file the background watcher
-# already writes to (cursiv_v215/training/watcher.py's TRAINING_JSONL,
-# read by "the next LoRA training pass") -- one store, one schema
-# ({"prompt", "response", "quality", "agent_id", "timestamp", "source"}),
-# regardless of whether an entry came from a conversation the watcher
-# scored automatically, an uploaded image, typed notes, or a manually
-# pasted JSON object.
+# Images, free-form notes and pasted JSON all feed one file
+# (cursiv_v215/training/paths.py's TRAINING_JSONL, read by LoRA training) --
+# one store, one schema ({"prompt", "response", "quality", "agent_id",
+# "timestamp", "source"}).
 try:
-    from cursiv_v215.training.watcher import TRAINING_JSONL as _TRAINING_JSONL
+    from cursiv_v215.training.paths import TRAINING_JSONL as _TRAINING_JSONL
 except Exception:
     _TRAINING_JSONL = Path.home() / ".cursiv" / "training_data.jsonl"
 

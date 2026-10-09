@@ -1,20 +1,3 @@
-# CURSIV-CRUCIBLE-STAMP BEGIN
-# Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
-# Layer: project
-# Hash reversed: 03ce2b39d8556c980ff1bbd6487d7c0fafd7b36799d39558f5cfb26768223bfa
-# Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: a7887d865f61f90b12b64a1597ead943b6655ad267af92b803a3ef6c55f143d2
-# Substrate loop hash: 3d39a0096719f217aceaaecd2c0a66a5d9209a434c1ae8238f3b83ab4b58f4ea
-# Substrate loop logic: ΔוΔבגΑΑבΗΘΒבחΓΒΘגהזגגזהוΓהΑגΗΗגΖובΓΑבגΕΔΕהΒגזאΓΔאחΔדאΔגדΕדΖאחΕזג
-# Natural evolution depth: 3
-# Exponential evolution rate: 16
-# Leaf origin hash: 9e6ccd63bb83ea3e341123ab1d753a0f3401cc312d127b6c991ebc024d6ed922
-# Evolution hash: 7324c2a600564fbb73b2939cb7656b7fda42bef20088bd98d81ede209afeb700
-# Evolution logic: ΘΔΓΕהΓגΗΑΑΖΗΕחדדΘΔדΓבΔבהדΘΗΖΗדΘחוגΕΓדזחΓΑΑאאדובאואΒזוזΓΑבגחזדΘΑΑ
-# Binary reversed: 0000110000110111010011011100100110110001101010100110001110010001000011111111100011011101101101100010000111101011111000110000111101011111101111101101110001101110100110011011110010011010101000011111101000111111110101000110111001100001010001001100110111110101
-# Greek/Hebrew/logic stamp: גחדΔΓΓאΗΘΗΓדחהΖחאΖΖבΔובבΘΗΔדΘוחגחΑהΘוΘאΕΗודדΒחחΑאבהΗΖΖאובΔדΓזהΔΑ
-# Encoded local stamp: ΦηξΧΗΩΕβτβγ∂οηΙΘεΟυπχυθōακξνĀ∃γδΣΖūηΙωŪψΞκΕ=
-# CURSIV-CRUCIBLE-STAMP END
 """
 Academy Engine — the 8-phase evolutionary process.
 
@@ -33,11 +16,6 @@ Phases:
 """
 
 from __future__ import annotations
-
-try:
-    from cursiv_v215.core.sigil import LCW_MANIFEST_ZWC as _LCW_SIGIL  # noqa: F401
-except ImportError:
-    _LCW_SIGIL = ""
 
 import json
 import time

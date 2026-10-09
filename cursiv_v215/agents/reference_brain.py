@@ -1,20 +1,3 @@
-# CURSIV-CRUCIBLE-STAMP BEGIN
-# Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
-# Layer: project
-# Hash reversed: a9990e62edb2fad31f968f94044cdecba2c6e58484f2acf91c6fd04dfeb203af
-# Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 2583b96f4d41068d6cd1eefdbabe96a3b7928b023e5a2cff55c381373835ca63
-# Substrate loop hash: 666301fae98ba4363519a12da0244971c7df51638003e86542257f778cec45b7
-# Substrate loop logic: ΗΗΗΔΑΒחגזבאדגΕΔΗΔΖΒבגΒΓוגΑΓΕΕבΘΒהΘוחΖΒΗΔאΑΑΔזאΗΖΕΓΓΖΘחΘΘאהזהΕΖדΘ
-# Natural evolution depth: 3
-# Exponential evolution rate: 16
-# Leaf origin hash: 67c19ebc9905981529ec5532ad0f23d585e5d928a4d12571034c256dcfa5a4e6
-# Evolution hash: f8a42920f878ddd707804d61596e143b628bae95596765201d4a5f014904b9a9
-# Evolution logic: חאגΕΓבΓΑחאΘאוווΘΑΘאΑΕוΗΒΖבΗזΒΕΔדΗΓאדגזבΖΖבΗΘΗΖΓΑΒוΕגΖחΑΒΕבΑΕדבגב
-# Binary reversed: 0101100110011001000001110110010001111011110101001111010110111100100011111001011000011111100100100000001000100011101101110011110101010100001101100111101000010010000100101111010001010011111110011000001101101111101100000010101111110111110101000000110001011111
-# Greek/Hebrew/logic stamp: חגΔΑΓדזחוΕΑוחΗהΒבחהגΓחΕאΕאΖזΗהΓגדהזוהΕΕΑΕבחאΗבחΒΔוגחΓדוזΓΗזΑבבבג
-# Encoded local stamp: ΡūāΠΧΛΓē∀Ōκ∞ūαŪειω∃αēζοΧΤΥψĒΜΑλεζΕΣντīπθΩĒΡ=
-# CURSIV-CRUCIBLE-STAMP END
 """
 Reference Brain — Offline knowledge lookup (zero model required)
 
@@ -39,11 +22,6 @@ records); the bundled tier is always the fallback, so `ref` never comes
 back empty on a plain install.
 """
 from __future__ import annotations
-
-try:
-    from cursiv_v215.core.sigil import LCW_MANIFEST_ZWC as _LCW_SIGIL  # noqa: F401
-except ImportError:
-    _LCW_SIGIL = ""
 
 import json
 import os

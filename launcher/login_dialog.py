@@ -1,20 +1,3 @@
-# CURSIV-CRUCIBLE-STAMP BEGIN
-# Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
-# Layer: desktop-browser
-# Hash reversed: 5ec5c89b6aaf9c62a6053f8578667c026d84728701f8ab1243555dc627baf82e
-# Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 320017d2011e203d399901792d5e0e9abc5f5ed4f1f618c3faa71461df18b6c6
-# Substrate loop hash: 7b25745a62bf2f8279e80e3ce14bc54e061a5a364946b5d4d970371cadb6d510
-# Substrate loop logic: ΘדΓΖΘΕΖגΗΓדחΓחאΓΘבזאΑזΔהזΒΕדהΖΕזΑΗΒגΖגΔΗΕבΕΗדΖוΕובΘΑΔΘΒהגודΗוΖΒΑ
-# Natural evolution depth: 2
-# Exponential evolution rate: 8
-# Leaf origin hash: 2294143438ed212469ec362e2affbb2838c7a286df1854626fa494306e84a542
-# Evolution hash: 3e65d2db925ef285413c75da21509b771e437d9f8c706cf76495053808dfb963
-# Evolution logic: ΔזΗΖוΓודבΓΖזחΓאΖΕΒΔהΘΖוגΓΒΖΑבדΘΘΒזΕΔΘובחאהΘΑΗהחΘΗΕבΖΑΖΔאΑאוחדבΗΔ
-# Binary reversed: 1010011100111010001100011001110101100101010111111001001101100100010101100000101011001111000110101110000101100110111000110000010001101011000100101110010000011110000010001111000101011101100001000010110010101010101010110011011001001110110101011111000101000111
-# Greek/Hebrew/logic stamp: זΓאחגדΘΓΗהוΖΖΖΔΕΓΒדגאחΒΑΘאΓΘΕאוΗΓΑהΘΗΗאΘΖאחΔΖΑΗגΓΗהבחגגΗדבאהΖהזΖ
-# Encoded local stamp: ΧυΚū∂ĪΦ∀∇φφγ∂ūΕΥτθρΦīψθβιοūγēσēηιŌōμζΝΡΞ∀ēν=
-# CURSIV-CRUCIBLE-STAMP END
 """
 Cursiv Login / Setup Dialogs — PyQt6.
 Integrates with cursiv_v215.guardian.access_gate (bcrypt credential store)

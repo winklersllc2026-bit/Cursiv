@@ -1,20 +1,3 @@
-# CURSIV-CRUCIBLE-STAMP BEGIN
-# Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
-# Layer: project
-# Hash reversed: 8c7ffd18784b4bb48921641e10e54cb80080d1d20ffb589b2de84ae78a346fd8
-# Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: b4bb5e991ccf5725e1d8af383626791bb78a2f8f6c40937f58c3ed495828fcca
-# Substrate loop hash: 37ed598cf876e285a818425ea242d609a13a27e670cf00a3dbd420853c699a5e
-# Substrate loop logic: ΔΘזוΖבאהחאΘΗזΓאΖגאΒאΕΓΖזגΓΕΓוΗΑבגΒΔגΓΘזΗΘΑהחΑΑגΔודוΕΓΑאΖΔהΗבבגΖז
-# Natural evolution depth: 3
-# Exponential evolution rate: 16
-# Leaf origin hash: 77f56e1caf0f35fc431110f1a88f9737f7ccc6a6ddc7d4b2f5c8f16939026f34
-# Evolution hash: eca8a048e47ec47066c65d0838e20358943a1e7aa951b8f9bc96b996663db937
-# Evolution logic: זהגאגΑΕאזΕΘזהΕΘΑΗΗהΗΖוΑאΔאזΓΑΔΖאבΕΔגΒזΘגגבΖΒדאחבדהבΗדבבΗΗΗΔודבΔΘ
-# Binary reversed: 0001001111101111111110111000000111100001001011010010110111010010000110010100100001100010100001111000000001111010001000111101000100000000000100001011100010110100000011111111110110100001100111010100101101110001001001010111111000010101110000100110111110110001
-# Greek/Hebrew/logic stamp: אוחΗΕΔגאΘזגΕאזוΓדבאΖדחחΑΓוΒוΑאΑΑאדהΕΖזΑΒזΒΕΗΒΓבאΕדדΕדΕאΘאΒוחחΘהא
-# Encoded local stamp: ΠĪτ∀ΙΑ∀ρΟΟΛωŌΡΛΚΤΜΡυΜψΣīāηΣĪκ∈∀īβΞλΗζΘ∃ΩλΓΙ=
-# CURSIV-CRUCIBLE-STAMP END
 # ┌─────────────────────────────────────────────────────────────────────────────┐
 # │  CURSIV POSTAL — USER REGISTRY                                              │
 # │  Local address book: display names → Ed25519 public keys.                  │
@@ -47,11 +30,6 @@ Writing to a contact by name:
 Key ID = first 8 chars of SHA-256(pubkey) — short fingerprint for display.
 """
 from __future__ import annotations
-
-try:
-    from cursiv_v215.core.sigil import LCW_MANIFEST_ZWC as _LCW_SIGIL  # noqa: F401
-except ImportError:
-    _LCW_SIGIL = ""
 
 import json
 from datetime import datetime

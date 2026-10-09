@@ -1,20 +1,3 @@
-# CURSIV-CRUCIBLE-STAMP BEGIN
-# Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
-# Layer: core-sigil
-# Hash reversed: b1c171c3d5d94ba97588c281c39355c6edc5f85ca801aba5a498e36ffad307da
-# Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 5096f48842cd507c544a62afcf0dc01445f88da9f26cf3df2ae485c3adeb1e1b
-# Substrate loop hash: ab799e21fe4d6eef3e61a75dda9216d83a966eb79f5a4461b4b18d3f61aac547
-# Substrate loop logic: גדΘבבזΓΒחזΕוΗזזחΔזΗΒגΘΖווגבΓΒΗואΔגבΗΗזדΘבחΖגΕΕΗΒדΕדΒאוΔחΗΒגגהΖΕΘ
-# Natural evolution depth: 3
-# Exponential evolution rate: 16
-# Leaf origin hash: 3b56f94e4fa29e4a7dc268573a6d5bf22af962b01fc4b9a4a425efe8dc311638
-# Evolution hash: 4d7d02a043672e1a420501d730e18f26a63950dce32875ee4ef29b37db162f0d
-# Evolution logic: ΕוΘוΑΓגΑΕΔΗΘΓזΒגΕΓΑΖΑΒוΘΔΑזΒאחΓΗגΗΔבΖΑוהזΔΓאΘΖזזΕזחΓבדΔΘודΒΗΓחΑו
-# Binary reversed: 1101100000111000111010000011110010111010101110010010110101011001111010100001000100110100000110000011110010011100101010100011011001111011001110101111000110100011010100010000100001011101010110100101001010010001011111000110111111110101101111000000111010110101
-# Greek/Hebrew/logic stamp: גוΘΑΔוגחחΗΔזאבΕגΖגדגΒΑאגהΖאחΖהוזΗהΖΖΔבΔהΒאΓהאאΖΘבגדΕבוΖוΔהΒΘΒהΒד
-# Encoded local stamp: ψĪνλκχΚΠīōμπΖγ∞ΚΛΤ∀ΦīΜζ∂τοūΩāΑΦ∈ξβΨρΠΕ∀πΕθĀ=
-# CURSIV-CRUCIBLE-STAMP END
 """
 Strand codec — compress JSON knowledge into a DNA strand and decode it back.
 
@@ -24,11 +7,6 @@ which the full agent grows during Academy.
 """
 
 from __future__ import annotations
-
-try:
-    from cursiv_v215.core.sigil import LCW_MANIFEST_ZWC as _LCW_SIGIL  # noqa: F401
-except ImportError:
-    _LCW_SIGIL = ""
 
 import base64
 import json

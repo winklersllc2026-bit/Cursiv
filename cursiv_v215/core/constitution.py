@@ -1,20 +1,3 @@
-# CURSIV-CRUCIBLE-STAMP BEGIN
-# Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
-# Layer: core-sigil
-# Hash reversed: 95719a835555577cefe27757b53bcf5c964e1b9df782ff5e7ce1b8650ea06f1e
-# Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 323fc3143a1bbd14888e0065f495bedbb50f92cf034fc6b1b00ad3a7e0952091
-# Substrate loop hash: 10274c0a46ce58d873db6077edd6e0597bd3ecb64e8eb45e72d5fcbcf1ca34ea
-# Substrate loop logic: ΒΑΓΘΕהΑגΕΗהזΖאואΘΔודΗΑΘΘזווΗזΑΖבΘדוΔזהדΗΕזאזדΕΖזΘΓוΖחהדהחΒהגΔΕזג
-# Natural evolution depth: 3
-# Exponential evolution rate: 16
-# Leaf origin hash: 22ec93cca523a2a77a6c8c6f5a5368ee71bdb308112f6ef4726edacd974d1dd2
-# Evolution hash: f32107460dcfc8cb29dc957b96665b1beb27f256407269460c45f9e0a070a2a7
-# Evolution logic: חΔΓΒΑΘΕΗΑוהחהאהדΓבוהבΖΘדבΗΗΗΖדΒדזדΓΘחΓΖΗΕΑΘΓΗבΕΗΑהΕΖחבזΑגΑΘΑגΓגΘ
-# Binary reversed: 1001101011101000100101010001110010101010101010101010111011100011011111110111010011101110101011101101101011001101001111111010001110010110001001111000110110011011111111100001010011111111101001111110001101111000110100010110101000000111010100000110111110000111
-# Greek/Hebrew/logic stamp: זΒחΗΑגזΑΖΗאדΒזהΘזΖחחΓאΘחובדΒזΕΗבהΖחהדΔΖדΘΖΘΘΓזחזהΘΘΖΖΖΖΖΔאגבΒΘΖב
-# Encoded local stamp: ∃φūδυĪΓΤφαν∀κχζΓΠΓδχ∇ΗΦŌΚΨΘαΕκΓΡōκπΙ∇ΧβΠχδφ=
-# CURSIV-CRUCIBLE-STAMP END
 """
 Constitutional core — the unchangeable laws of Cursiv.
 
@@ -27,11 +10,6 @@ any system change is applied. This is not a setting.
 """
 
 from __future__ import annotations
-
-try:
-    from cursiv_v215.core.sigil import LCW_MANIFEST_ZWC as _LCW_SIGIL  # noqa: F401
-except ImportError:
-    _LCW_SIGIL = ""
 
 import hashlib
 import json

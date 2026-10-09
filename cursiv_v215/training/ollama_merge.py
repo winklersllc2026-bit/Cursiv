@@ -27,12 +27,7 @@ import sys
 from pathlib import Path
 from typing import Callable, Optional
 
-try:
-    from cursiv_v215.core.sigil import LCW_MANIFEST_ZWC as _LCW_SIGIL  # noqa: F401
-except ImportError:
-    _LCW_SIGIL = ""
-
-from cursiv_v215.training.watcher import CURSIV_DIR
+from cursiv_v215.training.paths import CURSIV_DIR
 from cursiv_v215.training.lora_trainer import CHECKPOINTS_DIR, find_system_python
 
 # Confirmed via Ollama's registry manifest: qwen2.5:1.5b ships a ChatML

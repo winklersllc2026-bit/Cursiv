@@ -37,13 +37,6 @@ datas = [
     (str(SERVICES), "services"),
 ]
 
-# Collect data files from packages that read files at import time
-# groovy is a gradio dependency that reads version.txt at import — must be included
-for _pkg in ("safehttpx", "gradio", "gradio_client", "groovy"):
-    try:
-        datas += collect_data_files(_pkg)
-    except Exception:
-        pass
 
 # ── Hidden imports that PyInstaller static analysis misses ───────────────────
 hiddenimports = [
@@ -69,23 +62,14 @@ hiddenimports = [
     "cursiv_v215.memory",
     "cursiv_v215.runtime",
     "cursiv_v215.runtime.config",
-    "cursiv_v215.runtime.db",
-    "cursiv_v215.runtime.evolution_engine",
-    "cursiv_v215.runtime.guardian",
-    "cursiv_v215.runtime.metrics",
     "cursiv_v215.academy",
-    "cursiv_v215.cli",
     "cursiv_v215.council",
     "cursiv_v215.dugout",
     "cursiv_v215.forge",
-    "cursiv_v215.knowledge",
-    "cursiv_v215.nexus",
     "cursiv_v215.obsidian",
-    "cursiv_v215.weave",
     # launcher
     "cursiv_launcher",
     "login_dialog",
-    "tray",
     "chat_panel",
     "chat_commands",
     "legacy_vault_dialog",
@@ -99,26 +83,8 @@ hiddenimports = [
     "PyQt6.QtCore",
     "PyQt6.QtGui",
     "PyQt6.sip",
-    "uvicorn",
-    "uvicorn.logging",
-    "uvicorn.loops",
-    "uvicorn.loops.auto",
-    "uvicorn.protocols",
-    "uvicorn.protocols.http",
-    "uvicorn.protocols.http.auto",
-    "uvicorn.protocols.websockets",
-    "uvicorn.protocols.websockets.auto",
-    "uvicorn.lifespan",
-    "uvicorn.lifespan.on",
-    "fastapi",
-    "starlette",
     "pydantic",
     "cursiv_v215.web",
-    "cursiv_v215.web.app",
-    "cursiv_v215.web.db",
-    "cursiv_v215.web.auth",
-    "cursiv_v215.web.sentinel",
-    "cursiv_v215.web.maze",
     "cursiv_v215.substrate",
     "cursiv_v215.substrate.activator",
     "cursiv_v215.substrate.ruw",
@@ -136,9 +102,6 @@ hiddenimports = [
     "openai",
     "httpx",
     "PIL",
-    "gradio",
-    "gradio_client",
-    "safehttpx",
 ]
 
 a = Analysis(
@@ -162,6 +125,8 @@ a = Analysis(
         "cv2", "skimage",
         # Jupyter / dev tools
         "notebook", "ipykernel", "ipywidgets",
+        # Old browser/web interfaces (removed in U55)
+        "gradio", "gradio_client", "streamlit", "uvicorn", "fastapi", "starlette",
         # Unused stdlib
         "unittest", "doctest", "pdb",
     ],

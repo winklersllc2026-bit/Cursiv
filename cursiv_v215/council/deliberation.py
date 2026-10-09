@@ -1,20 +1,3 @@
-# CURSIV-CRUCIBLE-STAMP BEGIN
-# Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
-# Layer: council
-# Hash reversed: 3404021c2203e015df56c9f796b244c66debca9a7774e93fbd0f2897e1fb875d
-# Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 29c98d830f2a8c075de0eb05c3b63c93b8bc3de07ee626c42ce8ed45e0d63cac
-# Substrate loop hash: c7333d40ac00257c85381daaf81d2f4facd2e75afae93336d9d70b45337a28fa
-# Substrate loop logic: הΘΔΔΔוΕΑגהΑΑΓΖΘהאΖΔאΒוגגחאΒוΓחΕחגהוΓזΘΖגחגזבΔΔΔΗובוΘΑדΕΖΔΔΘגΓאחג
-# Natural evolution depth: 3
-# Exponential evolution rate: 16
-# Leaf origin hash: deaff4b96956effddeb1dd749e5dd95d72554fdb3e73ab8abcc94f34ef2f52e3
-# Evolution hash: 2e175e296a7476d6194cb7fd47494d953e1baf0094cd45e973511290eba7b0ac
-# Evolution logic: ΓזΒΘΖזΓבΗגΘΕΘΗוΗΒבΕהדΘחוΕΘΕבΕובΖΔזΒדגחΑΑבΕהוΕΖזבΘΔΖΒΒΓבΑזדגΘדΑגה
-# Binary reversed: 1100001000000010000001001000001101000100000011000111000010001010101111111010011000111001111111101001011011010100001000100011011001101011011111010011010110010101111011101110001001111001110011111101101100001111010000011001111001111000111111010001111010101011
-# Greek/Hebrew/logic stamp: וΖΘאדחΒזΘבאΓחΑודחΔבזΕΘΘΘגבגהדזוΗΗהΕΕΓדΗבΘחבהΗΖחוΖΒΑזΔΑΓΓהΒΓΑΕΑΕΔ
-# Encoded local stamp: ΓωΓφα∞δδ∀ΔΦΕτφχζΩΚΡα∃ΘψΨΔβΥΖδστΚ∀ΟΥōζΥπ∃ΣπΙ=
-# CURSIV-CRUCIBLE-STAMP END
 """
 Persona Council — real 14-agent parallel deliberation.
 
@@ -46,11 +29,6 @@ This is genuine deliberation, not metadata. Each LLM call is real.
 """
 
 from __future__ import annotations
-
-try:
-    from cursiv_v215.core.sigil import LCW_MANIFEST_ZWC as _LCW_SIGIL  # noqa: F401
-except ImportError:
-    _LCW_SIGIL = ""
 
 try:
     from cursiv_v215.guardian.identity_core import wrap as _identity_wrap, filter_text as _id_filter

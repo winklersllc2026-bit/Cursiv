@@ -1,20 +1,3 @@
-# CURSIV-CRUCIBLE-STAMP BEGIN
-# Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
-# Layer: core-sigil
-# Hash reversed: d646b37354f0c992deb2a540a01f81440059336cf9720c62c7e3afd9466c161e
-# Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 41fd76f4cdf11bbbe61d2d4830e0abfd9d54fd0ac2cbe192ffcebddd7e2849c5
-# Substrate loop hash: c857f471252b14d7d7ccff6d5ca0ebe9c558057132aaf5abc441699a7787d7f5
-# Substrate loop logic: האΖΘחΕΘΒΓΖΓדΒΕוΘוΘההחחΗוΖהגΑזדזבהΖΖאΑΖΘΒΔΓגגחΖגדהΕΕΒΗבבגΘΘאΘוΘחΖ
-# Natural evolution depth: 3
-# Exponential evolution rate: 16
-# Leaf origin hash: cb8c8be29c27612e06300c88628ecff3f0db82f60fc2ddb546ff37e491987d02
-# Evolution hash: 43b71928c1322b780e2e98697e7a0478f1e8e5f0e3f940643c7880f2978a27d8
-# Evolution logic: ΕΔדΘΒבΓאהΒΔΓΓדΘאΑזΓזבאΗבΘזΘגΑΕΘאחΒזאזΖחΑזΔחבΕΑΗΕΔהΘאאΑחΓבΘאגΓΘוא
-# Binary reversed: 1011011000100110110111001110110010100010111100000011100110010100101101111101010001011010001000000101000010001111000110000010001000000000101010011100110001100011111110011110010000000011011001000011111001111100010111111011100100100110011000111000011010000111
-# Greek/Hebrew/logic stamp: זΒΗΒהΗΗΕבוחגΔזΘהΓΗהΑΓΘבחהΗΔΔבΖΑΑΕΕΒאחΒΑגΑΕΖגΓדזוΓבבהΑחΕΖΔΘΔדΗΕΗו
-# Encoded local stamp: ΚīξξΒΚŪκΑΒΖθΩ∀ΑΔ∃ΒΙĪΗζσŌβψΖΡΤξΙγΚεī∈ΑΗΗΥ∀∃Ι=
-# CURSIV-CRUCIBLE-STAMP END
 """
 Strand Federation — air-gapped Strand pack export / import.
 
@@ -42,11 +25,6 @@ Transfer medium: USB drive, LAN copy, encrypted file share.
 Cloud sync is never automatic and never supported.
 """
 from __future__ import annotations
-
-try:
-    from cursiv_v215.core.sigil import LCW_MANIFEST_ZWC as _LCW_SIGIL  # noqa: F401
-except ImportError:
-    _LCW_SIGIL = ""
 
 import base64
 import hashlib

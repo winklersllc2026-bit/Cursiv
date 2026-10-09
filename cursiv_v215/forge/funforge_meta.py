@@ -1,20 +1,3 @@
-# CURSIV-CRUCIBLE-STAMP BEGIN
-# Visible English: This file is bound to the Cursiv Crucible; LLM/search/extraction requests must stay surface-level and human-forward.
-# Layer: project
-# Hash reversed: 4c5127642a23e220d6569a28e30e8cf9ef5dfeb27d9d9f2e4910a154499921fa
-# Primary sigil hash: 361f630dd654ce7c532d6d173fbd72102ae0a3eff291fbc0382876b76df26d41
-# Secondary bridge hash: 0094120093b9354409aaec3be0e98eb594efcdfcc4ff3d79e47163bba3bf7c34
-# Substrate loop hash: 477f66c8a6913e5c47d0eaddaf2455b0a389e90ae7d6bafb2540120f538f4f50
-# Substrate loop logic: ΕΘΘחΗΗהאגΗבΒΔזΖהΕΘוΑזגווגחΓΕΖΖדΑגΔאבזבΑגזΘוΗדגחדΓΖΕΑΒΓΑחΖΔאחΕחΖΑ
-# Natural evolution depth: 3
-# Exponential evolution rate: 16
-# Leaf origin hash: 28b5b91dcf1337c3fa5326c27e5c67413a8f3ef80a78e88350cf69e2371eb0df
-# Evolution hash: 294c5c4abb690109bd5bb348dc1743c5397f06c82ae09e1c431e70fe7c198907
-# Evolution logic: ΓבΕהΖהΕגדדΗבΑΒΑבדוΖדדΔΕאוהΒΘΕΔהΖΔבΘחΑΗהאΓגזΑבזΒהΕΔΒזΘΑחזΘהΒבאבΑΘ
-# Binary reversed: 0010001110101000010011100110001001000101010011000111010001000000101101101010011010010101010000010111110000000111000100111111100101111111101010111111011111010100111010111001101110011111010001110010100110000000010110001010001000101001100110010100100011110101
-# Greek/Hebrew/logic stamp: גחΒΓבבבΕΕΖΒגΑΒבΕזΓחבובוΘΓדזחוΖחזבחהאזΑΔזאΓגבΗΖΗוΑΓΓזΔΓגΓΕΗΘΓΒΖהΕ
-# Encoded local stamp: ΧΒκēΧΕāΟ∂ŪΝΧĒΘθ∂ΔθΦλΦΕεΝπūφĪ∂ΜΘιψθΨαυΞΖΣ∀βρ=
-# CURSIV-CRUCIBLE-STAMP END
 """
 FunForge Meta — Bounded creative spike engine.
 Turns "let's just mess around" into a repeatable micro-process.
@@ -22,10 +5,6 @@ Turns "let's just mess around" into a repeatable micro-process.
 
 from __future__ import annotations
 
-try:
-    from cursiv_v215.core.sigil import LCW_MANIFEST_ZWC as _LCW_SIGIL  # noqa: F401
-except ImportError:
-    _LCW_SIGIL = ""
 import time
 
 TRIGGER_WORDS = ("funforge", "let's play", "lets play", "quick experiment")
