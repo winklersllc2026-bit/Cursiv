@@ -82,6 +82,8 @@ class ConversationSidebar(QWidget):
         head = QLabel("SAVED CONVERSATIONS")
         lay.addWidget(head)
         self._list = QListWidget()
+        self._list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._list.setTextElideMode(Qt.TextElideMode.ElideRight)   # long titles end in "…"
         self._list.itemClicked.connect(self._open)
         self._list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self._list.customContextMenuRequested.connect(self._menu)

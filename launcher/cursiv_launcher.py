@@ -56,7 +56,7 @@ _ICONS = (
 _LOCK_PORT       = 17_860        # local socket port for single-instance lock
 
 # ── Update checker ─────────────────────────────────────────────────────────────
-_CURRENT_VERSION   = "3.14-U55"
+_CURRENT_VERSION   = "3.14-U56"
 _GITHUB_API        = "https://api.github.com/repos/winklersllc2026-bit/Cursiv/releases/latest"
 _GITHUB_RELEASES   = "https://github.com/winklersllc2026-bit/Cursiv/releases"
 
@@ -1299,6 +1299,7 @@ class CursivLauncher(QMainWindow):
             for target, name in ((_run_guardian, "Guardian"), (_run_tracker, "Tracker")):
                 threading.Thread(target=target, args=(self._guardian_stop,),
                                  daemon=True, name=name).start()
+            self._set_status("Ready")
         except Exception as e:
             self._set_status(f"Guardian failed to start: {e}")
 
@@ -1541,7 +1542,7 @@ class CursivLauncher(QMainWindow):
         row.addWidget(self._status_lbl)
         row.addStretch()
 
-        ver = QLabel("Cursiv v3.0")
+        ver = QLabel(f"Cursiv v{_CURRENT_VERSION}")
         ver.setStyleSheet(f"color: {SILV2}; font-size: 10px;")
         row.addWidget(ver)
         return footer

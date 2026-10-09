@@ -185,7 +185,7 @@ class ChatPanel(QWidget):
         self._build_ui()
         self._send_btn.setEnabled(False)
         self._voice_btn.setEnabled(False)
-        self._append_system("Loading Cursiv's core…")
+        self._append_system("Getting Cursiv ready…")
 
         # Deferred to the next event-loop tick (still the *main* thread) --
         # not a background thread. This was a background thread originally,
@@ -230,27 +230,19 @@ class ChatPanel(QWidget):
             self._backend_ready = True
             self._send_btn.setEnabled(True)
             self._voice_btn.setEnabled(True)
-            has_key = any(self._cfg.get(k) for k in ("api_key", "openai_key", "anthropic_key"))
-            if has_key:
-                self._append_system(
-                    "Talk to Cursiv here — no terminal needed. Runs through Ollama "
-                    "locally when no cloud key is set, or cascades through your "
-                    "configured providers otherwise. Type 'help' for the full command list."
-                )
-            elif _is_ollama_installed():
-                self._append_system(
-                    "Talk to Cursiv here — no terminal needed. No cloud API key is "
-                    "configured yet, so this runs on your local Ollama model. Type "
-                    "'key xai-...', 'openai sk-...', or 'anthropic sk-ant-...' to add one. "
-                    "Type 'help' for the full command list."
-                )
+            # Replace "Getting Cursiv ready…" with one line -- unless the
+            # person already opened a saved conversation while it loaded.
+            if not self._history and not self._conv_id:
+                self._transcript.clear()
+            has_key = any(keys.get(k) for k in
+                          ("api_key", "openai_key", "anthropic_key", "gemini_key", "groq_key"))
+            if has_key or _is_ollama_installed():
+                self._append_system("Ready. Ask me anything — or type help to see what I can do.")
             else:
                 self._append_system(
-                    "Talk to Cursiv here — no terminal needed. No cloud API key is "
-                    "configured and Ollama isn't installed yet, so there's no model "
-                    "to talk to. Right-click the tray icon → Install Ollama, or type "
-                    "'key xai-...', 'openai sk-...', or 'anthropic sk-ant-...' to use "
-                    "a cloud provider instead."
+                    "Almost ready — Cursiv needs an AI to talk through. Open Setup "
+                    "(tray menu → Setup…) to install the free local engine, or add a "
+                    "free Gemini or Groq key in Settings."
                 )
         else:
             _CHAT_IMPORT_ERROR = error

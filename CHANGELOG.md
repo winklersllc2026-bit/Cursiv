@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.14-U56 — Clean startup (2026-10-09)
+- The chat says **"Getting Cursiv ready…"** while it loads, then replaces it with one line: **"Ready. Ask me anything — or type help to see what I can do."** It used to leave "Loading Cursiv's core…" on screen and add an out-of-date paragraph about terminals and paid keys. Free Gemini/Groq keys now count as ready too.
+- The status bar at the bottom left says **Ready** instead of staying on "Starting…", and the bottom right shows the real version number.
+- Saved conversations: long titles end in "…" instead of being cut off, and the sideways scrollbar is gone.
+
 ## v3.14-U55 — Cleanup: one window, nothing extra (2026-10-09)
 - **Only the desktop window opens.** The tray's "Open Cursiv" now opens the Cursiv window instead of the old browser chat. The old browser chat, Command Nexus, Sacred UI and terminal chat are gone, along with "Open in Terminal" and the `cursiv` command the installer used to add to PATH. Updating removes the leftover files.
 - **No more background training watcher.** Training examples are added only on purpose (Training Data window, or notes converted in chat).
