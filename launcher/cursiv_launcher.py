@@ -81,6 +81,14 @@ def _is_ollama_installed() -> bool:
     return bool(shutil.which("ollama")) or _OLLAMA_EXE_PATH.exists()
 
 
+# Windows' default UI font (Segoe UI) has no Egyptian Hieroglyphs glyphs, and
+# Qt's automatic font fallback does NOT pick up "Segoe UI Historic" (the
+# system font that covers that block) on its own. Every hieroglyph in this UI
+# (Anubis, the Eye of Horus) rendered as a tofu box until it was registered
+# explicitly. Call once, before building any widget that uses one.
+_HIEROGLYPH_FONT_LOADED = False
+
+
 def _ensure_hieroglyph_font() -> None:
     global _HIEROGLYPH_FONT_LOADED
     if _HIEROGLYPH_FONT_LOADED:
