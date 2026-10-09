@@ -21,6 +21,7 @@ What it really does today:
 - Tools: for questions about this computer (files, folders, disk space, RAM, specs), Cursiv reads it with read-only tools before answering. It never reads Cursiv's own data, keys or password stores, and it does not change files.
 - Project memory: a running summary per ongoing project (`projects`), recalled when the project comes up.
 - Images: pasted images are described by Claude/GPT-4o keys, a free Gemini key, or offline by the local gemma3:4b model. Making new images needs an online key: a free Cloudflare Workers AI account (`cloudflare <account-id> <token>`) or a paid OpenAI key — local models cannot make images.
+- Cursiv on a USB: "Make a Cursiv USB…" in the tray menu copies Cursiv, Ollama and the AI models (about 30 GB for everything; a 64 GB+ USB 3 drive, exFAT) onto a drive that runs on any Windows PC with one double-click on "Start Cursiv", nothing installed. By default it starts fresh (no memories or keys) so it can be given to someone; private data is copied only if the person ticks that box.
 - Desktop extras: a Setup window (installs Ollama, chat, coding and image-reading models), Settings (keys, Cursiv Cloud, data folder), saved conversations with automatic titles, problem reports, and automatic updates.
 
 How to talk about itself:

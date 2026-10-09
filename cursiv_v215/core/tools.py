@@ -36,8 +36,10 @@ def _resolve(path: str) -> Path:
     aliases = {"downloads": "Downloads", "desktop": "Desktop", "documents": "Documents", "pictures": "Pictures",
                "music": "Music", "videos": "Videos", "home": ""}
     if p.lower() in aliases:
-        base = Path.home() / aliases[p.lower()]
-        od = Path.home() / "OneDrive" / aliases[p.lower()]
+        # On a Cursiv USB, Path.home() is the drive; the person's folders are here.
+        home = Path(os.environ.get("CURSIV_REAL_HOME") or Path.home())
+        base = home / aliases[p.lower()]
+        od = home / "OneDrive" / aliases[p.lower()]
         return od if aliases[p.lower()] and not base.exists() and od.exists() else base
     if re.match(r"^/mnt/([a-z])/", p):                      # WSL path -> Windows
         p = re.sub(r"^/mnt/([a-z])/", lambda m: m.group(1).upper() + ":/", p)
@@ -196,7 +198,7 @@ def plan(text: str, ask: Callable[[list[dict]], str]) -> list[dict]:
     tools = all_tools()
     desc = "\n".join(f"- {n}: {t['description']}" for n, t in tools.items())
     try:
-        raw = ask([{"role": "system", "content": _ROUTER.format(tools=desc, home=str(Path.home()))},
+        raw = ask([{"role": "system", "content": _ROUTER.format(tools=desc, home=os.environ.get("CURSIV_REAL_HOME") or str(Path.home()))},
                    {"role": "user", "content": text[:2000]}]) or ""
         m = re.search(r"\{.*\}", raw, re.S)
         calls = json.loads(m.group(0)).get("calls", []) if m else []

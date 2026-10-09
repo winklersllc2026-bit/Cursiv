@@ -45,6 +45,12 @@
 -->
 # Changelog
 
+## v3.14-U54 — Cursiv on a USB (2026-10-09)
+- **Make a Cursiv USB** (tray menu) — copies Cursiv, the Ollama AI engine and your AI models onto a USB drive. Plug it into any Windows PC and double-click **Start Cursiv**: nothing is installed, it works offline, and everything it saves stays on the drive. A qwen chat model and memory search are always included (downloaded first if missing); every other model is included by default and can be unticked. The full set is about 30 GB — use a 64 GB or bigger USB 3 drive or USB SSD, formatted exFAT (Cursiv warns about FAT32, which can't hold the bigger models).
+- **Fresh or personal** — by default the USB starts fresh, so it can be given to someone else as their own Cursiv. Tick "Include my memories, keys and settings" for a private copy of your own.
+- **Quick re-make** — making the USB again on the same drive only copies what changed, so updating it after a Cursiv update is fast.
+- The terminal chat no longer opens by itself when Cursiv is started from a command window; it opens only from "Open in Terminal" or the `cursiv` command.
+
 ## v3.14-U53 — LoRA training works, images in and out, Cursiv is for anyone (2026-10-09)
 - **LoRA training actually trains now.** Two bugs stopped it: the training terminal loaded Cursiv's own bundled Python 3.13 files ahead of your system Python, so PyTorch crashed on any other Python version and the trainer reported "missing packages"; and the button checked for PyTorch inside Cursiv.exe (where it never is), so it always offered to install instead of starting. The check now asks the Python that will do the training, and that Python is launched cleanly. "Merge into Ollama" had the same launch problem and is fixed too.
 - **Read images for free.** Pasted images (and image uploads in Training Data) are described by Claude or GPT-4o if you have those keys, then a free Gemini key, then a local vision model through Ollama — so it works offline with no key at all. The Setup window has a new step, **Image reading model**, that downloads Gemma 3 (3.3 GB) with one click.

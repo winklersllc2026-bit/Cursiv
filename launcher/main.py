@@ -37,6 +37,14 @@ if str(_ROOT) not in sys.path:
 # ── One home for user data (installed app only) ───────────────────────────
 # Before anything touches .cursiv: point the program-folder .cursiv folders at
 # %USERPROFILE%\.cursiv so updates and reinstalls can never wipe user data.
+# Running off a Cursiv USB? Point home/models/Ollama at the drive before
+# anything below reads Path.home().
+try:
+    from portable import activate as _activate_portable
+    _activate_portable()
+except Exception:
+    pass
+
 try:
     from data_home import link_data_folders
     link_data_folders()
@@ -112,26 +120,6 @@ except Exception:
     pass
 
 
-_CONSOLE_PARENTS = {
-    "cmd.exe", "powershell.exe", "pwsh.exe",
-    "windowsterminal.exe", "wt.exe",
-    "bash.exe", "git-bash.exe", "mintty.exe", "conhost.exe",
-    "alacritty.exe", "wezterm.exe", "hyper.exe",
-}
-
-
-def _launched_from_terminal() -> bool:
-    """True if the parent process is a known terminal shell."""
-    try:
-        import psutil
-        parent = psutil.Process().parent()
-        if parent and parent.name().lower() in _CONSOLE_PARENTS:
-            return True
-    except Exception:
-        pass
-    return False
-
-
 def _run_terminal_mode() -> None:
     """Attach to parent console and run the Eye of Horus CLI terminal."""
     if sys.platform == "win32":
@@ -195,11 +183,11 @@ if sys.platform == "win32":
 
 
 def main():
-    # ── Terminal mode: explicit flag OR auto-detected console parent ─────
-    # Use 'cursiv --gui' to force the launcher window from a terminal.
-    if "--gui" not in sys.argv and (
-        "--terminal" in sys.argv or "-t" in sys.argv or _launched_from_terminal()
-    ):
+    # ── Terminal mode: explicit flag only (the `cursiv` command and "Open in
+    # Terminal" pass -t). No auto-detection from the parent process -- a
+    # launch through cmd.exe (e.g. the USB's "Start Cursiv.bat") must open
+    # the normal app, never the terminal chat.
+    if "--gui" not in sys.argv and ("--terminal" in sys.argv or "-t" in sys.argv):
         _run_terminal_mode()
         return
 

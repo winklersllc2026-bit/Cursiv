@@ -91,6 +91,8 @@ hiddenimports = [
     "legacy_vault_dialog",
     "postal_compose_dialog",
     "training_data_dialog",
+    "portable",
+    "usb_maker",
     # PyQt6
     "PyQt6",
     "PyQt6.QtWidgets",

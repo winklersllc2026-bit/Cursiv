@@ -83,7 +83,7 @@ _WATCHDOG_MS     = 3_000         # ms between app-health checks
 _POLL_DEADLINE_S = 30            # seconds to wait for app to bind its port
 
 # ── Update checker ─────────────────────────────────────────────────────────────
-_CURRENT_VERSION   = "3.14-U53"
+_CURRENT_VERSION   = "3.14-U54"
 _GITHUB_API        = "https://api.github.com/repos/winklersllc2026-bit/Cursiv/releases/latest"
 _GITHUB_RELEASES   = "https://github.com/winklersllc2026-bit/Cursiv/releases"
 
@@ -1957,6 +1957,11 @@ class CursivLauncher(QMainWindow):
             if not automatic:
                 self._set_status(f"You're up to date  ({_CURRENT_VERSION})")
             return
+        if os.environ.get("CURSIV_PORTABLE") == "1":
+            # The installer would install onto this PC, not the USB.
+            self._set_status(f"v{tag} is available — to update this USB, update Cursiv on your "
+                             "computer, then use \"Make a Cursiv USB…\" again.")
+            return
         self._set_status(f"Update available: v{tag}")
         if automatic and self.isHidden():
             self.showNormal()
@@ -2062,6 +2067,13 @@ class CursivLauncher(QMainWindow):
     def _send_problem_report(self, context: str = ""):
         from problem_report import open_report
         open_report(self, context)
+
+    def _open_usb_maker(self):
+        try:
+            from usb_maker import UsbMakerDialog
+            UsbMakerDialog(self).exec()
+        except Exception as e:
+            self._set_status(f"USB maker failed to open: {e}")
 
     def _open_setup(self):
         try:
@@ -2182,6 +2194,10 @@ class CursivLauncher(QMainWindow):
         setup_act = QAction("Setup…", self)
         setup_act.triggered.connect(self._open_setup)
         menu.addAction(setup_act)
+
+        usb_act = QAction("Make a Cursiv USB…", self)
+        usb_act.triggered.connect(lambda: self._open_usb_maker())
+        menu.addAction(usb_act)
 
         report_act = QAction("Send problem report…", self)
         report_act.triggered.connect(lambda: self._send_problem_report())
